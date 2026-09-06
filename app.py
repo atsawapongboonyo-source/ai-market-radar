@@ -561,7 +561,7 @@ def backtest(ticker):
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "service": "AI Market Radar", "version": "3.3"}), 200
+    return jsonify({"status": "ok", "service": "AI Market Radar", "version": "3.4"}), 200
 
 
 @app.errorhandler(404)

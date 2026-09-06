@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Market Radar V3.3</title>
+<title>AI Market Radar V3.4</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eef5ff;--muted:#93a9c3;--line:#1e3856;--good:#37d67a;--warn:#f3c95d;--bad:#ff6b6b;--blue:#65b5ff}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06101d,#091827 52%,#06101d);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
@@ -14,14 +14,14 @@ button{background:#1d4f80;font-weight:800;cursor:pointer}button:disabled{opacity
 .status{padding:13px;border-radius:13px;margin-top:10px;font-weight:800;line-height:1.45}.good{background:#0d3020;border:1px solid #1c6b43;color:#95f3bc}.warn{background:#30270d;border:1px solid #6c5718;color:#ffe18b}.bad{background:#331414;border:1px solid #763131;color:#ffadad}.neutral{background:#10243a;border:1px solid var(--line)}
 .reasons{margin:8px 0 0;padding-left:18px;color:#c8daec;font-size:12px;line-height:1.6}.hint{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px}.notice-title{font-size:20px;font-weight:900}.notice-note{font-size:12px;margin-top:5px;font-weight:600;opacity:.95}.scoreline{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px;font-size:12px;color:var(--muted)}
 .progress{height:8px;background:#081725;border-radius:99px;overflow:hidden;margin-top:6px;border:1px solid var(--line)}.progress>span{display:block;height:100%;background:linear-gradient(90deg,#2b7bb9,#37d67a);width:0%}.progress.entry>span{background:linear-gradient(90deg,#8a6cf5,#f3c95d)}
-.entry-card{border:1px solid #2b5278;background:#0b2034}.entry-card .v{color:#d9ecff}.hidden{display:none!important}
+.entry-card{border:1px solid #2b5278;background:#0b2034}.entry-card .v{color:#d9ecff}.position-card{border:1px solid #31526d;background:#0b1d2f}.position-status{margin-top:10px}.positive{color:#95f3bc}.negative{color:#ffadad}.hidden{display:none!important}
 table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1px solid var(--line);text-align:left;font-size:12px}th{font-size:10px;color:var(--muted)}.pill{padding:4px 7px;border-radius:999px;background:#15314e;font-size:10px}.event{padding:9px 0;border-bottom:1px solid var(--line)}.event:last-child{border-bottom:0}.event b{font-size:13px}.meta{font-size:11px;color:var(--muted);margin-top:3px}.section-note{font-size:11px;color:var(--muted);margin-top:9px;line-height:1.5}.mono{font-variant-numeric:tabular-nums}.blue{color:var(--blue)}
 @media(max-width:760px){.grid{grid-template-columns:1fr 1fr}.two,.three{grid-template-columns:1fr}}@media(max-width:520px){.wrap{padding:11px}th:nth-child(2),td:nth-child(2){display:none}.v{font-size:17px}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header><div><h1>AI Market Radar</h1><div class="sub">V3.3 • Entry Validation + Confidence + Price Trigger + Backtest</div></div><div class="badge">Free-first</div></header>
+<header><div><h1>AI Market Radar</h1><div class="sub">V3.4 • Position Lite + Entry Validation + Backtest</div></div><div class="badge">Free-first</div></header>
 
 <div class="card">
 <div class="title">🔥 วิเคราะห์หุ้นอัตโนมัติ</div>
@@ -58,6 +58,24 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
  <div class="metric"><div class="k">ไม้ 2</div><div class="v" id="triggerEntry2">—</div></div>
 </div>
 <div class="section-note">ช่วยตอบว่า “ตอนนี้ไม่ซื้อ แล้วต้องรอราคาเท่าไร” ระดับจะเปลี่ยนตาม ATR / Buy Zone / แนวรับของหุ้นแต่ละตัว</div>
+</div>
+
+<div class="card" id="positionCard">
+<div class="title">💼 My Position • หุ้นที่ถืออยู่</div>
+<div class="two">
+ <div><label>จำนวนหุ้นที่ถือ</label><input id="positionShares" type="number" min="0" step="0.0001" placeholder="เช่น 4.50" oninput="saveAndRenderPosition()"></div>
+ <div><label>ราคาเฉลี่ย / หุ้น (USD)</label><input id="positionAvg" type="number" min="0" step="0.01" placeholder="เช่น 1485.00" oninput="saveAndRenderPosition()"></div>
+</div>
+<div class="grid" style="margin-top:10px">
+ <div class="metric position-card"><div class="k">ราคาที่ใช้คำนวณ</div><div class="v" id="posPrice">—</div><div class="meta">ราคาสด Webull ถ้ามี มิฉะนั้นใช้ราคาปิดล่าสุด</div></div>
+ <div class="metric position-card"><div class="k">มูลค่าปัจจุบัน</div><div class="v" id="posValue">—</div></div>
+ <div class="metric position-card"><div class="k">กำไร / ขาดทุน</div><div class="v" id="posPnl">—</div><div class="meta" id="posPnlPct">—</div></div>
+ <div class="metric position-card"><div class="k">ต้นทุนรวม</div><div class="v" id="posCost">—</div></div>
+ <div class="metric position-card"><div class="k">ถึง TP1</div><div class="v" id="posToTp1">—</div></div>
+ <div class="metric position-card"><div class="k">ถึง Stop / Invalidation</div><div class="v" id="posToStop">—</div></div>
+</div>
+<div id="positionStatus" class="status neutral position-status"><div class="notice-title">ยังไม่ได้บันทึก Position</div><div class="notice-note">กรอกจำนวนหุ้นและราคาเฉลี่ย ระบบจะจำแยกตามหุ้นไว้ในเครื่องนี้</div></div>
+<div class="section-note">Position Status แยกจาก Entry Status: หุ้นที่ “ไม่ควรไล่ซื้อเพิ่ม” อาจยัง “ถือได้” หากต้นทุนและแนวโน้มยังอยู่ในแผน</div>
 </div>
 
 <div class="card">
@@ -144,11 +162,47 @@ function setBtStatus(text,cls){const el=document.getElementById("btStatus");el.c
 function clearMetrics(){
  ["close","trend","rsi","atr","ema20","ema50","vol","score","entryScore","rr","distSupport","buy","entry1","entry2","entry3","tp1","tp2","stop","support","resistance","upside","downside","liveState","baseAction","watchPrice","triggerEntry1","triggerEntry2"].forEach(id=>document.getElementById(id).textContent="—");
  document.getElementById("reasons").innerHTML="";document.getElementById("entryReasons").innerHTML="";document.getElementById("radarBar").style.width="0%";document.getElementById("entryBar").style.width="0%";
- renderBudget();
+ renderBudget();renderPosition();
 }
 function clearBacktest(){
  ["btSignals","bt1","bt3","bt5","bt10","avg1","avg3","avg5","avg10","pf5","mae10","mfe10","btPeriod","btConfidence","e1Hit","e1Result","e2Hit","e2Result","e3Hit","e3Result"].forEach(id=>document.getElementById(id).textContent="—");
  setBtStatus("ยังไม่ได้ทำ Backtest สำหรับหุ้นตัวนี้","neutral");
+}
+
+function positionKey(){return "position_v34_"+document.getElementById("ticker").value}
+function loadPosition(){
+ const raw=localStorage.getItem(positionKey());let p={};
+ try{p=raw?JSON.parse(raw):{}}catch(e){p={}}
+ document.getElementById("positionShares").value=p.shares??"";
+ document.getElementById("positionAvg").value=p.avg??"";
+ renderPosition();
+}
+function saveAndRenderPosition(){
+ const shares=parseFloat(document.getElementById("positionShares").value),avg=parseFloat(document.getElementById("positionAvg").value);
+ if(isFinite(shares)&&shares>0&&isFinite(avg)&&avg>0)localStorage.setItem(positionKey(),JSON.stringify({shares:shares,avg:avg}));
+ else localStorage.removeItem(positionKey());
+ renderPosition();
+}
+function positionDecision(p,pnlPct){
+ const d=lastData;if(!d)return {label:"รอข้อมูลวิเคราะห์",cls:"neutral",note:"กดดึงข้อมูลย้อนหลังและวิเคราะห์ก่อน"};
+ if(p<d.stop)return {label:"🔴 ต่ำกว่า Invalidation",cls:"bad",note:"ราคาต่ำกว่าจุดที่แผนผิด ควรทบทวนแผนและลดความเสี่ยงตามกติกาของคุณ"};
+ if(p>=d.tp1&&pnlPct>0)return {label:"🟢 กำไรถึงโซนเป้า",cls:"good",note:"ราคาถึง/เหนือ TP1 แล้ว พิจารณาล็อกกำไรบางส่วนแทนการไล่เติม"};
+ if(p>d.buy_high)return {label:"🟢 ถือได้ตามแนวโน้ม • ไม่ไล่เติม",cls:"good",note:"สำหรับ Position เดิมยังไม่ใช่สัญญาณขาย แต่ราคาใหม่สูงกว่า Buy Zone"};
+ if(p>=d.buy_low&&p<=d.buy_high)return {label:"🟡 อยู่ใน Buy Zone",cls:"warn",note:"ถ้าจะเพิ่ม Position ให้ยึดแผนไม้และขนาดความเสี่ยง ไม่จำเป็นต้องเติมเพราะถืออยู่แล้ว"};
+ return {label:"🟡 ถือและรอการยืนยัน",cls:"warn",note:"ราคาต่ำกว่า Buy Zone แต่ยังไม่หลุด Invalidation จึงควรรอการยืนยันก่อนเพิ่ม"};
+}
+function renderPosition(){
+ const ids=["posPrice","posValue","posPnl","posPnlPct","posCost","posToTp1","posToStop"];
+ const shares=parseFloat(document.getElementById("positionShares")?.value||""),avg=parseFloat(document.getElementById("positionAvg")?.value||"");
+ const live=parseFloat(document.getElementById("livePrice")?.value||"");
+ const p=isFinite(live)&&live>0?live:(lastData&&lastData.last_close?Number(lastData.last_close):NaN);
+ if(!isFinite(shares)||shares<=0||!isFinite(avg)||avg<=0){ids.forEach(id=>{const e=document.getElementById(id);if(e)e.textContent="—"});const st=document.getElementById("positionStatus");if(st){st.className="status neutral position-status";st.innerHTML='<div class="notice-title">ยังไม่ได้บันทึก Position</div><div class="notice-note">กรอกจำนวนหุ้นและราคาเฉลี่ย ระบบจะจำแยกตามหุ้นไว้ในเครื่องนี้</div>'}return}
+ const cost=shares*avg;document.getElementById("posCost").textContent=fmt(cost);
+ if(!isFinite(p)||p<=0){document.getElementById("posPrice").textContent="—";document.getElementById("posValue").textContent="—";document.getElementById("posPnl").textContent="—";document.getElementById("posPnlPct").textContent="รอราคาปัจจุบัน";return}
+ const value=shares*p,pnl=value-cost,pnlPct=pnl/cost*100;
+ document.getElementById("posPrice").textContent=fmt(p);document.getElementById("posValue").textContent=fmt(value);document.getElementById("posPnl").textContent=(pnl>=0?"+":"-")+"$"+Math.abs(pnl).toFixed(2);document.getElementById("posPnl").className="v "+(pnl>=0?"positive":"negative");document.getElementById("posPnlPct").textContent=(pnlPct>=0?"+":"")+pnlPct.toFixed(2)+"%";
+ if(lastData){const toTp=(lastData.tp1-p)/p*100,toStop=(lastData.stop-p)/p*100;document.getElementById("posToTp1").textContent=(toTp>=0?"+":"")+toTp.toFixed(2)+"%";document.getElementById("posToStop").textContent=(toStop>=0?"+":"")+toStop.toFixed(2)+"%";const x=positionDecision(p,pnlPct),st=document.getElementById("positionStatus");st.className="status "+x.cls+" position-status";st.innerHTML='<div class="notice-title">'+x.label+'</div><div class="notice-note">P/L '+(pnlPct>=0?"+":"")+pnlPct.toFixed(2)+'% • '+x.note+'</div>'}
+ else{document.getElementById("posToTp1").textContent="—";document.getElementById("posToStop").textContent="—"}
 }
 
 async function loadAnalysis(){
@@ -159,7 +213,7 @@ async function loadAnalysis(){
    const raw=await response.text();if(!raw)throw new Error("เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา กรุณาลองอีกครั้ง");
    let j;try{j=JSON.parse(raw)}catch(e){throw new Error("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ กรุณาลองใหม่หลัง Render พร้อมใช้งาน")}
    if(!j.ok)throw new Error(j.error||"โหลดข้อมูลไม่สำเร็จ");
-   lastData=j.data;render(lastData);localStorage.setItem("analysis_v33_"+ticker,JSON.stringify(lastData));
+   lastData=j.data;render(lastData);localStorage.setItem("analysis_v34_"+ticker,JSON.stringify(lastData));
  }catch(e){lastData=null;clearMetrics();setStatus("โหลดข้อมูลไม่สำเร็จ","bad",e.message)}
  finally{btn.disabled=false;btn.textContent="ดึงข้อมูลย้อนหลังและวิเคราะห์"}
 }
@@ -174,7 +228,7 @@ function render(d){
  document.getElementById("reasons").innerHTML=(d.reasons||[]).map(x=>"<li>"+x+"</li>").join("");document.getElementById("entryReasons").innerHTML=(d.entry_reasons||[]).map(x=>"<li>"+x+"</li>").join("");
  document.getElementById("entryPlanCard").classList.toggle("hidden",d.show_entries===false);
  setStatus(d.action_label||"วิเคราะห์สำเร็จ",d.action_class||"neutral",(d.action_note||"")+" • ข้อมูลถึง "+d.data_date);
- renderBudget();recalcLive(false);
+ renderBudget();recalcLive(false);renderPosition();
 }
 
 function renderBudget(){
@@ -202,9 +256,9 @@ function liveDecision(p){
 function recalcLive(updateStatus=true){
  if(!lastData){if(updateStatus)setStatus("กรุณาดึงข้อมูลย้อนหลังของหุ้นก่อน","warn");return}
  const p=parseFloat(document.getElementById("livePrice").value);
- if(!isFinite(p)||p<=0){document.getElementById("upside").textContent="—";document.getElementById("downside").textContent="—";document.getElementById("liveState").textContent="—";return}
+ if(!isFinite(p)||p<=0){document.getElementById("upside").textContent="—";document.getElementById("downside").textContent="—";document.getElementById("liveState").textContent="—";renderPosition();return}
  const up=(lastData.tp1-p)/p*100,down=(lastData.stop-p)/p*100;document.getElementById("upside").textContent=(up>=0?"+":"")+up.toFixed(2)+"%";document.getElementById("downside").textContent=(down>=0?"+":"")+down.toFixed(2)+"%";
- const x=liveDecision(p);document.getElementById("liveState").textContent=x.label;if(updateStatus)setStatus(x.label,x.cls,x.note+" • ราคาสด $"+p.toFixed(2));
+ const x=liveDecision(p);document.getElementById("liveState").textContent=x.label;if(updateStatus)setStatus(x.label,x.cls,x.note+" • ราคาสด $"+p.toFixed(2));renderPosition();
 }
 
 async function loadBacktest(){
@@ -226,7 +280,9 @@ function renderBacktest(d){
 }
 
 
-document.getElementById("ticker").addEventListener("change",()=>{const t=document.getElementById("ticker").value;const saved=localStorage.getItem("analysis_v33_"+t);lastData=saved?JSON.parse(saved):null;clearBacktest();if(lastData)render(lastData);else{clearMetrics();setStatus("เลือก "+t+" แล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”","neutral")}});
+document.getElementById("ticker").addEventListener("change",()=>{const t=document.getElementById("ticker").value;const saved=localStorage.getItem("analysis_v34_"+t)||localStorage.getItem("analysis_v33_"+t);lastData=saved?JSON.parse(saved):null;clearBacktest();loadPosition();if(lastData)render(lastData);else{clearMetrics();setStatus("เลือก "+t+" แล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”","neutral")}});
+document.getElementById("livePrice").addEventListener("input",()=>renderPosition());
+loadPosition();
 </script>
 </body>
 </html>
