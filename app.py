@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify
 import json
 from pathlib import Path
-import math
+import traceback
 import pandas as pd
 import yfinance as yf
 
@@ -14,21 +14,34 @@ def load_json(name):
 
 def safe_float(v):
     try:
-        if pd.isna(v):
+        if v is None or pd.isna(v):
             return None
         return float(v)
     except Exception:
         return None
 
+def flatten_columns(df):
+    if isinstance(df.columns, pd.MultiIndex):
+        # yfinance อาจคืน ('Close','SNDK') หรือ ('SNDK','Close')
+        level0 = list(df.columns.get_level_values(0))
+        level1 = list(df.columns.get_level_values(1))
+        price_names = {"Open","High","Low","Close","Adj Close","Volume"}
+        if any(x in price_names for x in level0):
+            df = df.copy()
+            df.columns = df.columns.get_level_values(0)
+        elif any(x in price_names for x in level1):
+            df = df.copy()
+            df.columns = df.columns.get_level_values(1)
+    return df
+
 def calc_rsi(close, period=14):
     delta = close.diff()
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
-    avg_gain = gain.ewm(alpha=1/period, adjust=False).mean()
-    avg_loss = loss.ewm(alpha=1/period, adjust=False).mean()
+    avg_gain = gain.ewm(alpha=1/period, adjust=False, min_periods=period).mean()
+    avg_loss = loss.ewm(alpha=1/period, adjust=False, min_periods=period).mean()
     rs = avg_gain / avg_loss.replace(0, pd.NA)
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+    return 100 - (100 / (1 + rs))
 
 def calc_atr(df, period=14):
     prev_close = df["Close"].shift(1)
@@ -37,33 +50,63 @@ def calc_atr(df, period=14):
         (df["High"] - prev_close).abs(),
         (df["Low"] - prev_close).abs()
     ], axis=1).max(axis=1)
-    return tr.ewm(alpha=1/period, adjust=False).mean()
+    return tr.ewm(alpha=1/period, adjust=False, min_periods=period).mean()
+
+def download_history(ticker):
+    ticker = ticker.strip().upper()
+
+    # ลอง download ก่อน
+    try:
+        data = yf.download(
+            ticker,
+            period="6mo",
+            interval="1d",
+            auto_adjust=False,
+            progress=False,
+            threads=False,
+            timeout=12
+        )
+        data = flatten_columns(data)
+        if data is not None and not data.empty:
+            return data
+    except Exception:
+        pass
+
+    # fallback ผ่าน Ticker.history
+    try:
+        data = yf.Ticker(ticker).history(
+            period="6mo",
+            interval="1d",
+            auto_adjust=False,
+            timeout=12
+        )
+        data = flatten_columns(data)
+        if data is not None and not data.empty:
+            return data
+    except TypeError:
+        # บางเวอร์ชันไม่รับ timeout ใน history
+        data = yf.Ticker(ticker).history(
+            period="6mo",
+            interval="1d",
+            auto_adjust=False
+        )
+        data = flatten_columns(data)
+        if data is not None and not data.empty:
+            return data
+
+    raise ValueError("แหล่งข้อมูลฟรีไม่ตอบกลับหรือไม่พบข้อมูลหุ้นนี้ กรุณาลองอีกครั้งในอีกสักครู่")
 
 def analyze_history(ticker):
-    data = yf.download(
-        ticker,
-        period="6mo",
-        interval="1d",
-        auto_adjust=False,
-        progress=False,
-        threads=False
-    )
+    data = download_history(ticker)
 
-    if data is None or data.empty:
-        raise ValueError("ไม่พบข้อมูลย้อนหลัง")
-
-    # yfinance บางรุ่นคืน MultiIndex columns
-    if isinstance(data.columns, pd.MultiIndex):
-        data.columns = data.columns.get_level_values(0)
-
-    needed = ["Open", "High", "Low", "Close", "Volume"]
-    for c in needed:
-        if c not in data.columns:
-            raise ValueError(f"ข้อมูล {c} ไม่ครบ")
+    needed = ["High", "Low", "Close", "Volume"]
+    missing = [c for c in needed if c not in data.columns]
+    if missing:
+        raise ValueError("ข้อมูลย้อนหลังไม่ครบ: " + ", ".join(missing))
 
     data = data.dropna(subset=["High", "Low", "Close"]).copy()
     if len(data) < 30:
-        raise ValueError("ข้อมูลย้อนหลังไม่เพียงพอ")
+        raise ValueError("ข้อมูลย้อนหลังไม่เพียงพอสำหรับการคำนวณ")
 
     data["EMA20"] = data["Close"].ewm(span=20, adjust=False).mean()
     data["EMA50"] = data["Close"].ewm(span=50, adjust=False).mean()
@@ -72,50 +115,45 @@ def analyze_history(ticker):
     data["VOL20"] = data["Volume"].rolling(20).mean()
 
     last = data.iloc[-1]
-    last_close = float(last["Close"])
-    atr = safe_float(last["ATR14"]) or 0.0
+    last_close = safe_float(last["Close"])
+    if not last_close or last_close <= 0:
+        raise ValueError("ไม่สามารถอ่านราคาปิดล่าสุดได้")
 
-    # แนวรับ/แนวต้านแบบโปร่งใส:
-    # ใช้ low/high ของ 20 วันล่าสุด และ EMA20 เป็นตัวช่วย
-    recent20 = data.tail(20)
-    recent50 = data.tail(50)
-
-    low20 = float(recent20["Low"].min())
-    high20 = float(recent20["High"].max())
-    low50 = float(recent50["Low"].min())
-    high50 = float(recent50["High"].max())
     ema20 = safe_float(last["EMA20"])
     ema50 = safe_float(last["EMA50"])
+    rsi = safe_float(last["RSI14"])
+    atr = safe_float(last["ATR14"]) or (last_close * 0.025)
+    vol = safe_float(last["Volume"])
+    vol20 = safe_float(last["VOL20"])
+    vol_ratio = vol / vol20 if vol and vol20 and vol20 > 0 else None
 
-    support_candidates = [low20]
-    if ema20 and ema20 < last_close * 1.03:
-        support_candidates.append(ema20)
-    if ema50 and ema50 < last_close * 1.05:
-        support_candidates.append(ema50)
+    recent20 = data.tail(20)
+    recent50 = data.tail(50)
+    low20 = safe_float(recent20["Low"].min())
+    high20 = safe_float(recent20["High"].max())
+    high50 = safe_float(recent50["High"].max())
 
-    # เลือกแนวรับที่อยู่ใกล้ราคาปิดที่สุดแต่ไม่สูงเกินราคามาก
-    support_candidates = [x for x in support_candidates if x and x <= last_close * 1.02]
+    support_candidates = [x for x in [low20, ema20, ema50] if x is not None and x <= last_close * 1.02]
     support = max(support_candidates) if support_candidates else low20
+    if support is None:
+        support = last_close - atr
 
-    resistance_candidates = [high20, high50]
-    resistance_candidates = [x for x in resistance_candidates if x >= last_close * 0.98]
-    resistance = min(resistance_candidates) if resistance_candidates else high20
-
-    if resistance <= support:
-        resistance = max(high20, last_close + max(atr, last_close * 0.03))
+    resistance_candidates = [x for x in [high20, high50] if x is not None and x >= last_close * 0.98]
+    resistance = min(resistance_candidates) if resistance_candidates else None
+    if resistance is None or resistance <= support:
+        resistance = last_close + max(atr, last_close * 0.03)
 
     buy_low = support
-    buy_high = support + max(atr * 0.35, last_close * 0.004)
-    buy_high = min(buy_high, resistance * 0.985)
+    buy_high = min(
+        support + max(atr * 0.35, last_close * 0.004),
+        resistance * 0.985
+    )
+    if buy_high < buy_low:
+        buy_high = buy_low + max(atr * 0.2, last_close * 0.003)
 
     stop = max(0.01, support - max(atr * 0.5, last_close * 0.006))
     tp1 = resistance
     tp2 = resistance + max(atr * 0.5, last_close * 0.008)
-
-    rsi = safe_float(last["RSI14"])
-    vol = safe_float(last["Volume"])
-    vol20 = safe_float(last["VOL20"])
-    vol_ratio = (vol / vol20) if vol and vol20 and vol20 > 0 else None
 
     trend = "กลาง"
     if ema20 and ema50:
@@ -134,7 +172,7 @@ def analyze_history(ticker):
         score -= 15
         reasons.append("ราคาอยู่ต่ำกว่า EMA20 และ EMA50")
     else:
-        reasons.append("แนวโน้มยังไม่ชัด")
+        reasons.append("แนวโน้ม EMA ยังไม่ชัด")
 
     if rsi is not None:
         if 45 <= rsi <= 65:
@@ -145,7 +183,7 @@ def analyze_history(ticker):
             reasons.append("RSI ค่อนข้างร้อน")
         elif rsi < 35:
             score -= 4
-            reasons.append("RSI อ่อนและต้องรอการยืนยัน")
+            reasons.append("RSI อ่อน ควรรอการยืนยัน")
 
     if vol_ratio is not None:
         if vol_ratio >= 1.2:
@@ -161,16 +199,22 @@ def analyze_history(ticker):
         reasons.append("ราคาอยู่ไม่ไกลจากแนวรับ")
     elif distance_to_support > 8:
         score -= 6
-        reasons.append("ราคาห่างแนวรับมาก ควรระวังการไล่ราคา")
+        reasons.append("ราคาห่างแนวรับมาก ระวังการไล่ราคา")
 
     score = max(0, min(100, round(score)))
 
+    idx = data.index[-1]
+    try:
+        data_date = idx.strftime("%Y-%m-%d")
+    except Exception:
+        data_date = str(idx)[:10]
+
     return {
         "ticker": ticker.upper(),
-        "data_date": data.index[-1].strftime("%Y-%m-%d"),
+        "data_date": data_date,
         "last_close": round(last_close, 2),
-        "ema20": round(ema20, 2) if ema20 else None,
-        "ema50": round(ema50, 2) if ema50 else None,
+        "ema20": round(ema20, 2) if ema20 is not None else None,
+        "ema50": round(ema50, 2) if ema50 is not None else None,
         "rsi14": round(rsi, 1) if rsi is not None else None,
         "atr14": round(atr, 2),
         "volume_ratio": round(vol_ratio, 2) if vol_ratio is not None else None,
@@ -197,21 +241,27 @@ def home():
 @app.route("/api/history-analysis/<ticker>")
 def history_analysis(ticker):
     try:
-        return jsonify({"ok": True, "data": analyze_history(ticker)})
+        data = analyze_history(ticker)
+        return jsonify({"ok": True, "data": data}), 200
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 400
-
-@app.route("/api/watchlist")
-def api_watchlist():
-    return jsonify(load_json("watchlist.json"))
-
-@app.route("/api/events")
-def api_events():
-    return jsonify(load_json("events.json"))
+        # สำคัญ: route นี้ส่ง JSON กลับเสมอ แม้เกิด error
+        app.logger.error("history-analysis error for %s: %s", ticker, traceback.format_exc())
+        return jsonify({
+            "ok": False,
+            "error": str(e) or "เกิดข้อผิดพลาดระหว่างวิเคราะห์ข้อมูล"
+        }), 200
 
 @app.route("/health")
 def health():
-    return jsonify({"status":"ok","service":"AI Market Radar","version":"3.0"})
+    return jsonify({"status":"ok","service":"AI Market Radar","version":"3.1"}), 200
+
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"ok": False, "error": "ไม่พบหน้า API ที่เรียก"}), 404
+
+@app.errorhandler(500)
+def internal_error(e):
+    return jsonify({"ok": False, "error": "เซิร์ฟเวอร์มีปัญหาชั่วคราว กรุณาลองใหม่"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Market Radar V3</title>
+<title>AI Market Radar V3.1</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eef5ff;--muted:#93a9c3;--line:#1e3856;--good:#37d67a;--warn:#f3c95d;--bad:#ff6b6b}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06101d,#091827 52%,#06101d);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
@@ -20,7 +20,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
 </head>
 <body>
 <div class="wrap">
-<header><div><h1>AI Market Radar</h1><div class="sub">V3 • วิเคราะห์ข้อมูลย้อนหลังฟรี + ใช้ Webull เป็นราคาสด</div></div><div class="badge">Free-first</div></header>
+<header><div><h1>AI Market Radar</h1><div class="sub">V3.1 • แก้ระบบข้อมูลฟรีให้ทน Error มากขึ้น</div></div><div class="badge">Free-first</div></header>
 
 <div class="card">
 <div class="title">🔥 วิเคราะห์หุ้นอัตโนมัติ</div>
@@ -29,10 +29,10 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
   <div><label>ราคาปัจจุบันจาก Webull (ใส่ทีหลังได้)</label><input id="livePrice" type="number" step="0.01" placeholder="เช่น 125.50"></div>
 </div>
 <div class="two" style="margin-top:9px">
-  <button onclick="loadAnalysis()">ดึงข้อมูลย้อนหลังและวิเคราะห์</button>
+  <button id="loadBtn" onclick="loadAnalysis()">ดึงข้อมูลย้อนหลังและวิเคราะห์</button>
   <button class="secondary" onclick="recalcLive()">คำนวณจากราคาสด Webull</button>
 </div>
-<div class="hint">ระบบจะดึงข้อมูลรายวันย้อนหลังฟรี แล้วคำนวณ EMA20/50, RSI14, ATR14, แนวรับ, แนวต้าน และโซนเข้าอัตโนมัติ ส่วนราคาสดให้ใช้จาก Webull ตามแผนของเรา</div>
+<div class="hint">ถ้าแหล่งข้อมูลฟรีตอบช้าหรือจำกัดการใช้งาน ระบบจะแจ้งข้อความที่อ่านได้ และคุณสามารถกดลองใหม่ได้โดยไม่ทำให้หน้าเว็บพัง</div>
 <div id="status" class="status neutral">เลือกหุ้นแล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”</div>
 <ul id="reasons" class="reasons"></ul>
 </div>
@@ -65,47 +65,75 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
 </div>
 </div>
 
-<div class="card">
-<div class="title">🗓️ ปฏิทินสำคัญ</div>
+<div class="card"><div class="title">🗓️ ปฏิทินสำคัญ</div>
 {% for e in events %}<div class="event"><b>{{e.title}}</b><div class="meta">{{e.date}} • {{e.type}} • {{e.ticker}}</div><div class="meta">{{e.note}}</div></div>{% endfor %}
 </div>
 
-<div class="card">
-<div class="title">👀 Watchlist 32 ตัว</div>
+<div class="card"><div class="title">👀 Watchlist 32 ตัว</div>
 <table><thead><tr><th>หุ้น</th><th>บริษัท</th><th>กลุ่ม</th><th>สถานะ</th></tr></thead><tbody>
 {% for s in watchlist %}<tr><td><strong>{{s.ticker}}</strong></td><td>{{s.name}}</td><td>{{s.stage}}</td><td><span class="pill">{{s.status}}</span></td></tr>{% endfor %}
-</tbody></table>
-</div>
+</tbody></table></div>
 </div>
 
 <script>
 let lastData=null;
-function fmt(x){return x===null||x===undefined?"—":"$"+Number(x).toFixed(2)}
+function fmt(x){return x===null||x===undefined||Number.isNaN(Number(x))?"—":"$"+Number(x).toFixed(2)}
 function setStatus(text,cls){const el=document.getElementById("status");el.className="status "+cls;el.textContent=text}
+function clearMetrics(){
+ ["close","trend","rsi","atr","ema20","ema50","vol","score","buy","tp1","tp2","stop","support","resistance","upside","downside"].forEach(id=>document.getElementById(id).textContent="—");
+ document.getElementById("reasons").innerHTML="";
+}
 
 async function loadAnalysis(){
  const ticker=document.getElementById("ticker").value;
+ const btn=document.getElementById("loadBtn");
+ btn.disabled=true; btn.textContent="กำลังโหลด...";
  setStatus("กำลังดึงข้อมูลย้อนหลังของ "+ticker+" ...","neutral");
- document.getElementById("reasons").innerHTML="";
+
  try{
-   const r=await fetch("/api/history-analysis/"+ticker);
-   const j=await r.json();
-   if(!j.ok) throw new Error(j.error||"โหลดข้อมูลไม่สำเร็จ");
+   const response=await fetch("/api/history-analysis/"+encodeURIComponent(ticker),{
+     method:"GET",
+     headers:{"Accept":"application/json"},
+     cache:"no-store"
+   });
+
+   const raw=await response.text();
+   if(!raw){
+     throw new Error("เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา กรุณาลองอีกครั้ง");
+   }
+
+   let j;
+   try{
+     j=JSON.parse(raw);
+   }catch(parseErr){
+     throw new Error("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ กรุณาลองใหม่หลัง Render พร้อมใช้งาน");
+   }
+
+   if(!j.ok){
+     throw new Error(j.error||"โหลดข้อมูลไม่สำเร็จ");
+   }
+
    lastData=j.data;
    render(lastData);
    localStorage.setItem("analysis_"+ticker,JSON.stringify(lastData));
- }catch(e){setStatus("โหลดข้อมูลไม่สำเร็จ: "+e.message,"bad")}
+ }catch(e){
+   lastData=null;
+   clearMetrics();
+   setStatus("โหลดข้อมูลไม่สำเร็จ: "+e.message,"bad");
+ }finally{
+   btn.disabled=false; btn.textContent="ดึงข้อมูลย้อนหลังและวิเคราะห์";
+ }
 }
 
 function render(d){
  document.getElementById("close").textContent=fmt(d.last_close);
- document.getElementById("trend").textContent=d.trend;
+ document.getElementById("trend").textContent=d.trend||"—";
  document.getElementById("rsi").textContent=d.rsi14??"—";
  document.getElementById("atr").textContent=fmt(d.atr14);
  document.getElementById("ema20").textContent=fmt(d.ema20);
  document.getElementById("ema50").textContent=fmt(d.ema50);
- document.getElementById("vol").textContent=d.volume_ratio?d.volume_ratio.toFixed(2)+"x":"—";
- document.getElementById("score").textContent=d.score+"/100";
+ document.getElementById("vol").textContent=d.volume_ratio?Number(d.volume_ratio).toFixed(2)+"x":"—";
+ document.getElementById("score").textContent=(d.score??"—")+"/100";
  document.getElementById("buy").textContent=fmt(d.buy_low)+" – "+fmt(d.buy_high);
  document.getElementById("tp1").textContent=fmt(d.tp1);
  document.getElementById("tp2").textContent=fmt(d.tp2);
@@ -121,10 +149,15 @@ function render(d){
 function recalcLive(){
  if(!lastData){setStatus("กรุณาดึงข้อมูลย้อนหลังของหุ้นก่อน","warn");return}
  const p=parseFloat(document.getElementById("livePrice").value);
- if(!isFinite(p)||p<=0){document.getElementById("upside").textContent="—";document.getElementById("downside").textContent="—";return}
+ if(!isFinite(p)||p<=0){
+   document.getElementById("upside").textContent="—";
+   document.getElementById("downside").textContent="—";
+   return;
+ }
  const up=(lastData.tp1-p)/p*100, down=(lastData.stop-p)/p*100;
  document.getElementById("upside").textContent=(up>=0?"+":"")+up.toFixed(2)+"%";
  document.getElementById("downside").textContent=(down>=0?"+":"")+down.toFixed(2)+"%";
+
  if(p>=lastData.buy_low&&p<=lastData.buy_high)setStatus("🟢 ราคาสดอยู่ในช่วงน่าซื้อ — เช็ก Volume/ข่าวก่อนเข้า","good");
  else if(p<lastData.support)setStatus("🟡 ราคาสดต่ำกว่าแนวรับ — รอให้ราคากลับมายืนเหนือแนวรับก่อน","warn");
  else if(p>lastData.buy_high&&p<lastData.tp1)setStatus("🟡 ราคาสดสูงกว่าโซนเข้า — รอย่อดีกว่า ไม่ควรไล่ราคา","warn");
@@ -135,12 +168,8 @@ document.getElementById("ticker").addEventListener("change",()=>{
  const t=document.getElementById("ticker").value;
  const saved=localStorage.getItem("analysis_"+t);
  lastData=saved?JSON.parse(saved):null;
- if(lastData)render(lastData);
- else{
-   ["close","trend","rsi","atr","ema20","ema50","vol","score","buy","tp1","tp2","stop","support","resistance","upside","downside"].forEach(id=>document.getElementById(id).textContent="—");
-   document.getElementById("reasons").innerHTML="";
-   setStatus("เลือก "+t+" แล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”","neutral");
- }
+ if(lastData) render(lastData);
+ else {clearMetrics();setStatus("เลือก "+t+" แล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”","neutral");}
 });
 </script>
 </body>
