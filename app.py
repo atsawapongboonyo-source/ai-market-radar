@@ -373,6 +373,7 @@ def build_snapshot(data):
         "entry1": _round(entry1),
         "entry2": _round(entry2),
         "entry3": _round(entry3),
+        "watch_price": _round(buy_high + min(atr * 0.30, last_close * 0.02)),
         "entry_allocations": [40, 35, 25],
         "action_code": action_code,
         "action_label": action_label,
@@ -394,20 +395,17 @@ def analyze_history(ticker):
 
 
 def backtest_ticker(ticker):
-    """
-    Historical signal study, not a promise of future accuracy.
-    A signal is counted only when the model newly enters ENTER/SCALE state.
-    Performance is measured from that day's close to future closes.
-    """
+    """V3.3: validate signals and the proposed 3-step entry plan without look-ahead."""
     ticker = ticker.strip().upper()
     data = prepare_indicators(download_history(ticker, period="5y"))
     if len(data) < 140:
         raise ValueError("ข้อมูลย้อนหลังยังไม่พอสำหรับ Backtest ที่น่าเชื่อถือ")
 
-    signal_rows = []
-    previous_actionable = False
     start = 70
-    end = len(data) - 11
+    end = len(data) - 16
+    signal_rows = []
+    state_counts = {}
+    previous_code = None
 
     for i in range(start, end):
         sub = data.iloc[: i + 1].copy()
@@ -415,78 +413,114 @@ def backtest_ticker(ticker):
         try:
             snap = build_snapshot(sub)
         except Exception:
-            previous_actionable = False
             continue
 
-        actionable = snap["action_code"] in {"ENTER", "SCALE"}
-        # Only count a new episode so consecutive days do not inflate the sample.
-        if actionable and not previous_actionable:
-            entry = safe_float(data.iloc[i]["Close"])
-            if not entry or entry <= 0:
-                previous_actionable = actionable
-                continue
+        code = snap["action_code"]
+        state_counts[code] = state_counts.get(code, 0) + 1
 
-            returns = {}
-            for horizon in (1, 3, 5, 10):
-                future = safe_float(data.iloc[i + horizon]["Close"])
-                returns[horizon] = ((future - entry) / entry * 100) if future else None
+        # Count only a new state episode to avoid inflating samples with consecutive days.
+        if code == previous_code:
+            continue
+        previous_code = code
 
-            window = data.iloc[i + 1 : i + 11]
-            min_low = safe_float(window["Low"].min())
-            max_high = safe_float(window["High"].max())
-            mae10 = ((min_low - entry) / entry * 100) if min_low else None
-            mfe10 = ((max_high - entry) / entry * 100) if max_high else None
+        entry = safe_float(data.iloc[i]["Close"])
+        if not entry or entry <= 0:
+            continue
 
-            signal_rows.append({
-                "date": str(data.index[i])[:10],
-                "entry_score": snap["entry_score"],
-                "radar_score": snap["score"],
-                "r1": returns[1],
-                "r3": returns[3],
-                "r5": returns[5],
-                "r10": returns[10],
-                "mae10": mae10,
-                "mfe10": mfe10,
-            })
-        previous_actionable = actionable
+        returns = {}
+        for horizon in (1, 3, 5, 10):
+            future = safe_float(data.iloc[i + horizon]["Close"])
+            returns[horizon] = ((future - entry) / entry * 100) if future else None
+
+        window10 = data.iloc[i + 1 : i + 11]
+        min_low = safe_float(window10["Low"].min())
+        max_high = safe_float(window10["High"].max())
+        mae10 = ((min_low - entry) / entry * 100) if min_low else None
+        mfe10 = ((max_high - entry) / entry * 100) if max_high else None
+
+        # Test whether each proposed limit-entry level was actually touched within 10 sessions.
+        entry_tests = {}
+        for n in (1, 2, 3):
+            level = safe_float(snap.get(f"entry{n}"))
+            hit = False
+            fill_offset = None
+            ret5_after_fill = None
+            if level and level > 0:
+                for off in range(1, 11):
+                    row = data.iloc[i + off]
+                    lo, hi = safe_float(row["Low"]), safe_float(row["High"])
+                    if lo is not None and hi is not None and lo <= level <= hi:
+                        hit, fill_offset = True, off
+                        exit_idx = i + off + 5
+                        if exit_idx < len(data):
+                            exit_close = safe_float(data.iloc[exit_idx]["Close"])
+                            if exit_close:
+                                ret5_after_fill = (exit_close - level) / level * 100
+                        break
+            entry_tests[n] = {"hit": hit, "ret5": ret5_after_fill}
+
+        signal_rows.append({
+            "date": str(data.index[i])[:10],
+            "action": code,
+            "entry_score": snap["entry_score"],
+            "radar_score": snap["score"],
+            "r1": returns[1], "r3": returns[3], "r5": returns[5], "r10": returns[10],
+            "mae10": mae10, "mfe10": mfe10,
+            "e1_hit": entry_tests[1]["hit"], "e1_r5": entry_tests[1]["ret5"],
+            "e2_hit": entry_tests[2]["hit"], "e2_r5": entry_tests[2]["ret5"],
+            "e3_hit": entry_tests[3]["hit"], "e3_r5": entry_tests[3]["ret5"],
+        })
 
     if not signal_rows:
-        return {
-            "ticker": ticker,
-            "signals": 0,
-            "message": "ยังไม่พบสัญญาณเข้าในข้อมูลย้อนหลังตามเกณฑ์ V3.2",
-        }
+        return {"ticker": ticker, "signals": 0, "message": "ยังไม่พบ episode ของสัญญาณที่ใช้วัดได้"}
 
     bt = pd.DataFrame(signal_rows)
+    actionable = bt[bt["action"].isin(["ENTER", "SCALE"])].copy()
 
-    def stat(h):
-        s = bt[f"r{h}"].dropna()
+    def stat(frame, h):
+        s = frame[f"r{h}"].dropna()
         if s.empty:
             return {"win_rate": None, "avg_return": None}
+        return {"win_rate": round((s > 0).mean() * 100, 1), "avg_return": round(s.mean(), 2)}
+
+    def entry_stat(n):
+        hits = bt[f"e{n}_hit"]
+        hit_count = int(hits.sum())
+        total = int(len(hits))
+        rets = bt.loc[hits, f"e{n}_r5"].dropna()
         return {
-            "win_rate": round((s > 0).mean() * 100, 1),
-            "avg_return": round(s.mean(), 2),
+            "hit_rate": round(hit_count / total * 100, 1) if total else None,
+            "hits": hit_count, "total": total,
+            "win_rate_5d_after_fill": round((rets > 0).mean() * 100, 1) if not rets.empty else None,
+            "avg_return_5d_after_fill": round(rets.mean(), 2) if not rets.empty else None,
         }
 
-    r5 = bt["r5"].dropna()
+    r5 = actionable["r5"].dropna()
     gross_profit = r5[r5 > 0].sum()
     gross_loss = abs(r5[r5 < 0].sum())
     profit_factor = (gross_profit / gross_loss) if gross_loss > 0 else None
 
+    sig_count = int(len(actionable))
+    confidence = "High" if sig_count >= 50 else "Medium" if sig_count >= 20 else "Low"
+    confidence_th = "สูง" if confidence == "High" else "ปานกลาง" if confidence == "Medium" else "ต่ำ"
+
+    d0 = pd.Timestamp(data.index[0]).tz_localize(None) if getattr(pd.Timestamp(data.index[0]), 'tzinfo', None) else pd.Timestamp(data.index[0])
+    d1 = pd.Timestamp(data.index[-1]).tz_localize(None) if getattr(pd.Timestamp(data.index[-1]), 'tzinfo', None) else pd.Timestamp(data.index[-1])
+    years = round((d1 - d0).days / 365.25, 1)
+
     return {
-        "ticker": ticker,
-        "signals": int(len(bt)),
-        "period_start": str(data.index[0])[:10],
-        "period_end": str(data.index[-1])[:10],
-        "d1": stat(1),
-        "d3": stat(3),
-        "d5": stat(5),
-        "d10": stat(10),
+        "ticker": ticker, "signals": sig_count, "episodes": int(len(bt)),
+        "period_start": str(data.index[0])[:10], "period_end": str(data.index[-1])[:10],
+        "actual_years": years, "confidence": confidence, "confidence_th": confidence_th,
+        "d1": stat(actionable, 1), "d3": stat(actionable, 3),
+        "d5": stat(actionable, 5), "d10": stat(actionable, 10),
         "profit_factor_5d": round(profit_factor, 2) if profit_factor is not None else None,
-        "avg_mae_10d": round(bt["mae10"].dropna().mean(), 2),
-        "avg_mfe_10d": round(bt["mfe10"].dropna().mean(), 2),
+        "avg_mae_10d": round(actionable["mae10"].dropna().mean(), 2) if not actionable.empty else None,
+        "avg_mfe_10d": round(actionable["mfe10"].dropna().mean(), 2) if not actionable.empty else None,
+        "state_counts": state_counts,
+        "entry1_test": entry_stat(1), "entry2_test": entry_stat(2), "entry3_test": entry_stat(3),
         "latest_signals": signal_rows[-5:][::-1],
-        "method_note": "นับสัญญาณใหม่เมื่อสถานะเปลี่ยนเข้า ENTER/SCALE และวัดผลจากราคาปิดวันสัญญาณถึงราคาปิดในอนาคต ไม่รวมค่าธรรมเนียม/สลิปเพจ",
+        "method_note": "V3.3 นับผล ENTER/SCALE แบบ episode และทดสอบเพิ่มว่าไม้ 1/2/3 ถูกแตะจริงภายใน 10 วันทำการหรือไม่ จากนั้นวัดผล 5 วันหลังราคาแตะไม้ โดยไม่ใช้ข้อมูลอนาคตในการสร้างระดับราคา ไม่รวมค่าธรรมเนียม/Slippage",
     }
 
 
@@ -527,7 +561,7 @@ def backtest(ticker):
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "service": "AI Market Radar", "version": "3.2"}), 200
+    return jsonify({"status": "ok", "service": "AI Market Radar", "version": "3.3"}), 200
 
 
 @app.errorhandler(404)

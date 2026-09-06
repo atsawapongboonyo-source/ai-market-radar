@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>AI Market Radar V3.2</title>
+<title>AI Market Radar V3.3</title>
 <style>
 :root{--bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eef5ff;--muted:#93a9c3;--line:#1e3856;--good:#37d67a;--warn:#f3c95d;--bad:#ff6b6b;--blue:#65b5ff}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06101d,#091827 52%,#06101d);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
@@ -21,7 +21,7 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
 </head>
 <body>
 <div class="wrap">
-<header><div><h1>AI Market Radar</h1><div class="sub">V3.2 • Radar Score + Entry Score + แผน 3 ไม้ + Backtest</div></div><div class="badge">Free-first</div></header>
+<header><div><h1>AI Market Radar</h1><div class="sub">V3.3 • Entry Validation + Confidence + Price Trigger + Backtest</div></div><div class="badge">Free-first</div></header>
 
 <div class="card">
 <div class="title">🔥 วิเคราะห์หุ้นอัตโนมัติ</div>
@@ -47,6 +47,17 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
  <div class="metric"><div class="k">ห่างแนวรับ</div><div class="v" id="distSupport">—</div></div>
 </div>
 <ul id="entryReasons" class="reasons"></ul>
+</div>
+
+<div class="card">
+<div class="title">🚦 ราคาที่ระบบจะเปลี่ยนใจ</div>
+<div class="grid">
+ <div class="metric"><div class="k">สถานะจากราคาปิด</div><div class="v smallv" id="baseAction">—</div></div>
+ <div class="metric"><div class="k">เริ่มเฝ้ารอเมื่อ ≤</div><div class="v" id="watchPrice">—</div></div>
+ <div class="metric"><div class="k">ไม้ 1</div><div class="v" id="triggerEntry1">—</div></div>
+ <div class="metric"><div class="k">ไม้ 2</div><div class="v" id="triggerEntry2">—</div></div>
+</div>
+<div class="section-note">ช่วยตอบว่า “ตอนนี้ไม่ซื้อ แล้วต้องรอราคาเท่าไร” ระดับจะเปลี่ยนตาม ATR / Buy Zone / แนวรับของหุ้นแต่ละตัว</div>
 </div>
 
 <div class="card">
@@ -91,8 +102,8 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
 <div class="card">
 <div class="title">🧪 Backtest / Accuracy Dashboard</div>
 <div class="two">
- <button id="btBtn" onclick="loadBacktest()">ทดสอบสัญญาณย้อนหลัง 5 ปี</button>
- <div class="metric"><div class="k">จำนวนสัญญาณที่ใช้ทดสอบ</div><div class="v" id="btSignals">—</div></div>
+ <button id="btBtn" onclick="loadBacktest()">ทดสอบข้อมูลย้อนหลังสูงสุด 5 ปี</button>
+ <div class="metric"><div class="k">จำนวนสัญญาณ ENTER/SCALE</div><div class="v" id="btSignals">—</div><div class="meta" id="btConfidence">Confidence —</div></div>
 </div>
 <div id="btStatus" class="status neutral">ยังไม่ได้ทำ Backtest สำหรับหุ้นตัวนี้</div>
 <div class="grid" style="margin-top:10px">
@@ -105,7 +116,13 @@ table{width:100%;border-collapse:collapse}th,td{padding:9px 7px;border-bottom:1p
  <div class="metric"><div class="k">Avg MFE 10D</div><div class="v" id="mfe10">—</div></div>
  <div class="metric"><div class="k">ช่วงข้อมูล</div><div class="v smallv" id="btPeriod">—</div></div>
 </div>
-<div class="section-note" id="btMethod">Backtest เป็นการวัดผลย้อนหลัง ไม่ใช่การรับประกันผลลัพธ์ในอนาคต และ V3.2 ยังไม่รวมค่าธรรมเนียม/Slippage</div>
+<div class="title" style="margin-top:16px;font-size:16px">🪜 ตรวจสอบราคาเข้า 3 ไม้ย้อนหลัง</div>
+<div class="three">
+ <div class="metric"><div class="k">ไม้ 1 ถูกแตะใน 10 วัน</div><div class="v" id="e1Hit">—</div><div class="meta" id="e1Result">—</div></div>
+ <div class="metric"><div class="k">ไม้ 2 ถูกแตะใน 10 วัน</div><div class="v" id="e2Hit">—</div><div class="meta" id="e2Result">—</div></div>
+ <div class="metric"><div class="k">ไม้ 3 ถูกแตะใน 10 วัน</div><div class="v" id="e3Hit">—</div><div class="meta" id="e3Result">—</div></div>
+</div>
+<div class="section-note" id="btMethod">Backtest เป็นการวัดผลย้อนหลัง ไม่ใช่การรับประกันผลลัพธ์ในอนาคต</div>
 </div>
 
 <div class="card"><div class="title">🗓️ ปฏิทินสำคัญ</div>
@@ -125,12 +142,12 @@ function pct(x){return x===null||x===undefined||Number.isNaN(Number(x))?"—":Nu
 function setStatus(title,cls,note=""){const el=document.getElementById("status");el.className="status "+cls;el.innerHTML='<div class="notice-title">'+title+'</div>'+(note?'<div class="notice-note">'+note+'</div>':'')}
 function setBtStatus(text,cls){const el=document.getElementById("btStatus");el.className="status "+cls;el.textContent=text}
 function clearMetrics(){
- ["close","trend","rsi","atr","ema20","ema50","vol","score","entryScore","rr","distSupport","buy","entry1","entry2","entry3","tp1","tp2","stop","support","resistance","upside","downside","liveState"].forEach(id=>document.getElementById(id).textContent="—");
+ ["close","trend","rsi","atr","ema20","ema50","vol","score","entryScore","rr","distSupport","buy","entry1","entry2","entry3","tp1","tp2","stop","support","resistance","upside","downside","liveState","baseAction","watchPrice","triggerEntry1","triggerEntry2"].forEach(id=>document.getElementById(id).textContent="—");
  document.getElementById("reasons").innerHTML="";document.getElementById("entryReasons").innerHTML="";document.getElementById("radarBar").style.width="0%";document.getElementById("entryBar").style.width="0%";
  renderBudget();
 }
 function clearBacktest(){
- ["btSignals","bt1","bt3","bt5","bt10","avg1","avg3","avg5","avg10","pf5","mae10","mfe10","btPeriod"].forEach(id=>document.getElementById(id).textContent="—");
+ ["btSignals","bt1","bt3","bt5","bt10","avg1","avg3","avg5","avg10","pf5","mae10","mfe10","btPeriod","btConfidence","e1Hit","e1Result","e2Hit","e2Result","e3Hit","e3Result"].forEach(id=>document.getElementById(id).textContent="—");
  setBtStatus("ยังไม่ได้ทำ Backtest สำหรับหุ้นตัวนี้","neutral");
 }
 
@@ -142,7 +159,7 @@ async function loadAnalysis(){
    const raw=await response.text();if(!raw)throw new Error("เซิร์ฟเวอร์ไม่ส่งข้อมูลกลับมา กรุณาลองอีกครั้ง");
    let j;try{j=JSON.parse(raw)}catch(e){throw new Error("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ กรุณาลองใหม่หลัง Render พร้อมใช้งาน")}
    if(!j.ok)throw new Error(j.error||"โหลดข้อมูลไม่สำเร็จ");
-   lastData=j.data;render(lastData);localStorage.setItem("analysis_v32_"+ticker,JSON.stringify(lastData));
+   lastData=j.data;render(lastData);localStorage.setItem("analysis_v33_"+ticker,JSON.stringify(lastData));
  }catch(e){lastData=null;clearMetrics();setStatus("โหลดข้อมูลไม่สำเร็จ","bad",e.message)}
  finally{btn.disabled=false;btn.textContent="ดึงข้อมูลย้อนหลังและวิเคราะห์"}
 }
@@ -153,7 +170,7 @@ function render(d){
  document.getElementById("score").textContent=(d.score??"—")+"/100";document.getElementById("entryScore").textContent=(d.entry_score??"—")+"/100";document.getElementById("radarBar").style.width=(d.score||0)+"%";document.getElementById("entryBar").style.width=(d.entry_score||0)+"%";
  document.getElementById("rr").textContent=d.risk_reward_tp1===null||d.risk_reward_tp1===undefined?"—":Number(d.risk_reward_tp1).toFixed(2)+" : 1";document.getElementById("distSupport").textContent=pct(d.distance_to_support_pct);
  document.getElementById("buy").textContent=fmt(d.buy_low)+" – "+fmt(d.buy_high);document.getElementById("entry1").textContent=fmt(d.entry1);document.getElementById("entry2").textContent=fmt(d.entry2);document.getElementById("entry3").textContent=fmt(d.entry3);
- document.getElementById("tp1").textContent=fmt(d.tp1);document.getElementById("tp2").textContent=fmt(d.tp2);document.getElementById("stop").textContent=fmt(d.stop);document.getElementById("support").textContent=fmt(d.support);document.getElementById("resistance").textContent=fmt(d.resistance);
+ document.getElementById("tp1").textContent=fmt(d.tp1);document.getElementById("tp2").textContent=fmt(d.tp2);document.getElementById("stop").textContent=fmt(d.stop);document.getElementById("support").textContent=fmt(d.support);document.getElementById("resistance").textContent=fmt(d.resistance);document.getElementById("baseAction").textContent=d.action_label||"—";document.getElementById("watchPrice").textContent=fmt(d.watch_price);document.getElementById("triggerEntry1").textContent=fmt(d.entry1);document.getElementById("triggerEntry2").textContent=fmt(d.entry2);
  document.getElementById("reasons").innerHTML=(d.reasons||[]).map(x=>"<li>"+x+"</li>").join("");document.getElementById("entryReasons").innerHTML=(d.entry_reasons||[]).map(x=>"<li>"+x+"</li>").join("");
  document.getElementById("entryPlanCard").classList.toggle("hidden",d.show_entries===false);
  setStatus(d.action_label||"วิเคราะห์สำเร็จ",d.action_class||"neutral",(d.action_note||"")+" • ข้อมูลถึง "+d.data_date);
@@ -196,17 +213,20 @@ async function loadBacktest(){
    const response=await fetch("/api/backtest/"+encodeURIComponent(ticker),{headers:{"Accept":"application/json"},cache:"no-store"});const raw=await response.text();if(!raw)throw new Error("เซิร์ฟเวอร์ไม่ส่งผล Backtest กลับมา");
    let j;try{j=JSON.parse(raw)}catch(e){throw new Error("ผล Backtest ไม่ใช่ JSON")};if(!j.ok)throw new Error(j.error||"Backtest ไม่สำเร็จ");renderBacktest(j.data);
  }catch(e){clearBacktest();setBtStatus("Backtest ไม่สำเร็จ: "+e.message,"bad")}
- finally{btn.disabled=false;btn.textContent="ทดสอบสัญญาณย้อนหลัง 5 ปี"}
+ finally{btn.disabled=false;btn.textContent="ทดสอบข้อมูลย้อนหลังสูงสุด 5 ปี"}
 }
 function renderBacktest(d){
  document.getElementById("btSignals").textContent=d.signals??0;
+ document.getElementById("btConfidence").textContent="Confidence: "+(d.confidence_th||"—")+" • "+(d.actual_years??"—")+" ปีจริง";
  if(!d.signals){setBtStatus(d.message||"ยังไม่มีสัญญาณที่ใช้วัดได้","warn");return}
  [[1,d.d1],[3,d.d3],[5,d.d5],[10,d.d10]].forEach(([n,x])=>{document.getElementById("bt"+n).textContent=x&&x.win_rate!==null?Number(x.win_rate).toFixed(1)+"%":"—";document.getElementById("avg"+n).textContent=x&&x.avg_return!==null?"Avg Return "+(x.avg_return>=0?"+":"")+Number(x.avg_return).toFixed(2)+"%":"—"});
- document.getElementById("pf5").textContent=d.profit_factor_5d??"—";document.getElementById("mae10").textContent=pct(d.avg_mae_10d);document.getElementById("mfe10").textContent=pct(d.avg_mfe_10d);document.getElementById("btPeriod").textContent=(d.period_start||"—")+" → "+(d.period_end||"—");document.getElementById("btMethod").textContent=d.method_note||"";
- const cls=d.d5&&d.d5.win_rate>=60?"good":d.d5&&d.d5.win_rate>=50?"warn":"bad";setBtStatus("Backtest "+d.ticker+" สำเร็จ • 5-Day Win Rate "+(d.d5?.win_rate??"—")+"% จาก "+d.signals+" สัญญาณ",cls);
+ document.getElementById("pf5").textContent=d.profit_factor_5d??"—";document.getElementById("mae10").textContent=pct(d.avg_mae_10d);document.getElementById("mfe10").textContent=pct(d.avg_mfe_10d);document.getElementById("btPeriod").textContent=(d.period_start||"—")+" → "+(d.period_end||"—")+" ("+(d.actual_years??"—")+" ปี)";document.getElementById("btMethod").textContent=d.method_note||"";
+ [1,2,3].forEach(n=>{const x=d["entry"+n+"_test"];document.getElementById("e"+n+"Hit").textContent=x&&x.hit_rate!==null?Number(x.hit_rate).toFixed(1)+"%":"—";document.getElementById("e"+n+"Result").textContent=x?(x.hits+"/"+x.total+" ครั้ง • หลัง Fill 5D Win "+(x.win_rate_5d_after_fill??"—")+"% • Avg "+(x.avg_return_5d_after_fill===null||x.avg_return_5d_after_fill===undefined?"—":(x.avg_return_5d_after_fill>=0?"+":"")+Number(x.avg_return_5d_after_fill).toFixed(2)+"%")):"—"});
+ const cls=d.confidence==="High"&&d.d5&&d.d5.win_rate>=60?"good":d.d5&&d.d5.win_rate>=50?"warn":"bad";setBtStatus("Backtest "+d.ticker+" • 5D Win Rate "+(d.d5?.win_rate??"—")+"% • "+d.signals+" ENTER/SCALE • Confidence "+(d.confidence_th||"—"),cls);
 }
 
-document.getElementById("ticker").addEventListener("change",()=>{const t=document.getElementById("ticker").value;const saved=localStorage.getItem("analysis_v32_"+t);lastData=saved?JSON.parse(saved):null;clearBacktest();if(lastData)render(lastData);else{clearMetrics();setStatus("เลือก "+t+" แล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”","neutral")}});
+
+document.getElementById("ticker").addEventListener("change",()=>{const t=document.getElementById("ticker").value;const saved=localStorage.getItem("analysis_v33_"+t);lastData=saved?JSON.parse(saved):null;clearBacktest();if(lastData)render(lastData);else{clearMetrics();setStatus("เลือก "+t+" แล้วกด “ดึงข้อมูลย้อนหลังและวิเคราะห์”","neutral")}});
 </script>
 </body>
 </html>
