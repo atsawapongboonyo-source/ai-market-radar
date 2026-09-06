@@ -1,80 +1,141 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Market Radar</title>
-  <style>
-    :root{--bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eaf2ff;--muted:#95a9c2;--line:#1d3652;--accent:#56d364;--warn:#f2cc60;--danger:#ff6b6b}
-    *{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#07111f,#091726 45%,#07111f);color:var(--text)}
-    .wrap{max-width:1180px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}.brand h1{margin:0;font-size:28px}.brand p{margin:6px 0 0;color:var(--muted)}
-    .badge{padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#0b1726;color:#b7c7d9;font-size:13px}
-    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}.card{background:rgba(13,27,42,.92);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,.18)}
-    .card h3{margin:0 0 8px;font-size:14px;color:var(--muted);font-weight:600}.metric{font-size:30px;font-weight:800}.sub{font-size:13px;color:var(--muted);margin-top:5px}
-    .section{margin-top:24px}.section h2{font-size:20px;margin:0 0 12px}.two{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-    .event{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}.event:last-child{border-bottom:none}.dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:0 0 auto}.high{background:var(--danger)}.medium{background:var(--warn)}.low{background:var(--accent)}
-    .event-title{font-weight:700}.event-meta{font-size:13px;color:var(--muted);margin-top:4px}.note{font-size:12px;color:#7f95ad;margin-top:5px}
-    table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);font-size:14px}th{font-size:12px;color:var(--muted);font-weight:600}.pill{display:inline-block;padding:5px 9px;border-radius:999px;background:#122c45;color:#b9d8ff;font-size:12px}
-    .chain{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.chain-item{background:var(--panel2);border:1px solid var(--line);padding:12px;border-radius:14px}.chain-name{font-size:13px;color:var(--muted)}.chain-tickers{margin-top:6px;font-weight:700;line-height:1.5}
-    .footer{color:var(--muted);font-size:12px;padding:24px 0 8px;text-align:center}
-    @media(max-width:850px){.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.chain{grid-template-columns:1fr}}
-    @media(max-width:520px){.wrap{padding:16px}.grid{grid-template-columns:1fr 1fr;gap:10px}.card{padding:14px}.metric{font-size:24px}.brand h1{font-size:24px}th:nth-child(2),td:nth-child(2){display:none}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Market Radar</title>
+<style>
+:root{
+  --bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eef5ff;
+  --muted:#93a9c3;--line:#1e3856;--good:#37d67a;--warn:#f3c95d;
+  --bad:#ff6b6b;--blue:#60a5fa
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#06101d,#091827 52%,#06101d);
+font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
+.wrap{max-width:1180px;margin:auto;padding:18px}
+header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:27px} .subtitle{color:var(--muted);margin-top:5px;font-size:14px}
+.badge{border:1px solid var(--line);background:#0c1a2b;padding:7px 11px;border-radius:999px;font-size:12px}
+.alert{margin-top:16px;padding:14px 16px;border:1px solid #604b1e;background:#2b2413;border-radius:15px}
+.alert strong{color:#ffe08a}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:14px}
+.card{background:rgba(13,27,42,.95);border:1px solid var(--line);border-radius:17px;padding:16px}
+.card h3{font-size:13px;color:var(--muted);margin:0 0 7px}.metric{font-weight:800;font-size:27px}
+.small{font-size:12px;color:var(--muted);margin-top:4px}
+.section{margin-top:18px}.section-title{font-size:19px;margin:0 0 10px}
+.two{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}
+.trade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.trade{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px}
+.trade .ticker{font-size:19px;font-weight:800}.trade .state{font-size:12px;color:var(--warn);margin-top:2px}
+.trade .row{display:flex;justify-content:space-between;gap:8px;margin-top:9px;font-size:13px}
+.trade .label{color:var(--muted)} .wait{color:var(--warn)}
+.chain{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.chain div{background:var(--panel2);border:1px solid var(--line);padding:11px;border-radius:13px}
+.chain b{display:block;margin-bottom:4px}.tickers{font-size:12px;color:#bfd4eb;line-height:1.45}
+.event{padding:12px 0;border-bottom:1px solid var(--line)}.event:last-child{border-bottom:0}
+.event-top{display:flex;align-items:center;gap:8px}.dot{width:9px;height:9px;border-radius:50%}
+.high{background:var(--bad)}.medium{background:var(--warn)}.low{background:var(--good)}
+.event-title{font-weight:700}.meta,.note{font-size:12px;color:var(--muted);margin-top:4px}
+table{width:100%;border-collapse:collapse}th,td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+th{font-size:11px;color:var(--muted)}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#15314e;font-size:11px}
+.footer{text-align:center;color:var(--muted);font-size:11px;padding:22px 0}
+@media(max-width:860px){.grid4{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.trade-grid{grid-template-columns:1fr}.chain{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.wrap{padding:13px}h1{font-size:24px}.card{padding:13px}.metric{font-size:23px}th:nth-child(2),td:nth-child(2){display:none}.chain{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <div class="brand"><h1>AI Market Radar</h1><p>Daily market news, AI chain, earnings, XD & catalyst calendar</p></div>
-      <div class="badge">V1 • GitHub + Render</div>
-    </div>
-
-    <div class="grid">
-      <div class="card"><h3>AI Watchlist</h3><div class="metric">{{ watchlist|length }}</div><div class="sub">หุ้นที่ติดตาม</div></div>
-      <div class="card"><h3>Events</h3><div class="metric">{{ events|length }}</div><div class="sub">เหตุการณ์ในระบบตอนนี้</div></div>
-      <div class="card"><h3>High Impact</h3><div class="metric">{{ events|selectattr('impact','equalto','high')|list|length }}</div><div class="sub">เหตุการณ์สำคัญสูง</div></div>
-      <div class="card"><h3>Data Mode</h3><div class="metric" style="font-size:20px">Manual V1</div><div class="sub">พร้อมต่อ API ภายหลัง</div></div>
-    </div>
-
-    <div class="section two">
-      <div class="card">
-        <h2>Market Calendar</h2>
-        {% for e in events %}
-        <div class="event">
-          <div class="dot {{ e.impact }}"></div>
-          <div>
-            <div class="event-title">{{ e.date }} • {{ e.title }}</div>
-            <div class="event-meta">{{ e.type }} • {{ e.ticker }}</div>
-            <div class="note">{{ e.note }}</div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      <div class="card">
-        <h2>AI Chain</h2>
-        <div class="chain">
-          <div class="chain-item"><div class="chain-name">AI Chips / GPU</div><div class="chain-tickers">NVDA · AMD</div></div>
-          <div class="chain-item"><div class="chain-name">Memory / Storage</div><div class="chain-tickers">MU · SNDK</div></div>
-          <div class="chain-item"><div class="chain-name">Networking / Optical</div><div class="chain-tickers">AVGO · MRVL · LITE</div></div>
-          <div class="chain-item"><div class="chain-name">AI Cloud</div><div class="chain-tickers">MSFT · GOOGL · AMZN</div></div>
-          <div class="chain-item"><div class="chain-name">Data Center</div><div class="chain-tickers">VRT · NBIS · IREN</div></div>
-          <div class="chain-item"><div class="chain-name">AI Software</div><div class="chain-tickers">PLTR</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="section card">
-      <h2>AI Watchlist</h2>
-      <table>
-        <thead><tr><th>Ticker</th><th>Company</th><th>AI Stage</th><th>Status</th></tr></thead>
-        <tbody>
-          {% for s in watchlist %}
-          <tr><td><strong>{{ s.ticker }}</strong></td><td>{{ s.name }}</td><td>{{ s.stage }}</td><td><span class="pill">{{ s.status }}</span></td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="footer">ข้อมูลใน V1 เป็นโครงสร้างเริ่มต้นและตัวอย่าง UI — ยังไม่ใช่ข้อมูลตลาดแบบเรียลไทม์</div>
+<div class="wrap">
+<header>
+  <div>
+    <h1>AI Market Radar</h1>
+    <div class="subtitle">เรดาร์หุ้น AI • ข่าวสำคัญ • จังหวะเข้าออก • ปฏิทินตลาด</div>
   </div>
+  <div class="badge">Trading V1.5 • ภาษาไทย</div>
+</header>
+
+<div class="alert">
+  <strong>📌 หมายเหตุ:</strong> วันจันทร์ 7 ก.ย. ตลาดหุ้นสหรัฐปิดเนื่องใน Labor Day — เราจะใช้ช่วงนี้เตรียมระบบก่อนตลาดกลับมาเปิดวันอังคาร
+</div>
+
+<div class="grid4">
+  <div class="card"><h3>หุ้นใน Watchlist</h3><div class="metric">{{ watchlist|length }}</div><div class="small">ครอบคลุม AI Supply Chain</div></div>
+  <div class="card"><h3>เหตุการณ์สำคัญ</h3><div class="metric">{{ events|length }}</div><div class="small">Macro / วันหยุดตลาด</div></div>
+  <div class="card"><h3>เหตุการณ์ผลกระทบสูง</h3><div class="metric">{{ events|selectattr('impact','equalto','high')|list|length }}</div><div class="small">ควรระวังก่อนเข้าเทรด</div></div>
+  <div class="card"><h3>ข้อมูลราคา</h3><div class="metric" style="font-size:18px">รอเชื่อม API</div><div class="small">จะเพิ่มราคา Pre-market / Live</div></div>
+</div>
+
+<div class="section">
+  <h2 class="section-title">🎯 หุ้นเด่นและจังหวะเข้าออก</h2>
+  <div class="trade-grid">
+    <div class="trade">
+      <div class="ticker">SNDK</div><div class="state">สถานะ: รอข้อมูลราคาสด</div>
+      <div class="row"><span class="label">ช่วงน่าซื้อ</span><span class="wait">คำนวณหลังเชื่อมราคา</span></div>
+      <div class="row"><span class="label">เป้าขาย</span><span>—</span></div>
+      <div class="row"><span class="label">จุดที่แผนผิด</span><span>—</span></div>
+    </div>
+    <div class="trade">
+      <div class="ticker">ANET</div><div class="state">ธีม: AI Networking</div>
+      <div class="row"><span class="label">ช่วงน่าซื้อ</span><span class="wait">คำนวณหลังเชื่อมราคา</span></div>
+      <div class="row"><span class="label">เป้าขาย</span><span>—</span></div>
+      <div class="row"><span class="label">จุดที่แผนผิด</span><span>—</span></div>
+    </div>
+    <div class="trade">
+      <div class="ticker">VRT</div><div class="state">ธีม: Power + Cooling</div>
+      <div class="row"><span class="label">ช่วงน่าซื้อ</span><span class="wait">คำนวณหลังเชื่อมราคา</span></div>
+      <div class="row"><span class="label">เป้าขาย</span><span>—</span></div>
+      <div class="row"><span class="label">จุดที่แผนผิด</span><span>—</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section two">
+  <div class="card">
+    <h2 class="section-title">🗓️ ปฏิทินสำคัญ</h2>
+    {% for e in events %}
+    <div class="event">
+      <div class="event-top"><span class="dot {{ e.impact }}"></span><span class="event-title">{{ e.title }}</span></div>
+      <div class="meta">{{ e.date }} • {{ e.type }} • {{ e.ticker }}</div>
+      <div class="note">{{ e.note }}</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2 class="section-title">🧠 AI Supply Chain</h2>
+    <div class="chain">
+      <div><b>1. ชิป / Compute</b><span class="tickers">NVDA · AMD · AVGO</span></div>
+      <div><b>2. โรงงาน / Equipment</b><span class="tickers">TSM · ASML · AMAT · LRCX · KLAC</span></div>
+      <div><b>3. Memory / Storage</b><span class="tickers">MU · SNDK · WDC · STX</span></div>
+      <div><b>4. Network / Optical</b><span class="tickers">ANET · MRVL · CRDO · LITE · COHR</span></div>
+      <div><b>5. Data Center</b><span class="tickers">VRT · DELL · SMCI · NBIS · IREN</span></div>
+      <div><b>6. Power / Grid</b><span class="tickers">ETN · GEV · CEG · VST</span></div>
+      <div><b>7. Cloud</b><span class="tickers">MSFT · GOOGL · AMZN · ORCL · META</span></div>
+      <div><b>8. AI Software</b><span class="tickers">PLTR</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="section card">
+  <h2 class="section-title">👀 Watchlist ของเรา</h2>
+  <table>
+    <thead><tr><th>หุ้น</th><th>บริษัท</th><th>กลุ่ม</th><th>สถานะ</th></tr></thead>
+    <tbody>
+      {% for s in watchlist %}
+      <tr>
+        <td><strong>{{ s.ticker }}</strong></td>
+        <td>{{ s.name }}</td>
+        <td>{{ s.stage }}</td>
+        <td><span class="pill">{{ s.status }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+V1.5 ยังไม่ใช่คำสั่งซื้อขายและยังไม่ใช้ราคาสด • ขั้นถัดไป: ราคา Pre-market/Live + Volume + VWAP + Buy Zone/เป้าขายอัตโนมัติ
+</div>
+</div>
 </body>
 </html>

@@ -1,18 +1,26 @@
 [
   {
-    "date": "2026-09-07",
-    "type": "Macro",
-    "title": "ตัวอย่างเหตุการณ์ Macro",
-    "ticker": "US Market",
+    "date": "7 ก.ย. 2026",
+    "type": "ตลาดสหรัฐ",
+    "title": "ตลาดหุ้นสหรัฐปิด — Labor Day",
+    "ticker": "NYSE / Nasdaq",
     "impact": "high",
-    "note": "ข้อมูลตัวอย่างสำหรับทดสอบระบบ — ยังไม่ใช่ปฏิทินจริง"
+    "note": "ไม่มีการซื้อขายหุ้นสหรัฐในวันจันทร์นี้"
   },
   {
-    "date": "2026-09-08",
-    "type": "Earnings",
-    "title": "ตัวอย่าง Earnings",
-    "ticker": "NVDA",
-    "impact": "medium",
-    "note": "ข้อมูลตัวอย่างสำหรับทดสอบ UI"
+    "date": "10 ก.ย. 2026 • 19:30 น. ไทย",
+    "type": "Macro",
+    "title": "PPI สหรัฐ เดือนสิงหาคม",
+    "ticker": "US Market",
+    "impact": "high",
+    "note": "ตัวเลขเงินเฟ้อฝั่งผู้ผลิต มีผลต่อคาดการณ์ดอกเบี้ยและหุ้น Growth"
+  },
+  {
+    "date": "11 ก.ย. 2026 • 19:30 น. ไทย",
+    "type": "Macro",
+    "title": "CPI สหรัฐ เดือนสิงหาคม",
+    "ticker": "US Market",
+    "impact": "high",
+    "note": "หนึ่งในตัวเลขสำคัญที่สุดของสัปดาห์สำหรับ Fed และ Nasdaq"
   }
 ]

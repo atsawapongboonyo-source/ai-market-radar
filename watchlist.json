@@ -1,16 +1,194 @@
 [
-  {"ticker":"NVDA","name":"NVIDIA","stage":"AI Chips / GPU","status":"watch"},
-  {"ticker":"AMD","name":"AMD","stage":"AI Chips / GPU","status":"watch"},
-  {"ticker":"AVGO","name":"Broadcom","stage":"Networking / ASIC","status":"watch"},
-  {"ticker":"MU","name":"Micron","stage":"Memory / HBM","status":"watch"},
-  {"ticker":"SNDK","name":"SanDisk","stage":"Storage / NAND","status":"watch"},
-  {"ticker":"LITE","name":"Lumentum","stage":"Optical / Connectivity","status":"watch"},
-  {"ticker":"MRVL","name":"Marvell","stage":"Networking / ASIC","status":"watch"},
-  {"ticker":"MSFT","name":"Microsoft","stage":"AI Cloud","status":"watch"},
-  {"ticker":"GOOGL","name":"Alphabet","stage":"AI Cloud","status":"watch"},
-  {"ticker":"AMZN","name":"Amazon","stage":"AI Cloud","status":"watch"},
-  {"ticker":"VRT","name":"Vertiv","stage":"Data Center Infrastructure","status":"watch"},
-  {"ticker":"PLTR","name":"Palantir","stage":"AI Software","status":"watch"},
-  {"ticker":"NBIS","name":"Nebius","stage":"AI Compute / Data Center","status":"watch"},
-  {"ticker":"IREN","name":"IREN","stage":"AI Compute / Power","status":"watch"}
+  {
+    "ticker": "NVDA",
+    "name": "NVIDIA",
+    "stage": "ชิป AI / GPU",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "AMD",
+    "name": "AMD",
+    "stage": "ชิป AI / GPU",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "AVGO",
+    "name": "Broadcom",
+    "stage": "ASIC / Networking",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "TSM",
+    "name": "TSMC",
+    "stage": "โรงงานผลิตชิป",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "MU",
+    "name": "Micron",
+    "stage": "HBM / Memory",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "SNDK",
+    "name": "SanDisk",
+    "stage": "NAND / Storage",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "WDC",
+    "name": "Western Digital",
+    "stage": "Storage",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "STX",
+    "name": "Seagate",
+    "stage": "Storage",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "ANET",
+    "name": "Arista Networks",
+    "stage": "AI Networking",
+    "status": "น่าสนใจ"
+  },
+  {
+    "ticker": "MRVL",
+    "name": "Marvell",
+    "stage": "AI Networking / ASIC",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "CRDO",
+    "name": "Credo Technology",
+    "stage": "High-speed Connectivity",
+    "status": "น่าสนใจ"
+  },
+  {
+    "ticker": "LITE",
+    "name": "Lumentum",
+    "stage": "Optical",
+    "status": "น่าสนใจ"
+  },
+  {
+    "ticker": "COHR",
+    "name": "Coherent",
+    "stage": "Optical",
+    "status": "น่าสนใจ"
+  },
+  {
+    "ticker": "VRT",
+    "name": "Vertiv",
+    "stage": "Power / Cooling",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "ETN",
+    "name": "Eaton",
+    "stage": "ระบบไฟฟ้า Data Center",
+    "status": "น่าสนใจ"
+  },
+  {
+    "ticker": "GEV",
+    "name": "GE Vernova",
+    "stage": "Grid / Power",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "CEG",
+    "name": "Constellation Energy",
+    "stage": "พลังงาน",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "VST",
+    "name": "Vistra",
+    "stage": "พลังงาน",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "MSFT",
+    "name": "Microsoft",
+    "stage": "AI Cloud",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "GOOGL",
+    "name": "Alphabet",
+    "stage": "AI Cloud",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "AMZN",
+    "name": "Amazon",
+    "stage": "AI Cloud",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "ORCL",
+    "name": "Oracle",
+    "stage": "AI Cloud / Infra",
+    "status": "น่าสนใจ"
+  },
+  {
+    "ticker": "META",
+    "name": "Meta",
+    "stage": "AI Platform",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "PLTR",
+    "name": "Palantir",
+    "stage": "AI Software",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "NBIS",
+    "name": "Nebius",
+    "stage": "AI Compute / Data Center",
+    "status": "เก็งกำไร"
+  },
+  {
+    "ticker": "IREN",
+    "name": "IREN",
+    "stage": "AI Compute / Power",
+    "status": "เก็งกำไร"
+  },
+  {
+    "ticker": "DELL",
+    "name": "Dell",
+    "stage": "AI Server",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "SMCI",
+    "name": "Super Micro Computer",
+    "stage": "AI Server",
+    "status": "เสี่ยงสูง"
+  },
+  {
+    "ticker": "ASML",
+    "name": "ASML",
+    "stage": "เครื่องจักรผลิตชิป",
+    "status": "แกนหลัก"
+  },
+  {
+    "ticker": "AMAT",
+    "name": "Applied Materials",
+    "stage": "เครื่องจักรผลิตชิป",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "LRCX",
+    "name": "Lam Research",
+    "stage": "เครื่องจักรผลิตชิป",
+    "status": "เฝ้าดู"
+  },
+  {
+    "ticker": "KLAC",
+    "name": "KLA",
+    "stage": "เครื่องจักรผลิตชิป",
+    "status": "เฝ้าดู"
+  }
 ]
