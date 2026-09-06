@@ -1,0 +1,18 @@
+[
+  {
+    "date": "2026-09-07",
+    "type": "Macro",
+    "title": "ตัวอย่างเหตุการณ์ Macro",
+    "ticker": "US Market",
+    "impact": "high",
+    "note": "ข้อมูลตัวอย่างสำหรับทดสอบระบบ — ยังไม่ใช่ปฏิทินจริง"
+  },
+  {
+    "date": "2026-09-08",
+    "type": "Earnings",
+    "title": "ตัวอย่าง Earnings",
+    "ticker": "NVDA",
+    "impact": "medium",
+    "note": "ข้อมูลตัวอย่างสำหรับทดสอบ UI"
+  }
+]

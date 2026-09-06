@@ -1,0 +1,16 @@
+[
+  {"ticker":"NVDA","name":"NVIDIA","stage":"AI Chips / GPU","status":"watch"},
+  {"ticker":"AMD","name":"AMD","stage":"AI Chips / GPU","status":"watch"},
+  {"ticker":"AVGO","name":"Broadcom","stage":"Networking / ASIC","status":"watch"},
+  {"ticker":"MU","name":"Micron","stage":"Memory / HBM","status":"watch"},
+  {"ticker":"SNDK","name":"SanDisk","stage":"Storage / NAND","status":"watch"},
+  {"ticker":"LITE","name":"Lumentum","stage":"Optical / Connectivity","status":"watch"},
+  {"ticker":"MRVL","name":"Marvell","stage":"Networking / ASIC","status":"watch"},
+  {"ticker":"MSFT","name":"Microsoft","stage":"AI Cloud","status":"watch"},
+  {"ticker":"GOOGL","name":"Alphabet","stage":"AI Cloud","status":"watch"},
+  {"ticker":"AMZN","name":"Amazon","stage":"AI Cloud","status":"watch"},
+  {"ticker":"VRT","name":"Vertiv","stage":"Data Center Infrastructure","status":"watch"},
+  {"ticker":"PLTR","name":"Palantir","stage":"AI Software","status":"watch"},
+  {"ticker":"NBIS","name":"Nebius","stage":"AI Compute / Data Center","status":"watch"},
+  {"ticker":"IREN","name":"IREN","stage":"AI Compute / Power","status":"watch"}
+]
