@@ -3,139 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Market Radar</title>
+<title>AI Market Radar V2</title>
 <style>
-:root{
-  --bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eef5ff;
-  --muted:#93a9c3;--line:#1e3856;--good:#37d67a;--warn:#f3c95d;
-  --bad:#ff6b6b;--blue:#60a5fa
-}
-*{box-sizing:border-box}
-body{margin:0;background:linear-gradient(180deg,#06101d,#091827 52%,#06101d);
-font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
-.wrap{max-width:1180px;margin:auto;padding:18px}
-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
-h1{margin:0;font-size:27px} .subtitle{color:var(--muted);margin-top:5px;font-size:14px}
-.badge{border:1px solid var(--line);background:#0c1a2b;padding:7px 11px;border-radius:999px;font-size:12px}
-.alert{margin-top:16px;padding:14px 16px;border:1px solid #604b1e;background:#2b2413;border-radius:15px}
-.alert strong{color:#ffe08a}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:14px}
-.card{background:rgba(13,27,42,.95);border:1px solid var(--line);border-radius:17px;padding:16px}
-.card h3{font-size:13px;color:var(--muted);margin:0 0 7px}.metric{font-weight:800;font-size:27px}
-.small{font-size:12px;color:var(--muted);margin-top:4px}
-.section{margin-top:18px}.section-title{font-size:19px;margin:0 0 10px}
-.two{display:grid;grid-template-columns:1.1fr .9fr;gap:13px}
-.trade-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.trade{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px}
-.trade .ticker{font-size:19px;font-weight:800}.trade .state{font-size:12px;color:var(--warn);margin-top:2px}
-.trade .row{display:flex;justify-content:space-between;gap:8px;margin-top:9px;font-size:13px}
-.trade .label{color:var(--muted)} .wait{color:var(--warn)}
-.chain{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
-.chain div{background:var(--panel2);border:1px solid var(--line);padding:11px;border-radius:13px}
-.chain b{display:block;margin-bottom:4px}.tickers{font-size:12px;color:#bfd4eb;line-height:1.45}
-.event{padding:12px 0;border-bottom:1px solid var(--line)}.event:last-child{border-bottom:0}
-.event-top{display:flex;align-items:center;gap:8px}.dot{width:9px;height:9px;border-radius:50%}
-.high{background:var(--bad)}.medium{background:var(--warn)}.low{background:var(--good)}
-.event-title{font-weight:700}.meta,.note{font-size:12px;color:var(--muted);margin-top:4px}
-table{width:100%;border-collapse:collapse}th,td{padding:11px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
-th{font-size:11px;color:var(--muted)}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#15314e;font-size:11px}
-.footer{text-align:center;color:var(--muted);font-size:11px;padding:22px 0}
-@media(max-width:860px){.grid4{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.trade-grid{grid-template-columns:1fr}.chain{grid-template-columns:1fr 1fr}}
-@media(max-width:520px){.wrap{padding:13px}h1{font-size:24px}.card{padding:13px}.metric{font-size:23px}th:nth-child(2),td:nth-child(2){display:none}.chain{grid-template-columns:1fr}}
+:root{--bg:#07111f;--panel:#0d1b2a;--panel2:#10243a;--text:#eef5ff;--muted:#93a9c3;--line:#1e3856;--good:#37d67a;--warn:#f3c95d;--bad:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06101d,#091827 52%,#06101d);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text)}
+.wrap{max-width:1180px;margin:auto;padding:15px}header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{margin:0;font-size:26px}.subtitle{color:var(--muted);font-size:13px;margin-top:4px}.badge{padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:#0c1a2b;font-size:12px}
+.card{background:rgba(13,27,42,.96);border:1px solid var(--line);border-radius:17px;padding:15px}.section{margin-top:15px}.title{font-size:18px;font-weight:800;margin:0 0 11px}
+.notice{margin-top:13px;border:1px solid #284b71;background:#0b2036;border-radius:14px;padding:12px 14px;font-size:13px;color:#cfe5ff}
+.formgrid{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:9px}label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}
+input,select,button{width:100%;border-radius:11px;border:1px solid var(--line);padding:11px;background:#081725;color:var(--text);font:inherit}button{background:#173d65;font-weight:800;cursor:pointer}
+.buttons{display:grid;grid-template-columns:1fr .55fr;gap:8px;margin-top:9px}.help{font-size:11px;color:var(--muted);line-height:1.5;margin-top:8px}
+.result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:12px}
+.metric .k{font-size:11px;color:var(--muted)}.metric .v{font-size:20px;font-weight:850;margin-top:3px}.status{margin-top:10px;padding:13px;border-radius:13px;font-weight:850}
+.good{background:#0d3020;border:1px solid #1c6b43;color:#8ff1b7}.warn{background:#30270d;border:1px solid #6c5718;color:#ffe18b}.bad{background:#331414;border:1px solid #763131;color:#ffadad}.neutral{background:#10243a;border:1px solid var(--line);color:#d8e9fb}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}.chain{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chain div{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:10px}
+.chain b{display:block;font-size:13px;margin-bottom:4px}.tickers{font-size:11px;color:#bdd2e8;line-height:1.5}.event{padding:10px 0;border-bottom:1px solid var(--line)}.event:last-child{border-bottom:0}
+.event b{font-size:13px}.meta,.note{font-size:11px;color:var(--muted);margin-top:3px}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px 7px;font-size:12px}
+th{font-size:10px;color:var(--muted)}.pill{padding:4px 7px;border-radius:999px;background:#15314e;font-size:10px}.footer{text-align:center;color:var(--muted);font-size:10px;padding:20px 0}
+@media(max-width:800px){.formgrid{grid-template-columns:1fr 1fr}.result-grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}
+@media(max-width:520px){.formgrid{grid-template-columns:1fr 1fr}.chain{grid-template-columns:1fr}.wrap{padding:12px}th:nth-child(2),td:nth-child(2){display:none}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <header>
-  <div>
-    <h1>AI Market Radar</h1>
-    <div class="subtitle">เรดาร์หุ้น AI • ข่าวสำคัญ • จังหวะเข้าออก • ปฏิทินตลาด</div>
-  </div>
-  <div class="badge">Trading V1.5 • ภาษาไทย</div>
+  <div><h1>AI Market Radar</h1><div class="subtitle">เรดาร์หุ้น AI • วางแผนเข้าออก • ใช้ Webull เป็นราคาสด</div></div>
+  <div class="badge">V2 • Free-first</div>
 </header>
 
-<div class="alert">
-  <strong>📌 หมายเหตุ:</strong> วันจันทร์ 7 ก.ย. ตลาดหุ้นสหรัฐปิดเนื่องใน Labor Day — เราจะใช้ช่วงนี้เตรียมระบบก่อนตลาดกลับมาเปิดวันอังคาร
-</div>
+<div class="notice"><strong>วิธีใช้เร็ว:</strong> เลือกหุ้น → ใส่ราคาปัจจุบันจาก Webull → ใส่แนวรับและแนวต้านจากกราฟ → ถ้ามี ATR ใส่เพิ่ม → กด “วิเคราะห์แผน”</div>
 
-<div class="grid4">
-  <div class="card"><h3>หุ้นใน Watchlist</h3><div class="metric">{{ watchlist|length }}</div><div class="small">ครอบคลุม AI Supply Chain</div></div>
-  <div class="card"><h3>เหตุการณ์สำคัญ</h3><div class="metric">{{ events|length }}</div><div class="small">Macro / วันหยุดตลาด</div></div>
-  <div class="card"><h3>เหตุการณ์ผลกระทบสูง</h3><div class="metric">{{ events|selectattr('impact','equalto','high')|list|length }}</div><div class="small">ควรระวังก่อนเข้าเทรด</div></div>
-  <div class="card"><h3>ข้อมูลราคา</h3><div class="metric" style="font-size:18px">รอเชื่อม API</div><div class="small">จะเพิ่มราคา Pre-market / Live</div></div>
-</div>
-
-<div class="section">
-  <h2 class="section-title">🎯 หุ้นเด่นและจังหวะเข้าออก</h2>
-  <div class="trade-grid">
-    <div class="trade">
-      <div class="ticker">SNDK</div><div class="state">สถานะ: รอข้อมูลราคาสด</div>
-      <div class="row"><span class="label">ช่วงน่าซื้อ</span><span class="wait">คำนวณหลังเชื่อมราคา</span></div>
-      <div class="row"><span class="label">เป้าขาย</span><span>—</span></div>
-      <div class="row"><span class="label">จุดที่แผนผิด</span><span>—</span></div>
-    </div>
-    <div class="trade">
-      <div class="ticker">ANET</div><div class="state">ธีม: AI Networking</div>
-      <div class="row"><span class="label">ช่วงน่าซื้อ</span><span class="wait">คำนวณหลังเชื่อมราคา</span></div>
-      <div class="row"><span class="label">เป้าขาย</span><span>—</span></div>
-      <div class="row"><span class="label">จุดที่แผนผิด</span><span>—</span></div>
-    </div>
-    <div class="trade">
-      <div class="ticker">VRT</div><div class="state">ธีม: Power + Cooling</div>
-      <div class="row"><span class="label">ช่วงน่าซื้อ</span><span class="wait">คำนวณหลังเชื่อมราคา</span></div>
-      <div class="row"><span class="label">เป้าขาย</span><span>—</span></div>
-      <div class="row"><span class="label">จุดที่แผนผิด</span><span>—</span></div>
-    </div>
+<div class="section card">
+  <div class="title">🎯 เครื่องมือวิเคราะห์จังหวะเข้า–ออก</div>
+  <div class="formgrid">
+    <div><label>หุ้น</label><select id="ticker">{% for s in watchlist %}<option value="{{ s.ticker }}">{{ s.ticker }} — {{ s.name }}</option>{% endfor %}</select></div>
+    <div><label>ราคาปัจจุบันจาก Webull</label><input id="price" type="number" step="0.01" placeholder="เช่น 125.50"></div>
+    <div><label>แนวรับ</label><input id="support" type="number" step="0.01" placeholder="เช่น 121.00"></div>
+    <div><label>แนวต้าน</label><input id="resistance" type="number" step="0.01" placeholder="เช่น 132.00"></div>
   </div>
+  <div class="formgrid" style="margin-top:9px">
+    <div><label>ATR (ถ้ามี)</label><input id="atr" type="number" step="0.01" placeholder="เว้นว่างได้"></div>
+    <div><label>เงินต่อไม้ (บาท)</label><input id="budget" type="number" step="100" value="25000"></div>
+    <div><label>อัตรา USD/THB</label><input id="fx" type="number" step="0.01" value="33.00"></div>
+    <div><label>จำนวนหุ้นโดยประมาณ</label><input id="shares" readonly placeholder="คำนวณอัตโนมัติ"></div>
+  </div>
+  <div class="buttons"><button onclick="analyzeTrade()">วิเคราะห์แผน</button><button onclick="resetForm()">ล้างค่า</button></div>
+  <div class="help">สูตร V2 ไม่ให้ AI เดาราคา: โซนเข้าอิงแนวรับ + ATR/กรอบราคา, จุดที่แผนผิดอยู่ต่ำกว่าแนวรับ และเป้าหมายอิงแนวต้านกับ ATR</div>
+  <div class="result-grid">
+    <div class="metric"><div class="k">🟢 ช่วงน่าซื้อ</div><div class="v" id="buyzone">—</div></div>
+    <div class="metric"><div class="k">🎯 เป้าขาย 1</div><div class="v" id="tp1">—</div></div>
+    <div class="metric"><div class="k">🎯 เป้าขาย 2</div><div class="v" id="tp2">—</div></div>
+    <div class="metric"><div class="k">🔴 จุดที่แผนผิด</div><div class="v" id="stop">—</div></div>
+  </div>
+  <div class="result-grid">
+    <div class="metric"><div class="k">Risk / Reward</div><div class="v" id="rr">—</div></div>
+    <div class="metric"><div class="k">ถึงเป้า 1</div><div class="v" id="upside">—</div></div>
+    <div class="metric"><div class="k">ความเสี่ยงถึง Stop</div><div class="v" id="downside">—</div></div>
+    <div class="metric"><div class="k">มูลค่าไม้โดยประมาณ</div><div class="v" id="position">—</div></div>
+  </div>
+  <div id="statusBox" class="status neutral">รอข้อมูลเพื่อวิเคราะห์</div>
 </div>
 
 <div class="section two">
-  <div class="card">
-    <h2 class="section-title">🗓️ ปฏิทินสำคัญ</h2>
-    {% for e in events %}
-    <div class="event">
-      <div class="event-top"><span class="dot {{ e.impact }}"></span><span class="event-title">{{ e.title }}</span></div>
-      <div class="meta">{{ e.date }} • {{ e.type }} • {{ e.ticker }}</div>
-      <div class="note">{{ e.note }}</div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <div class="card">
-    <h2 class="section-title">🧠 AI Supply Chain</h2>
-    <div class="chain">
-      <div><b>1. ชิป / Compute</b><span class="tickers">NVDA · AMD · AVGO</span></div>
-      <div><b>2. โรงงาน / Equipment</b><span class="tickers">TSM · ASML · AMAT · LRCX · KLAC</span></div>
-      <div><b>3. Memory / Storage</b><span class="tickers">MU · SNDK · WDC · STX</span></div>
-      <div><b>4. Network / Optical</b><span class="tickers">ANET · MRVL · CRDO · LITE · COHR</span></div>
-      <div><b>5. Data Center</b><span class="tickers">VRT · DELL · SMCI · NBIS · IREN</span></div>
-      <div><b>6. Power / Grid</b><span class="tickers">ETN · GEV · CEG · VST</span></div>
-      <div><b>7. Cloud</b><span class="tickers">MSFT · GOOGL · AMZN · ORCL · META</span></div>
-      <div><b>8. AI Software</b><span class="tickers">PLTR</span></div>
-    </div>
+  <div class="card"><div class="title">🧠 AI Supply Chain</div><div class="chain">
+    <div><b>1. ชิป / Compute</b><span class="tickers">NVDA · AMD · AVGO</span></div>
+    <div><b>2. Foundry / Equipment</b><span class="tickers">TSM · ASML · AMAT · LRCX · KLAC</span></div>
+    <div><b>3. Memory / Storage</b><span class="tickers">MU · SNDK · WDC · STX</span></div>
+    <div><b>4. Network / Optical</b><span class="tickers">ANET · MRVL · CRDO · LITE · COHR</span></div>
+    <div><b>5. Data Center</b><span class="tickers">VRT · DELL · SMCI · NBIS · IREN</span></div>
+    <div><b>6. Power / Grid</b><span class="tickers">ETN · GEV · CEG · VST</span></div>
+    <div><b>7. Cloud</b><span class="tickers">MSFT · GOOGL · AMZN · ORCL · META</span></div>
+    <div><b>8. AI Software</b><span class="tickers">PLTR</span></div>
+  </div></div>
+  <div class="card"><div class="title">🗓️ ปฏิทินสำคัญ</div>
+    {% for e in events %}<div class="event"><b>{{ e.title }}</b><div class="meta">{{ e.date }} • {{ e.type }} • {{ e.ticker }}</div><div class="note">{{ e.note }}</div></div>{% endfor %}
   </div>
 </div>
 
-<div class="section card">
-  <h2 class="section-title">👀 Watchlist ของเรา</h2>
-  <table>
-    <thead><tr><th>หุ้น</th><th>บริษัท</th><th>กลุ่ม</th><th>สถานะ</th></tr></thead>
-    <tbody>
-      {% for s in watchlist %}
-      <tr>
-        <td><strong>{{ s.ticker }}</strong></td>
-        <td>{{ s.name }}</td>
-        <td>{{ s.stage }}</td>
-        <td><span class="pill">{{ s.status }}</span></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div class="section card"><div class="title">👀 Watchlist</div>
+<table><thead><tr><th>หุ้น</th><th>บริษัท</th><th>กลุ่ม</th><th>สถานะ</th></tr></thead><tbody>
+{% for s in watchlist %}<tr><td><strong>{{ s.ticker }}</strong></td><td>{{ s.name }}</td><td>{{ s.stage }}</td><td><span class="pill">{{ s.status }}</span></td></tr>{% endfor %}
+</tbody></table></div>
+
+<div class="footer">V2 เป็นเครื่องมือช่วยวางแผน ไม่ใช่คำสั่งซื้อขาย • ขั้นต่อไป: ดึงข้อมูลย้อนหลังฟรีเพื่อเติมแนวรับ/แนวต้าน/ATR อัตโนมัติ</div>
 </div>
 
-<div class="footer">
-V1.5 ยังไม่ใช่คำสั่งซื้อขายและยังไม่ใช้ราคาสด • ขั้นถัดไป: ราคา Pre-market/Live + Volume + VWAP + Buy Zone/เป้าขายอัตโนมัติ
-</div>
-</div>
+<script>
+function n(id){return parseFloat(document.getElementById(id).value)}
+function money(x){return isFinite(x) ? "$"+x.toFixed(2) : "—"}
+function pct(x){return isFinite(x) ? (x>=0?"+":"")+x.toFixed(2)+"%" : "—"}
+
+function analyzeTrade(){
+  const ticker=document.getElementById("ticker").value;
+  const price=n("price"), support=n("support"), resistance=n("resistance");
+  let atr=n("atr"), budget=n("budget"), fx=n("fx");
+  const box=document.getElementById("statusBox");
+
+  if(!isFinite(price)||!isFinite(support)||!isFinite(resistance)||price<=0||support<=0||resistance<=support){
+    box.className="status bad"; box.textContent="กรุณาใส่ราคาปัจจุบัน แนวรับ และแนวต้านให้ถูกต้อง"; return;
+  }
+
+  const range=resistance-support;
+  if(!isFinite(atr)||atr<=0) atr=range*0.18;
+
+  const buyLow=support;
+  const buyHigh=Math.min(support+atr*0.35, support+range*0.25);
+  const entry=(buyLow+buyHigh)/2;
+  const stop=Math.max(0.01, support-atr*0.50);
+  const tp1=resistance;
+  const tp2=resistance+atr*0.50;
+  const risk=entry-stop, reward=tp1-entry;
+  const rr=risk>0?reward/risk:NaN;
+  const upside=(tp1-price)/price*100;
+  const downside=(stop-price)/price*100;
+
+  let shares=NaN,pos=NaN;
+  if(isFinite(budget)&&isFinite(fx)&&budget>0&&fx>0){shares=Math.floor(budget/(price*fx));pos=shares*price*fx;}
+
+  document.getElementById("buyzone").textContent=money(buyLow)+" – "+money(buyHigh);
+  document.getElementById("tp1").textContent=money(tp1);
+  document.getElementById("tp2").textContent=money(tp2);
+  document.getElementById("stop").textContent=money(stop);
+  document.getElementById("rr").textContent=isFinite(rr)?"1 : "+rr.toFixed(2):"—";
+  document.getElementById("upside").textContent=pct(upside);
+  document.getElementById("downside").textContent=pct(downside);
+  document.getElementById("shares").value=isFinite(shares)?shares+" หุ้น":"";
+  document.getElementById("position").textContent=isFinite(pos)?Math.round(pos).toLocaleString("th-TH")+" ฿":"—";
+
+  if(price>=buyLow&&price<=buyHigh){box.className="status good";box.textContent="🟢 "+ticker+" อยู่ในช่วงน่าซื้อ — เช็ก Volume/แนวโน้มก่อนกดคำสั่ง";}
+  else if(price<buyLow){box.className="status warn";box.textContent="🟡 "+ticker+" ต่ำกว่าแนวรับ — รอดูว่ายืนกลับเหนือแนวรับได้หรือไม่";}
+  else if(price>buyHigh&&price<tp1){box.className="status warn";box.textContent="🟡 "+ticker+" สูงกว่าโซนเข้า — รอย่อดีกว่า ไม่ควรไล่ราคา";}
+  else if(price>=tp1){box.className="status bad";box.textContent="🔴 "+ticker+" ถึง/เหนือเป้าขาย 1 แล้ว — จุดเข้าใหม่มี Risk/Reward แย่ลง";}
+  else{box.className="status neutral";box.textContent="รอจังหวะที่ชัดเจน";}
+
+  localStorage.setItem("radar_"+ticker, JSON.stringify({price,support,resistance,atr,budget,fx}));
+}
+
+function resetForm(){
+  ["price","support","resistance","atr"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("shares").value="";
+  ["buyzone","tp1","tp2","stop","rr","upside","downside","position"].forEach(id=>document.getElementById(id).textContent="—");
+  const box=document.getElementById("statusBox"); box.className="status neutral"; box.textContent="รอข้อมูลเพื่อวิเคราะห์";
+}
+
+document.getElementById("ticker").addEventListener("change",()=>{
+  const t=document.getElementById("ticker").value, saved=localStorage.getItem("radar_"+t);
+  if(saved){const d=JSON.parse(saved);["price","support","resistance","atr","budget","fx"].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]});analyzeTrade();}
+  else{resetForm();}
+});
+</script>
 </body>
 </html>
