@@ -1,23 +1,21 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, jsonify, send_from_directory
 import json
 from pathlib import Path
 
 app = Flask(__name__)
+
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
 
 
-def load_json(name):
-    path = DATA_DIR / name
+def load_json(filename):
+    path = BASE_DIR / filename
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
 @app.route("/")
 def home():
-    events = load_json("events.json")
-    watchlist = load_json("watchlist.json")
-    return render_template("index.html", events=events, watchlist=watchlist)
+    return send_from_directory(BASE_DIR, "index.html")
 
 
 @app.route("/api/events")
@@ -32,8 +30,11 @@ def api_watchlist():
 
 @app.route("/health")
 def health():
-    return {"status": "ok"}
+    return jsonify({
+        "status": "ok",
+        "service": "AI Market Radar"
+    })
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000)
