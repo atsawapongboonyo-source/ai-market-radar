@@ -1,681 +1,85 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V3.6</title>
-
+<!doctype html><html lang="th"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Market Radar V3.7</title>
 <style>
-:root{
-  --p:#0d1b2a;--p2:#10243a;--t:#eef5ff;--m:#93a9c3;--l:#1e3856
-}
-*{box-sizing:border-box}
+*{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
+.w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
+h1{margin:0;font-size:28px}.mut{color:#94a9c1}.tag{border:1px solid #24425f;border-radius:30px;padding:9px 14px}
+.card{background:#0d1f31;border:1px solid #24425f;border-radius:20px;padding:18px;margin-top:18px}
+h2{margin:0 0 14px}.buttons,.grid,.ctx{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button,input{width:100%;border:1px solid #24425f;border-radius:14px;padding:16px;background:#225f98;color:white;font:inherit;font-weight:800}
+button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;border-radius:15px;padding:14px}
+.big{font-size:24px;font-weight:900}.small{font-size:12px;color:#9eb1c6}
+.status{padding:14px;border-radius:15px;margin-top:12px;line-height:1.55}.info{background:#123150;border:1px solid #27679d}
+.good{background:#0c3321;border:1px solid #217449}.warn{background:#352b0b;border:1px solid #79601a}.bad{background:#371515;border:1px solid #7a3030}
+.rows{display:grid;gap:12px}.row{background:#10263c;border:1px solid #24425f;border-radius:17px;padding:15px}.row.candidate{border-color:#2872ad}.row.cached{opacity:.8}
+.top{display:flex;justify-content:space-between;gap:8px}.ticker{font-size:22px;font-weight:900}.label{text-align:right;font-size:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.m{background:#132c44;border-radius:12px;padding:10px}.m b{display:block;font-size:17px}
+.confirm{display:none}.confirm.show{display:block}.checks{line-height:1.8;color:#cbd9e8}.pill{font-size:11px;padding:5px 8px;border-radius:20px;background:#173a58;display:inline-block;margin-top:5px}
+@media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
+</style></head><body><div class="w">
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V3.7 • Auto Market Context</div></div><div class="tag">Free-first</div></div>
 
-body{
-  margin:0;
-  background:linear-gradient(180deg,#06101d,#091827 55%,#06101d);
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
-  color:var(--t)
-}
+<div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
+<div class="buttons"><button onclick="scan(false)">สแกน Watchlist 32 ตัว</button><button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button></div>
+<div class="status info">V3.7 ลดงานกรอกเอง: ระบบประเมิน <b>ภาพรวม Watchlist + ความแข็งแรงของกลุ่มหุ้น</b> อัตโนมัติจากผลสแกนฟรี คุณใส่เพียง <b>ราคาปัจจุบันจาก Webull</b></div>
+<div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
 
-.wrap{max-width:1100px;margin:auto;padding:14px}
-
-header{
-  display:flex;justify-content:space-between;align-items:center;gap:10px
-}
-
-h1{font-size:26px;margin:0}
-
-.sub,.note{
-  color:var(--m);font-size:12px;line-height:1.55
-}
-
-.badge{
-  border:1px solid var(--l);border-radius:99px;padding:7px 10px
-}
-
-.card{
-  background:var(--p);border:1px solid var(--l);
-  border-radius:18px;padding:14px;margin-top:14px
-}
-
-.title{font-size:20px;font-weight:900;margin-bottom:10px}
-
-button,input,select{
-  width:100%;padding:12px;border-radius:12px;border:1px solid var(--l);
-  background:#081725;color:var(--t);font:inherit
-}
-
-button{background:#1d568d;font-weight:850}
-button.secondary{background:#14314d}
-button:disabled{opacity:.55}
-
-.two,.grid4,.stats,.confirmgrid{
-  display:grid;gap:9px
-}
-
-.two{grid-template-columns:1fr 1fr}
-.grid4,.stats,.confirmgrid{grid-template-columns:repeat(4,1fr)}
-
-.metric,.mini{
-  background:var(--p2);border-radius:13px;padding:10px;border:1px solid #173451
-}
-
-.k,.mini span{font-size:11px;color:var(--m)}
-
-.v,.mini b{
-  font-weight:900;font-size:19px;display:block;margin-top:3px
-}
-
-.status{
-  padding:12px;border-radius:13px;margin-top:10px;line-height:1.5
-}
-
-.neutral{background:#10243a;border:1px solid var(--l)}
-.good{background:#0d3020;border:1px solid #1c6b43}
-.warn{background:#30270d;border:1px solid #6c5718}
-.bad{background:#331414;border:1px solid #763131}
-.info{background:#102b46;border:1px solid #245f94}
-
-.list{display:grid;gap:10px}
-
-.row{
-  background:#0c1e30;border:1px solid var(--l);
-  border-radius:15px;padding:13px
-}
-
-.candidate{border-color:#245f94}
-.wait{border-color:#6c5718}
-.chase{border-color:#80541c}
-.avoid{border-color:#763131}
-.cached{border-color:#66788c;opacity:.93}
-
-.rowtop{display:flex;justify-content:space-between;gap:10px}
-.ticker{font-size:21px;font-weight:900}
-.label{text-align:right;font-size:12px;font-weight:800}
-.rank{font-size:11px;color:var(--m);margin-top:4px}
-
-.confidence{
-  display:inline-block;margin-top:6px;padding:4px 7px;
-  border-radius:99px;font-size:10px
-}
-
-.conf-fresh{background:#0d3020;color:#9af0bc}
-.conf-recovered{background:#30270d;color:#ffe18b}
-.conf-cached{background:#26313b;color:#d4dde5}
-
-.confirmbox{display:none}
-.confirmbox.show{display:block}
-
-.checks{
-  margin:8px 0 0;padding-left:18px;color:#c8daec;font-size:12px;line-height:1.7
-}
-
-a{color:#9dceff;text-decoration:none}
-
-@media(max-width:700px){
-  .grid4,.stats,.confirmgrid{grid-template-columns:1fr 1fr}
-  .two{grid-template-columns:1fr}
-}
-</style>
-</head>
-
-<body>
-
-<div class="wrap">
-
-<header>
-  <div>
-    <h1>AI Market Radar</h1>
-    <div class="sub">V3.6 • Market Confirmation</div>
-  </div>
-  <div class="badge">Free-first</div>
-</header>
-
-<div class="card">
-
-  <div class="title">🔥 วันนี้ดูตัวไหนก่อน</div>
-
-  <div class="two">
-    <button id="scanBtn" onclick="scan(false)">
-      สแกน Watchlist 32 ตัว
-    </button>
-
-    <button class="secondary" onclick="scan(true)">
-      รีเฟรชข้อมูลใหม่
-    </button>
-  </div>
-
-  <div class="status info">
-    ขั้นตอน V3.6:
-    <br>1️⃣ Scanner คัด Candidate
-    <br>2️⃣ ใส่ราคาสดจาก Webull
-    <br>3️⃣ ยืนยัน QQQ / กลุ่มหุ้น / Volume / ข่าว
-    <br>4️⃣ ระบบให้ผล Confirmed / Caution / Wait / Block
-  </div>
-
-  <div id="scanStatus" class="status neutral">
-    กดสแกนเพื่อเริ่ม
-  </div>
-
+<div class="card"><h2>🧭 Auto Context</h2>
+<div class="ctx">
+<div class="box"><div class="small">ภาพรวม Watchlist</div><div id="market" class="big">—</div></div>
+<div class="box"><div class="small">ข้อมูลที่แสดง</div><div id="health" class="big">—</div></div>
+</div>
+<div class="small" style="margin-top:10px">หมายเหตุ: V3.7 ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี ไม่ได้อ้างว่าเป็นราคา QQQ แบบ real-time</div>
 </div>
 
-<div class="card">
-
-  <div class="title">🩺 สุขภาพ Scanner</div>
-
-  <div class="grid4">
-
-    <div class="metric">
-      <div class="k">ขอวิเคราะห์</div>
-      <div class="v" id="requested">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">🟢 Fresh</div>
-      <div class="v" id="freshCount">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">🟡 Recovered</div>
-      <div class="v" id="recoveredCount">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">⚪ Cached</div>
-      <div class="v" id="cachedCount">—</div>
-    </div>
-
-  </div>
-
-  <div class="grid4" style="margin-top:9px">
-
-    <div class="metric">
-      <div class="k">🔴 Missing</div>
-      <div class="v" id="failed">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">Initial Fail</div>
-      <div class="v" id="initialFailed">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">Retry Success</div>
-      <div class="v" id="retrySuccess">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">แสดงผลรวม</div>
-      <div class="v" id="total">—</div>
-    </div>
-
-  </div>
-
-  <div id="failedList" class="note" style="margin-top:9px"></div>
-
+<div id="confirm" class="card confirm"><h2>⚡ Auto Confirmation • <span id="ct">—</span></h2>
+<input id="price" type="number" step=".01" placeholder="ใส่ราคาปัจจุบันจาก Webull">
+<button style="margin-top:10px" onclick="confirmNow()">วิเคราะห์จังหวะเข้าอัตโนมัติ</button>
+<div id="cres" class="status info">ใส่ราคาแล้วกดวิเคราะห์</div><ul id="checks" class="checks"></ul>
+<div class="metrics"><div class="m"><span class="small">Buy Zone</span><b id="bz">—</b></div><div class="m"><span class="small">ไม้ 1</span><b id="e1">—</b></div><div class="m"><span class="small">TP1</span><b id="tp">—</b></div><div class="m"><span class="small">Stop</span><b id="sp">—</b></div></div>
 </div>
 
-<div class="card confirmbox" id="confirmBox">
-
-  <div class="title">
-    ⚡ Market Confirmation • <span id="confirmTicker">—</span>
-  </div>
-
-  <div id="cacheWarning" class="status warn" style="display:none">
-    ⚪ หุ้นนี้ใช้ข้อมูล Cached — V3.6 จะไม่อนุญาตให้ Confirm
-  </div>
-
-  <div class="two">
-
-    <input
-      id="livePrice"
-      type="number"
-      step="0.01"
-      placeholder="ราคาปัจจุบันจาก Webull"
-    >
-
-    <button onclick="confirmMarket()">
-      ตรวจ Market Confirmation
-    </button>
-
-  </div>
-
-  <div class="confirmgrid" style="margin-top:10px">
-
-    <select id="qqq">
-      <option value="neutral">QQQ / Nasdaq: กลาง</option>
-      <option value="bull">QQQ / Nasdaq: บวก</option>
-      <option value="bear">QQQ / Nasdaq: ลบ</option>
-    </select>
-
-    <select id="sector">
-      <option value="neutral">กลุ่มหุ้น: กลาง</option>
-      <option value="bull">กลุ่มหุ้น: บวก</option>
-      <option value="bear">กลุ่มหุ้น: ลบ</option>
-    </select>
-
-    <input
-      id="volumeRatio"
-      type="number"
-      step="0.1"
-      value="1.0"
-      placeholder="Volume Ratio เช่น 1.5"
-    >
-
-    <select id="news">
-      <option value="neutral">ข่าว/Catalyst: กลาง/ไม่มี</option>
-      <option value="positive">ข่าว/Catalyst: บวก</option>
-      <option value="negative">ข่าว/Catalyst: ลบ</option>
-    </select>
-
-  </div>
-
-  <div class="note" style="margin-top:8px">
-    Volume Ratio = Volume ปัจจุบันเทียบระดับปกติ เช่น 1.5 = สูงกว่าปกติประมาณ 50%
-    • คะแนน Confirmation ไม่ใช่เปอร์เซ็นต์โอกาสชนะ
-  </div>
-
-  <div id="confirmStatus" class="status neutral">
-    ใส่ข้อมูลจาก Webull แล้วกดตรวจ
-  </div>
-
-  <ul id="checks" class="checks"></ul>
-
-  <div class="grid4" style="margin-top:10px">
-
-    <div class="metric">
-      <div class="k">Buy Zone</div>
-      <div class="v" id="buyZone">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">ไม้ 1</div>
-      <div class="v" id="entry1">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">TP1</div>
-      <div class="v" id="tp1">—</div>
-    </div>
-
-    <div class="metric">
-      <div class="k">Stop</div>
-      <div class="v" id="stop">—</div>
-    </div>
-
-  </div>
-
-  <div class="note" style="margin-top:8px">
-    <a href="/analysis">เปิดหน้าวิเคราะห์ละเอียด V3.4 →</a>
-  </div>
-
+<div class="card"><h2>🏆 Candidate Ranking</h2><div class="small">แตะหุ้น → ใส่ราคาจาก Webull → ระบบใช้ Auto Context ให้เอง</div><div id="rows" class="rows" style="margin-top:12px"></div></div>
 </div>
-
-<div class="card">
-
-  <div class="title">🏆 Candidate Ranking</div>
-
-  <div class="note">
-    แตะหุ้นเพื่อเปิด Market Confirmation •
-    Ranking / Radar / Entry เป็นคะแนนเงื่อนไข ไม่ใช่เปอร์เซ็นต์ความแม่นยำ
-  </div>
-
-  <div id="results" class="list" style="margin-top:10px"></div>
-
-</div>
-
-</div>
-
 <script>
-
-let selected=null;
-
-const fmt=x =>
-  x===null || x===undefined
-    ? "—"
-    : "$"+Number(x).toFixed(2);
-
-
+let selected=null,context=null;
+const fmt=x=>x==null?"—":"$"+Number(x).toFixed(2);
+const state=s=>s==="bull"?"🟢 แข็งแรง":s==="bear"?"🔴 อ่อน":"⚪ กลาง";
 async function scan(force){
-
-  const btn=document.getElementById("scanBtn");
-  const status=document.getElementById("scanStatus");
-
-  btn.disabled=true;
-  btn.textContent="กำลังสแกน...";
-
-  status.className="status neutral";
-  status.textContent="กำลังวิเคราะห์ Watchlist...";
-
-  try{
-
-    const response=await fetch(
-      force ? "/api/scan/refresh" : "/api/scan",
-      {cache:"no-store"}
-    );
-
-    const raw=await response.text();
-    const data=JSON.parse(raw);
-
-    if(!data.ok){
-      throw new Error(data.error || "สแกนไม่สำเร็จ");
-    }
-
-    renderScan(data.data);
-
-  }catch(e){
-
-    status.className="status bad";
-    status.textContent="สแกนไม่สำเร็จ: "+e.message;
-
-  }finally{
-
-    btn.disabled=false;
-    btn.textContent="สแกน Watchlist 32 ตัว";
-
-  }
-
+ let st=document.getElementById("st");st.className="status info";st.textContent="กำลังสแกน...";
+ try{
+  let r=await fetch(force?"/api/scan/refresh":"/api/scan",{cache:"no-store"}),j=await r.json();
+  if(!j.ok)throw Error(j.error);let d=j.data;context=d.auto_context;
+  document.getElementById("market").textContent=state(context.market);
+  document.getElementById("health").textContent=`${d.total}/${d.requested}`;
+  st.className="status "+(d.failed?"warn":"good");
+  st.textContent=`สแกนสำเร็จ ${d.total}/${d.requested} • Fresh ${d.fresh_count} • Recovered ${d.recovered_count} • Cached ${d.fallback_used} • Missing ${d.failed}`;
+  document.getElementById("rows").innerHTML=d.results.map((x,i)=>`<div class="row ${x.scanner_class}" onclick='pick(${JSON.stringify(x)})'>
+   <div class="top"><div><div class="ticker">${i+1}. ${x.ticker}</div><div class="small">Ranking ${x.rank_score}/100 • ปิด ${fmt(x.last_close)}</div><div class="pill">${x.freshness_label}</div></div><div class="label">${x.scanner_label}</div></div>
+   <div class="metrics"><div class="m"><span class="small">Radar</span><b>${x.radar_score}/100</b></div><div class="m"><span class="small">Entry</span><b>${x.entry_score}/100</b></div><div class="m"><span class="small">R/R</span><b>${x.rr??"—"}</b></div><div class="m"><span class="small">Buy Zone</span><b>${fmt(x.buy_low)}–${fmt(x.buy_high)}</b></div></div></div>`).join("");
+ }catch(e){st.className="status bad";st.textContent="สแกนไม่สำเร็จ: "+e.message}
 }
-
-
-function renderScan(d){
-
-  document.getElementById("requested").textContent=d.requested ?? "—";
-  document.getElementById("freshCount").textContent=d.fresh_count ?? 0;
-  document.getElementById("recoveredCount").textContent=d.recovered_count ?? 0;
-  document.getElementById("cachedCount").textContent=d.fallback_used ?? 0;
-  document.getElementById("failed").textContent=d.failed ?? 0;
-  document.getElementById("initialFailed").textContent=d.initial_failed ?? 0;
-  document.getElementById("retrySuccess").textContent=d.retry_success ?? 0;
-  document.getElementById("total").textContent=d.total ?? 0;
-
-  const status=document.getElementById("scanStatus");
-
-  if(d.failed===0){
-
-    status.className="status good";
-
-    status.textContent=
-      `แสดงครบ ${d.total}/${d.requested} ตัว • Fresh ${d.fresh_count} • Recovered ${d.recovered_count} • Cached ${d.fallback_used}`;
-
-  }else{
-
-    status.className="status warn";
-
-    status.textContent=
-      `แสดง ${d.total}/${d.requested} ตัว • Missing ${d.failed} ตัว`;
-
-  }
-
-  const failedList=document.getElementById("failedList");
-
-  if((d.errors||[]).length){
-
-    failedList.textContent=
-      "ยังไม่มีข้อมูล: "+
-      d.errors.map(x=>x.ticker).join(", ");
-
-  }else{
-
-    failedList.textContent=
-      "ไม่มีหุ้นที่หายจาก Scanner";
-
-  }
-
-
-  document.getElementById("results").innerHTML=
-
-    (d.results||[]).map((x,i)=>{
-
-      let confClass="conf-fresh";
-
-      if(x.confidence_code==="RECOVERED"){
-        confClass="conf-recovered";
-      }
-
-      if(x.confidence_code==="CACHED"){
-        confClass="conf-cached";
-      }
-
-      return `
-
-        <div
-          class="row ${x.scanner_class}"
-          onclick='pick(${JSON.stringify(x)})'
-        >
-
-          <div class="rowtop">
-
-            <div>
-
-              <div class="ticker">
-                ${i+1}. ${x.ticker}
-              </div>
-
-              <div class="rank">
-                Ranking ${x.rank_score}/100
-                • ราคาปิด ${fmt(x.last_close)}
-              </div>
-
-              <div class="confidence ${confClass}">
-                ${x.freshness_label}
-                • Confidence ${x.confidence_score}/100
-              </div>
-
-            </div>
-
-            <div class="label">
-              ${x.scanner_label}
-            </div>
-
-          </div>
-
-          <div class="stats" style="margin-top:9px">
-
-            <div class="mini">
-              <span>Radar</span>
-              <b>${x.radar_score}/100</b>
-            </div>
-
-            <div class="mini">
-              <span>Entry</span>
-              <b>${x.entry_score}/100</b>
-            </div>
-
-            <div class="mini">
-              <span>R/R TP1</span>
-              <b>${x.rr ?? "—"}</b>
-            </div>
-
-            <div class="mini">
-              <span>Buy Zone</span>
-              <b style="font-size:15px">
-                ${fmt(x.buy_low)}–${fmt(x.buy_high)}
-              </b>
-            </div>
-
-          </div>
-
-        </div>
-
-      `;
-
-    }).join("");
-
-}
-
-
 function pick(x){
-
-  selected=x;
-
-  document.getElementById("confirmBox")
-    .classList.add("show");
-
-  document.getElementById("confirmTicker")
-    .textContent=x.ticker;
-
-  document.getElementById("buyZone")
-    .textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);
-
-  document.getElementById("entry1")
-    .textContent=fmt(x.entry1);
-
-  document.getElementById("tp1")
-    .textContent=fmt(x.tp1);
-
-  document.getElementById("stop")
-    .textContent=fmt(x.stop);
-
-  document.getElementById("livePrice").value="";
-  document.getElementById("volumeRatio").value="1.0";
-  document.getElementById("qqq").value="neutral";
-  document.getElementById("sector").value="neutral";
-  document.getElementById("news").value="neutral";
-
-  const warning=document.getElementById("cacheWarning");
-
-  warning.style.display=
-    x.confidence_code==="CACHED"
-      ? "block"
-      : "none";
-
-  const status=document.getElementById("confirmStatus");
-
-  status.className="status neutral";
-
-  status.textContent=
-    x.confidence_code==="CACHED"
-      ? "⚪ ข้อมูล Cached — ต้องรีเฟรชก่อน Confirm"
-      : "ใส่ข้อมูลจาก Webull แล้วกดตรวจ";
-
-  document.getElementById("checks").innerHTML="";
-
-  document.getElementById("confirmBox")
-    .scrollIntoView({
-      behavior:"smooth",
-      block:"start"
-    });
-
+ selected=x;let c=document.getElementById("confirm");c.classList.add("show");
+ document.getElementById("ct").textContent=x.ticker;document.getElementById("price").value="";
+ document.getElementById("bz").textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);document.getElementById("e1").textContent=fmt(x.entry1);
+ document.getElementById("tp").textContent=fmt(x.tp1);document.getElementById("sp").textContent=fmt(x.stop);
+ document.getElementById("cres").className="status info";document.getElementById("cres").textContent="ใส่ราคาปัจจุบันจาก Webull แล้วกดวิเคราะห์";
+ document.getElementById("checks").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});
 }
-
-
-async function confirmMarket(){
-
-  if(!selected)return;
-
-  const price=
-    parseFloat(
-      document.getElementById("livePrice").value
-    );
-
-  const status=
-    document.getElementById("confirmStatus");
-
-  if(!isFinite(price)||price<=0){
-
-    status.className="status bad";
-    status.textContent="กรุณาใส่ราคาปัจจุบันจาก Webull";
-    return;
-
-  }
-
-  const body={
-
-    price:price,
-
-    buy_low:selected.buy_low,
-    buy_high:selected.buy_high,
-
-    stop:selected.stop,
-    tp1:selected.tp1,
-
-    data_confidence:selected.confidence_code,
-
-    qqq:document.getElementById("qqq").value,
-
-    sector:document.getElementById("sector").value,
-
-    volume_ratio:
-      parseFloat(
-        document.getElementById("volumeRatio").value
-      ) || 1,
-
-    news:
-      document.getElementById("news").value
-
-  };
-
-
-  try{
-
-    const response=await fetch(
-      "/api/market-confirm",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify(body)
-      }
-    );
-
-    const raw=await response.text();
-    const data=JSON.parse(raw);
-
-    if(!data.ok){
-      throw new Error(data.error || "ตรวจ Confirmation ไม่สำเร็จ");
-    }
-
-    const r=data.data;
-
-    let cls="neutral";
-
-    if(r.status==="CONFIRMED"){
-      cls="good";
-    }
-
-    else if(
-      r.status==="CAUTION"
-      ||
-      r.status==="WAIT"
-    ){
-      cls="warn";
-    }
-
-    else if(r.status==="BLOCK"){
-      cls="bad";
-    }
-
-    status.className="status "+cls;
-
-    status.innerHTML=
-      `<b>${r.label}</b>
-       • Confirmation ${r.score}/100
-       <br>${r.reason}`;
-
-    document.getElementById("checks").innerHTML=
-
-      (r.checks||[])
-
-      .map(x=>`<li>${x}</li>`)
-
-      .join("");
-
-  }
-  catch(e){
-
-    status.className="status bad";
-
-    status.textContent=
-      "ตรวจ Confirmation ไม่สำเร็จ: "+e.message;
-
-  }
-
+async function confirmNow(){
+ if(!selected||!context)return;
+ let p=parseFloat(document.getElementById("price").value),out=document.getElementById("cres");
+ if(!isFinite(p)||p<=0){out.className="status bad";out.textContent="กรุณาใส่ราคาปัจจุบันจาก Webull";return}
+ let sg=context.groups[selected.group]||{state:"unknown"};
+ let body={price:p,buy_low:selected.buy_low,buy_high:selected.buy_high,stop:selected.stop,tp1:selected.tp1,
+ data_confidence:selected.confidence_code,market:context.market,sector:sg.state};
+ try{
+  let r=await fetch("/api/auto-confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),j=await r.json();
+  if(!j.ok)throw Error(j.error);let x=j.data,cl=x.status==="CONFIRMED"?"good":x.status==="BLOCK"?"bad":"warn";
+  out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Auto Confirmation ${x.score}/100<br>${x.reason}`;
+  document.getElementById("checks").innerHTML=x.checks.map(v=>`<li>${v}</li>`).join("");
+ }catch(e){out.className="status bad";out.textContent="วิเคราะห์ไม่สำเร็จ: "+e.message}
 }
-
-</script>
-
-</body>
-</html>
+</script></body></html>
