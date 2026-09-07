@@ -3,407 +3,110 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-
-<title>AI Market Radar V4.5.1</title>
+<title>AI Market Radar V4.5.3</title>
 
 <style>
 *{box-sizing:border-box}
-
-body{
-  margin:0;
-  background:#061423;
-  color:#edf5ff;
-  font-family:system-ui,-apple-system,sans-serif
-}
-
-.w{
-  max-width:1000px;
-  margin:auto;
-  padding:18px
-}
-
-.head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center
-}
-
-h1{
-  margin:0;
-  font-size:28px
-}
-
+body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
+.w{max-width:1000px;margin:auto;padding:18px}
+.head{display:flex;justify-content:space-between;align-items:center}
+h1{margin:0;font-size:28px}
 .mut{color:#94a9c1}
-
-.tag{
-  border:1px solid #24425f;
-  border-radius:30px;
-  padding:9px 14px
-}
-
-.card{
-  background:#0d1f31;
-  border:1px solid #24425f;
-  border-radius:20px;
-  padding:18px;
-  margin-top:18px
-}
-
+.tag{border:1px solid #24425f;border-radius:30px;padding:9px 14px}
+.card{background:#0d1f31;border:1px solid #24425f;border-radius:20px;padding:18px;margin-top:18px}
 h2{margin:0 0 14px}
-
-.buttons,
-.grid,
-.ctx{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px
-}
-
-button,
-input{
-  width:100%;
-  border:1px solid #24425f;
-  border-radius:14px;
-  padding:16px;
-  background:#225f98;
-  color:white;
-  font:inherit;
-  font-weight:800
-}
-
+.buttons,.grid,.ctx{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button,input{width:100%;border:1px solid #24425f;border-radius:14px;padding:16px;background:#225f98;color:white;font:inherit;font-weight:800}
 button.alt{background:#153a5b}
-
-.box{
-  background:#112a42;
-  border:1px solid #1c3b59;
-  border-radius:15px;
-  padding:14px
-}
-
-.big{
-  font-size:24px;
-  font-weight:900
-}
-
-.small{
-  font-size:12px;
-  color:#9eb1c6
-}
-
-.status{
-  padding:14px;
-  border-radius:15px;
-  margin-top:12px;
-  line-height:1.55
-}
-
-.info{
-  background:#123150;
-  border:1px solid #27679d
-}
-
-.good{
-  background:#0c3321;
-  border:1px solid #217449
-}
-
-.warn{
-  background:#352b0b;
-  border:1px solid #79601a
-}
-
-.bad{
-  background:#371515;
-  border:1px solid #7a3030
-}
-
-.rows{
-  display:grid;
-  gap:12px
-}
-
-.row{
-  background:#10263c;
-  border:1px solid #24425f;
-  border-radius:17px;
-  padding:15px
-}
-
+.box{background:#112a42;border:1px solid #1c3b59;border-radius:15px;padding:14px}
+.big{font-size:24px;font-weight:900}
+.small{font-size:12px;color:#9eb1c6}
+.status{padding:14px;border-radius:15px;margin-top:12px;line-height:1.55}
+.info{background:#123150;border:1px solid #27679d}
+.good{background:#0c3321;border:1px solid #217449}
+.warn{background:#352b0b;border:1px solid #79601a}
+.bad{background:#371515;border:1px solid #7a3030}
+.rows{display:grid;gap:12px}
+.row{background:#10263c;border:1px solid #24425f;border-radius:17px;padding:15px}
 .row.candidate{border-color:#2872ad}
 .row.cached{opacity:.8}
-
-.top{
-  display:flex;
-  justify-content:space-between;
-  gap:8px
-}
-
-.ticker{
-  font-size:22px;
-  font-weight:900
-}
-
-.label{
-  text-align:right;
-  font-size:12px
-}
-
-.metrics{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:8px;
-  margin-top:10px
-}
-
-.m{
-  background:#132c44;
-  border-radius:12px;
-  padding:10px
-}
-
-.m b{
-  display:block;
-  font-size:17px
-}
-
+.top{display:flex;justify-content:space-between;gap:8px}
+.ticker{font-size:22px;font-weight:900}
+.label{text-align:right;font-size:12px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.m{background:#132c44;border-radius:12px;padding:10px}
+.m b{display:block;font-size:17px}
 .confirm{display:none}
 .confirm.show{display:block}
-
-.checks{
-  line-height:1.8;
-  color:#cbd9e8
-}
-
-.pill{
-  font-size:11px;
-  padding:5px 8px;
-  border-radius:20px;
-  background:#173a58;
-  display:inline-block;
-  margin-top:5px
-}
-
-.news{
-  display:grid;
-  gap:8px;
-  margin-top:10px
-}
-
-.newsitem{
-  background:#10263c;
-  border:1px solid #1d3e5d;
-  border-radius:12px;
-  padding:10px
-}
-
-.newsitem a{
-  color:#dcecff;
-  text-decoration:none;
-  font-weight:750
-}
-
-.newsmeta{
-  font-size:11px;
-  color:#9eb1c6;
-  margin-top:4px
-}
-
-.topPicks{
-  display:grid;
-  gap:12px;
-  margin-top:12px
-}
-
-.pickCard{
-  background:#10263c;
-  border:1px solid #24425f;
-  border-radius:17px;
-  padding:15px
-}
-
-.pickCard.topPick{
-  border-color:#c79b36;
-  box-shadow:0 0 0 1px rgba(199,155,54,.15) inset
-}
-
-.pickCard.backup{
-  border-color:#4f7395
-}
-
-.pickHead{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  align-items:flex-start
-}
-
-.pickScore{
-  font-size:28px;
-  font-weight:900
-}
-
-.pickWhy{
-  margin:8px 0 0;
-  padding-left:18px;
-  color:#cbd9e8;
-  font-size:12px;
-  line-height:1.65
-}
-
-.pickHint{
-  margin-top:8px;
-  font-size:11px;
-  color:#9eb1c6
-}
-
-.gateGrid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  margin-top:12px
-}
-
-.gateNote{
-  font-size:11px;
-  color:#9eb1c6;
-  line-height:1.55;
-  margin-top:8px
-}
-
-.finalDash{
-  margin-top:14px;
-  border:1px solid #2d5274;
-  border-radius:18px;
-  padding:16px;
-  background:#0b2135
-}
-
-.finalAction{
-  font-size:26px;
-  font-weight:900;
-  line-height:1.2
-}
-
-.finalSub{
-  font-size:12px;
-  color:#a8bdd3;
-  margin-top:6px;
-  line-height:1.55
-}
-
-.finalGrid{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:8px;
-  margin-top:12px
-}
-
-.finalMetric{
-  background:#112b43;
-  border-radius:13px;
-  padding:11px
-}
-
-.finalMetric span{
-  display:block;
-  font-size:11px;
-  color:#9eb1c6
-}
-
-.finalMetric b{
-  display:block;
-  font-size:18px;
-  margin-top:2px
-}
-
-.finalWhy{
-  margin:12px 0 0;
-  padding-left:18px;
-  color:#d6e4f2;
-  line-height:1.7;
-  font-size:12px
-}
-
-.scenario{
-  margin-top:12px;
-  background:#10263c;
-  border-radius:13px;
-  padding:12px;
-  font-size:12px;
-  line-height:1.65
-}
+.checks{line-height:1.8;color:#cbd9e8}
+.pill{font-size:11px;padding:5px 8px;border-radius:20px;background:#173a58;display:inline-block;margin-top:5px}
+.news{display:grid;gap:8px;margin-top:10px}
+.newsitem{background:#10263c;border:1px solid #1d3e5d;border-radius:12px;padding:10px}
+.newsitem a{color:#dcecff;text-decoration:none;font-weight:750}
+.newsmeta{font-size:11px;color:#9eb1c6;margin-top:4px}
+.topPicks{display:grid;gap:12px;margin-top:12px}
+.pickCard{background:#10263c;border:1px solid #24425f;border-radius:17px;padding:15px}
+.pickCard.topPick{border-color:#c79b36;box-shadow:0 0 0 1px rgba(199,155,54,.15) inset}
+.pickCard.backup{border-color:#4f7395}
+.pickHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.pickScore{font-size:28px;font-weight:900}
+.pickWhy{margin:8px 0 0;padding-left:18px;color:#cbd9e8;font-size:12px;line-height:1.65}
+.pickHint{margin-top:8px;font-size:11px;color:#9eb1c6}
+.gateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.gateNote{font-size:11px;color:#9eb1c6;line-height:1.55;margin-top:8px}
+.finalDash{margin-top:14px;border:1px solid #2d5274;border-radius:18px;padding:16px;background:#0b2135}
+.finalAction{font-size:26px;font-weight:900;line-height:1.2}
+.finalSub{font-size:12px;color:#a8bdd3;margin-top:6px;line-height:1.55}
+.finalGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.finalMetric{background:#112b43;border-radius:13px;padding:11px}
+.finalMetric span{display:block;font-size:11px;color:#9eb1c6}
+.finalMetric b{display:block;font-size:18px;margin-top:2px}
+.finalWhy{margin:12px 0 0;padding-left:18px;color:#d6e4f2;line-height:1.7;font-size:12px}
+.scenario{margin-top:12px;background:#10263c;border-radius:13px;padding:12px;font-size:12px;line-height:1.65}
 
 @media(max-width:650px){
-  .finalGrid{
-    grid-template-columns:1fr 1fr
-  }
-
-  .gateGrid{
-    grid-template-columns:1fr
-  }
-
-  .metrics{
-    grid-template-columns:1fr 1fr
-  }
-
-  .ctx{
-    grid-template-columns:1fr 1fr
-  }
+  .finalGrid{grid-template-columns:1fr 1fr}
+  .gateGrid{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .ctx{grid-template-columns:1fr 1fr}
 }
 </style>
 </head>
 
 <body>
-
 <div class="w">
 
 <div class="head">
   <div>
     <h1>AI Market Radar</h1>
-    <div class="mut">V4.5.1 • Clear Entry / Trigger</div>
+    <div class="mut">V4.5.3 • Final Gate Logic</div>
   </div>
-
   <div class="tag">Free-first</div>
 </div>
 
-
 <div class="card">
-
 <h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 
 <div class="buttons">
-
-<button onclick="scan(false)">
-สแกน Watchlist 32 ตัว
-</button>
-
-<button class="alt" onclick="scan(true)">
-รีเฟรชข้อมูลใหม่
-</button>
-
+<button onclick="scan(false)">สแกน Watchlist 32 ตัว</button>
+<button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
 </div>
 
-<button
-style="margin-top:12px"
-onclick="loadTopPicks(false)">
+<button style="margin-top:12px" onclick="loadTopPicks(false)">
 🏆 คัด Top Pick วันนี้
 </button>
 
 <div class="status info">
-V4.5.1 แยก
-<b>เข้าได้ตอนนี้ / Trigger ที่รอ / ราคาที่รอย่อ / เงื่อนไขปลด Block</b>
-ให้ชัดเจน โดยยังคง Auto Context Self-Healing
+V4.5.3 แยก <b>Premarket HOT / ราคาที่รอย่อ / Trigger / Block</b>
+ให้ถูกตามสาเหตุ และยังคง Auto Context Self-Healing
 </div>
 
 <div id="st" class="status info">
 กดสแกนเพื่อเริ่ม
 </div>
-
 </div>
 
-
 <div class="card">
-
 <h2>🏆 Top Pick Engine</h2>
 
 <div class="small">
@@ -418,35 +121,28 @@ Watch Score ไม่ใช่เปอร์เซ็นต์โอกาส�
 </div>
 
 <div id="topPicks" class="topPicks"></div>
-
 </div>
 
-
 <div class="card">
-
 <h2>🧭 Auto Context</h2>
 
 <div class="ctx">
-
 <div class="box">
-  <div class="small">ภาพรวม Watchlist</div>
-  <div id="market" class="big">—</div>
+<div class="small">ภาพรวม Watchlist</div>
+<div id="market" class="big">—</div>
 </div>
 
 <div class="box">
-  <div class="small">ข้อมูลที่แสดง</div>
-  <div id="health" class="big">—</div>
+<div class="small">ข้อมูลที่แสดง</div>
+<div id="health" class="big">—</div>
 </div>
-
 </div>
 
 <div class="small" style="margin-top:10px">
-หมายเหตุ: V3.7 ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
+หมายเหตุ: ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
 ไม่ได้อ้างว่าเป็นราคา QQQ แบบ real-time
 </div>
-
 </div>
-
 
 <div id="confirm" class="card confirm">
 
@@ -460,7 +156,6 @@ Watch Score ไม่ใช่เปอร์เซ็นต์โอกาส�
 </div>
 
 <div id="newsList" class="news"></div>
-
 
 <div class="gateGrid">
 
@@ -482,22 +177,18 @@ id="relVolume"
 type="number"
 step=".01"
 min="0"
-placeholder="Relative Volume เช่น 1.35">
+placeholder="Relative Volume (ไม่บังคับ) เช่น 1.35">
 
 </div>
 
 <div class="gateNote">
 % Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า
 •
-Relative Volume = Volume เทียบระดับปกติ (ถ้า Webull มี)
+Relative Volume = Volume เทียบระดับปกติ ถ้ามี
 </div>
 
-<button
-style="margin-top:10px"
-onclick="confirmNow()">
-
+<button style="margin-top:10px" onclick="confirmNow()">
 ตรวจ Premarket Gate + Final Decision
-
 </button>
 
 <div id="gateResult" class="status info">
@@ -508,21 +199,12 @@ onclick="confirmNow()">
 ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์
 </div>
 
-
 <div id="finalDash" class="finalDash" style="display:none">
 
-<div class="small">
-FINAL DECISION
-</div>
+<div class="small">FINAL DECISION</div>
 
-<div id="finalAction" class="finalAction">
-—
-</div>
-
-<div id="finalSub" class="finalSub">
-—
-</div>
-
+<div id="finalAction" class="finalAction">—</div>
+<div id="finalSub" class="finalSub">—</div>
 
 <div class="finalGrid">
 
@@ -555,21 +237,13 @@ FINAL DECISION
 
 <ul id="finalWhy" class="finalWhy"></ul>
 
-<div id="finalScenario" class="scenario">
-—
-</div>
+<div id="finalScenario" class="scenario">—</div>
 
 </div>
-
 
 <ul id="checks" class="checks"></ul>
 
-<div
-id="missing"
-class="status info"
-style="display:none">
-</div>
-
+<div id="missing" class="status info" style="display:none"></div>
 
 <div class="metrics">
 
@@ -594,9 +268,7 @@ style="display:none">
 </div>
 
 </div>
-
 </div>
-
 
 <div class="card">
 
@@ -610,16 +282,11 @@ Candidate Ranking = รายการเทคนิคทั้งหมด
 แตะหุ้นเพื่อทำ Final Decision
 </div>
 
-<div
-id="rows"
-class="rows"
-style="margin-top:12px">
-</div>
+<div id="rows" class="rows" style="margin-top:12px"></div>
 
 </div>
 
 </div>
-
 
 <script>
 
@@ -629,12 +296,10 @@ let catalyst=null;
 
 const gateInputs={};
 
-
 const fmt=x=>
 x==null
 ?"—"
 :"$"+Number(x).toFixed(2);
-
 
 const state=s=>
 s==="bull"
@@ -642,7 +307,6 @@ s==="bull"
 :s==="bear"
 ?"🔴 อ่อน"
 :"⚪ กลาง";
-
 
 function signedNum(v){
 
@@ -658,15 +322,13 @@ String(v)
 if(s==="")
 return null;
 
-const n=
-Number(s);
+const n=Number(s);
 
 return Number.isFinite(n)
 ?n
 :null;
 
 }
-
 
 function pickState(s){
 
@@ -678,18 +340,15 @@ return s==="bull"
 
 }
 
-
 async function loadTopPicks(force){
 
 const st=
 document.getElementById("topPickStatus");
 
-st.className=
-"status info";
+st.className="status info";
 
 st.textContent=
 "กำลังคัด Top Pick และตรวจ Catalyst ของตัวอันดับต้น...";
-
 
 try{
 
@@ -698,56 +357,38 @@ force
 ?"/api/top-picks?force=1"
 :"/api/top-picks";
 
-
 const r=
 await fetch(
 url,
 {cache:"no-store"}
 );
 
-
 const j=
 await r.json();
-
 
 if(!j.ok)
 throw Error(j.error);
 
-
-const d=
-j.data;
-
-
-/* V4.5.1
-เตรียม Auto Context ล่วงหน้า */
+const d=j.data;
 
 if(!context){
-
 try{
-
 await ensureContext();
-
 }catch(_){}
-
 }
-
 
 st.className=
 "status "+(d.missing?"warn":"good");
 
-
 st.textContent=
 `คัดเสร็จ • แสดงจาก Scanner ${d.scan_total}/${d.scan_requested} • Missing ${d.missing}`;
-
 
 const box=
 document.getElementById("topPicks");
 
-
 box.innerHTML=
 (d.top_picks||[])
 .map((x,i)=>{
-
 
 let cls=
 x.pick_code==="TOP"
@@ -756,10 +397,8 @@ x.pick_code==="TOP"
 ?"backup"
 :"";
 
-
 let cat=
 x.catalyst||{};
-
 
 let catText=
 cat.sentiment==="positive"
@@ -768,12 +407,9 @@ cat.sentiment==="positive"
 ?"🔴 ลบ"
 :"⚪ กลาง/ยังไม่ชัด";
 
-
 return `
 
-<div
-class="pickCard ${cls}"
-onclick='pick(${JSON.stringify(x)})'>
+<div class="pickCard ${cls}" onclick='pick(${JSON.stringify(x)})'>
 
 <div class="pickHead">
 
@@ -790,19 +426,11 @@ ${x.pick_label} • ${x.ticker}
 </div>
 
 <div style="text-align:right">
-
-<div class="small">
-Watch Score
-</div>
-
-<div class="pickScore">
-${x.watch_score}
+<div class="small">Watch Score</div>
+<div class="pickScore">${x.watch_score}</div>
 </div>
 
 </div>
-
-</div>
-
 
 <div class="metrics">
 
@@ -828,15 +456,9 @@ ${x.watch_score}
 
 </div>
 
-
 <ul class="pickWhy">
-
-${(x.pick_reasons||[])
-.map(v=>`<li>${v}</li>`)
-.join("")}
-
+${(x.pick_reasons||[]).map(v=>`<li>${v}</li>`).join("")}
 </ul>
-
 
 <div class="pickHint">
 
@@ -858,13 +480,8 @@ x.gap_from_top ??
 :""}
 
 <br>
-
-แตะการ์ดนี้
-→ ใส่ราคาสด + Premarket
-→ Final Decision
-
+แตะการ์ดนี้ → ใส่ราคาสด + Premarket → Final Decision
 <br>
-
 Relative Volume ใส่เพิ่มได้ถ้ามี
 
 </div>
@@ -875,35 +492,24 @@ Relative Volume ใส่เพิ่มได้ถ้ามี
 
 }).join("");
 
-
 }catch(e){
 
-st.className=
-"status bad";
-
+st.className="status bad";
 
 st.textContent=
-"คัด Top Pick ไม่สำเร็จ: "
-+e.message;
+"คัด Top Pick ไม่สำเร็จ: "+e.message;
 
 }
 
 }
-
 
 async function scan(force){
 
 let st=
 document.getElementById("st");
 
-
-st.className=
-"status info";
-
-
-st.textContent=
-"กำลังสแกน...";
-
+st.className="status info";
+st.textContent="กำลังสแกน...";
 
 try{
 
@@ -915,53 +521,33 @@ force
 {cache:"no-store"}
 );
 
-
 let j=
 await r.json();
-
 
 if(!j.ok)
 throw Error(j.error);
 
+let d=j.data;
 
-let d=
-j.data;
+context=d.auto_context;
 
-
-context=
-d.auto_context;
-
-
-document
-.getElementById("market")
-.textContent=
+document.getElementById("market").textContent=
 state(context.market);
 
-
-document
-.getElementById("health")
-.textContent=
+document.getElementById("health").textContent=
 `${d.total}/${d.requested}`;
-
 
 st.className=
 "status "+(d.failed?"warn":"good");
 
-
 st.textContent=
 `สแกนสำเร็จ ${d.total}/${d.requested} • Fresh ${d.fresh_count} • Recovered ${d.recovered_count} • Cached ${d.fallback_used} • Missing ${d.failed}`;
 
+document.getElementById("rows").innerHTML=
 
-document
-.getElementById("rows")
-.innerHTML=
+d.results.map((x,i)=>`
 
-d.results
-.map((x,i)=>`
-
-<div
-class="row ${x.scanner_class}"
-onclick='pick(${JSON.stringify(x)})'>
+<div class="row ${x.scanner_class}" onclick='pick(${JSON.stringify(x)})'>
 
 <div class="top">
 
@@ -988,7 +574,6 @@ ${x.scanner_label}
 </div>
 
 </div>
-
 
 <div class="metrics">
 
@@ -1018,24 +603,16 @@ ${x.scanner_label}
 
 `).join("");
 
-
 loadTopPicks(false);
-
 
 }catch(e){
 
-st.className=
-"status bad";
-
-
-st.textContent=
-"สแกนไม่สำเร็จ: "
-+e.message;
+st.className="status bad";
+st.textContent="สแกนไม่สำเร็จ: "+e.message;
 
 }
 
 }
-
 
 function pick(x){
 
@@ -1043,169 +620,91 @@ if(selected){
 
 gateInputs[selected.ticker]={
 
-price:
-document
-.getElementById("price")
-.value,
-
-pm:
-document
-.getElementById("premarketPct")
-.value,
-
-rv:
-document
-.getElementById("relVolume")
-.value
+price:document.getElementById("price").value,
+pm:document.getElementById("premarketPct").value,
+rv:document.getElementById("relVolume").value
 
 };
 
 }
 
-
 selected=x;
-
 
 let c=
 document.getElementById("confirm");
 
-
 c.classList.add("show");
 
-
-document
-.getElementById("ct")
-.textContent=
+document.getElementById("ct").textContent=
 x.ticker;
-
 
 const saved=
 gateInputs[x.ticker]||{};
 
-
-document
-.getElementById("price")
-.value=
+document.getElementById("price").value=
 saved.price??"";
 
-
-document
-.getElementById("premarketPct")
-.value=
+document.getElementById("premarketPct").value=
 saved.pm??"";
 
-
-document
-.getElementById("relVolume")
-.value=
+document.getElementById("relVolume").value=
 saved.rv??"";
 
+document.getElementById("bz").textContent=
+fmt(x.buy_low)+"–"+fmt(x.buy_high);
 
-document
-.getElementById("bz")
-.textContent=
-fmt(x.buy_low)
-+"–"+
-fmt(x.buy_high);
-
-
-document
-.getElementById("e1")
-.textContent=
+document.getElementById("e1").textContent=
 fmt(x.entry1);
 
-
-document
-.getElementById("tp")
-.textContent=
+document.getElementById("tp").textContent=
 fmt(x.tp1);
 
-
-document
-.getElementById("sp")
-.textContent=
+document.getElementById("sp").textContent=
 fmt(x.stop);
 
-
-document
-.getElementById("gateResult")
-.className=
+document.getElementById("gateResult").className=
 "status info";
 
-
-document
-.getElementById("gateResult")
-.textContent=
+document.getElementById("gateResult").textContent=
 "⚪ พร้อมตรวจ • Auto Context จะโหลดให้อัตโนมัติ";
 
-
-document
-.getElementById("cres")
-.className=
+document.getElementById("cres").className=
 "status info";
 
-
-document
-.getElementById("cres")
-.textContent=
+document.getElementById("cres").textContent=
 "ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์";
 
-
-document
-.getElementById("finalDash")
-.style.display=
+document.getElementById("finalDash").style.display=
 "none";
 
-
-document
-.getElementById("checks")
-.innerHTML=
+document.getElementById("checks").innerHTML=
 "";
 
-
-document
-.getElementById("missing")
-.style.display=
+document.getElementById("missing").style.display=
 "none";
 
-
-document
-.getElementById("newsList")
-.innerHTML=
+document.getElementById("newsList").innerHTML=
 "";
-
 
 c.scrollIntoView({
 behavior:"smooth",
 block:"start"
 });
 
-
-loadCatalyst(
-x.ticker
-);
+loadCatalyst(x.ticker);
 
 }
-
 
 async function loadCatalyst(ticker){
 
 catalyst=null;
 
-
 let cs=
 document.getElementById("catStatus");
 
-
-cs.className=
-"status info";
-
-
+cs.className="status info";
 cs.textContent=
-"กำลังดึง Catalyst ของ "
-+ticker+
-" ...";
-
+"กำลังดึง Catalyst ของ "+ticker+" ...";
 
 try{
 
@@ -1215,18 +714,13 @@ await fetch(
 {cache:"no-store"}
 );
 
-
 let j=
 await r.json();
-
 
 if(!j.ok)
 throw Error(j.error);
 
-
-catalyst=
-j.data;
-
+catalyst=j.data;
 
 cs.className=
 "status "+
@@ -1238,22 +732,16 @@ catalyst.sentiment==="positive"
 :"info"
 );
 
-
 cs.innerHTML=
-
 `<b>${catalyst.label}</b>
 • Catalyst ${catalyst.score}/100
 <br>
 ${catalyst.reason}`;
 
-
-document
-.getElementById("newsList")
-.innerHTML=
+document.getElementById("newsList").innerHTML=
 
 (catalyst.items||[])
 .map(n=>{
-
 
 let age=
 n.age_hours==null
@@ -1262,7 +750,6 @@ n.age_hours==null
 ?`${n.age_hours} ชม.`
 :`${Math.round(n.age_hours/24)} วัน`;
 
-
 let icon=
 n.sentiment==="positive"
 ?"🟢"
@@ -1270,16 +757,10 @@ n.sentiment==="positive"
 ?"🔴"
 :"⚪";
 
-
 let title=
 n.link
-?`<a href="${n.link}"
-target="_blank"
-rel="noopener">
-${n.title}
-</a>`
+?`<a href="${n.link}" target="_blank" rel="noopener">${n.title}</a>`
 :n.title;
-
 
 return `
 
@@ -1293,10 +774,7 @@ ${title}
 ${n.publisher||"แหล่งข่าว"}
 •
 ${age}
-
-${n.high_impact
-?" • Impact สูง"
-:""}
+${n.high_impact?" • Impact สูง":""}
 
 </div>
 
@@ -1306,7 +784,6 @@ ${n.high_impact
 
 }).join("");
 
-
 }catch(e){
 
 catalyst={
@@ -1315,10 +792,7 @@ score:50,
 negative_high_impact:false
 };
 
-
-cs.className=
-"status warn";
-
+cs.className="status warn";
 
 cs.textContent=
 "Catalyst โหลดไม่สำเร็จ — ระบบจะไม่เพิ่ม/ลดคะแนนข่าว";
@@ -1327,32 +801,27 @@ cs.textContent=
 
 }
 
-
 function triggerPlan(x,price){
 
 const lo=
 Number(selected.buy_low);
 
-
 const hi=
 Number(selected.buy_high);
-
 
 const pm=
 x?.premarket_gate?.premarket_pct;
 
+const gateStatus=
+x?.premarket_gate?.status;
 
-if(
-x.status==="CONFIRMED"
-){
+if(x.status==="CONFIRMED"){
 
 return {
 
-label:
-"เข้าได้ตอนนี้",
+label:"เข้าได้ตอนนี้",
 
-price:
-price,
+display:fmt(price),
 
 text:
 `ราคาอยู่ใน Buy Zone ${fmt(lo)}–${fmt(hi)} • เข้าไม้ 1 ได้ตามแผน ณ ราคาปัจจุบัน หากยังไม่วิ่งเกินโซน`
@@ -1361,18 +830,35 @@ text:
 
 }
 
-
 if(
-x.status==="DONT_CHASE"
+x.status==="DONT_CHASE" &&
+gateStatus==="HOT"
 ){
 
 return {
 
-label:
-"ราคาที่รอย่อ",
+label:"เงื่อนไขที่รอ",
 
-price:
-hi,
+display:"PM < +5%",
+
+text:
+`Premarket ${
+pm==null
+?"—"
+:(Number(pm)>=0?"+":"")+Number(pm).toFixed(2)+"%"
+} ร้อนเกินไป • รอให้ Premarket ต่ำกว่า +5% หรือเกิด Pullback/ฐานราคาใหม่ แล้วตรวจ Gate อีกครั้ง`
+
+};
+
+}
+
+if(x.status==="DONT_CHASE"){
+
+return {
+
+label:"ราคาที่รอย่อ",
+
+display:fmt(hi),
 
 text:
 `ยังไม่ไล่ราคา • รอย่อกลับมา ≤ ${fmt(hi)} แล้วตรวจ Gate ใหม่`
@@ -1381,10 +867,7 @@ text:
 
 }
 
-
-if(
-x.status==="BLOCK"
-){
+if(x.status==="BLOCK"){
 
 if(
 pm!=null &&
@@ -1393,11 +876,9 @@ Number(pm)<-5
 
 return {
 
-label:
-"ระดับอ้างอิง",
+label:"เงื่อนไขปลด Block",
 
-price:
-lo,
+display:"PM > -5%",
 
 text:
 `ยังไม่เข้า • รอ Premarket ฟื้นเหนือ -5% และให้ราคากลับมายืน ≥ ${fmt(lo)} ก่อนตรวจใหม่`
@@ -1406,14 +887,11 @@ text:
 
 }
 
-
 return {
 
-label:
-"ระดับอ้างอิง",
+label:"ระดับอ้างอิง",
 
-price:
-lo,
+display:fmt(lo),
 
 text:
 `ยังไม่เข้า • รอเงื่อนไข Block คลี่คลาย และให้ราคากลับมายืน ≥ ${fmt(lo)} พร้อม Context ฟื้น`
@@ -1422,18 +900,13 @@ text:
 
 }
 
-
-if(
-price<lo
-){
+if(price<lo){
 
 return {
 
-label:
-"Trigger ที่รอ",
+label:"Trigger ที่รอ",
 
-price:
-lo,
+display:fmt(lo),
 
 text:
 `รอราคากลับเข้า Buy Zone ที่ ${fmt(lo)} แล้วตรวจ Context/Premarket อีกครั้ง`
@@ -1442,18 +915,13 @@ text:
 
 }
 
-
-if(
-price>hi
-){
+if(price>hi){
 
 return {
 
-label:
-"ราคาที่รอย่อ",
+label:"ราคาที่รอย่อ",
 
-price:
-hi,
+display:fmt(hi),
 
 text:
 `รอย่อลง ≤ ${fmt(hi)} — ไม่ไล่ราคา`
@@ -1462,14 +930,12 @@ text:
 
 }
 
-
 return {
 
-label:
-"Trigger ที่รอ",
+label:"Trigger ที่รอ",
 
-price:
-selected.entry1 ?? hi,
+display:
+fmt(selected.entry1 ?? hi),
 
 text:
 "ราคาอยู่ใน Buy Zone แต่ Decision Engine ยังรอ Context/Trigger เพิ่มก่อนเข้าไม้ 1"
@@ -1478,161 +944,103 @@ text:
 
 }
 
-
 function renderFinalDecision(x,price){
 
 const dash=
 document.getElementById("finalDash");
 
+dash.style.display="block";
 
-dash.style.display=
-"block";
-
-
-document
-.getElementById("finalAction")
-.textContent=
+document.getElementById("finalAction").textContent=
 x.label||"—";
 
-
-document
-.getElementById("finalSub")
-.textContent=
+document.getElementById("finalSub").textContent=
 `Decision Score ${x.score}/100 • ${x.reason||""}`;
 
-
-document
-.getElementById("fdPrice")
-.textContent=
+document.getElementById("fdPrice").textContent=
 fmt(price);
 
-
-document
-.getElementById("fdBuy")
-.textContent=
-fmt(selected.buy_low)
-+"–"+
-fmt(selected.buy_high);
-
+document.getElementById("fdBuy").textContent=
+fmt(selected.buy_low)+"–"+fmt(selected.buy_high);
 
 const trg=
-triggerPlan(
-x,
-price
-);
+triggerPlan(x,price);
 
-
-document
-.getElementById("fdTriggerLabel")
-.textContent=
+document.getElementById("fdTriggerLabel").textContent=
 trg.label;
 
+document.getElementById("fdTrigger").textContent=
+trg.display;
 
-document
-.getElementById("fdTrigger")
-.textContent=
-fmt(trg.price);
-
-
-document
-.getElementById("fdTp")
-.textContent=
+document.getElementById("fdTp").textContent=
 fmt(selected.tp1);
 
-
-document
-.getElementById("fdStop")
-.textContent=
+document.getElementById("fdStop").textContent=
 fmt(selected.stop);
-
 
 const core=
 (x.checks||[])
 .filter(v=>
-
 v.startsWith("🟢")||
 v.startsWith("🟡")||
 v.startsWith("🔴")||
 v.startsWith("🟠")
-
 )
 .slice(0,4);
 
-
-document
-.getElementById("finalWhy")
-.innerHTML=
-
-core
-.map(v=>`<li>${v}</li>`)
-.join("");
-
+document.getElementById("finalWhy").innerHTML=
+core.map(v=>`<li>${v}</li>`).join("");
 
 let s="";
 
+if(x.status==="CONFIRMED"){
+
+s=
+`ถ้าราคายังอยู่ใน Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} → เข้าไม้ 1 ตามแผนได้ • ถ้าราคาวิ่งเหนือ ${fmt(selected.buy_high)} มาก → หยุดไล่ราคา`;
+
+}
+
+else if(x.status==="DONT_CHASE"){
 
 if(
-x.status==="CONFIRMED"
+x?.premarket_gate?.status==="HOT"
 ){
 
 s=
-`ราคาอยู่ใน Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)}
-→ เข้าไม้ 1 ตามแผนได้
-•
-ถ้าราคาวิ่งเหนือ ${fmt(selected.buy_high)} มาก → หยุดไล่ราคา`;
+`ยังไม่ไล่ซื้อ • สาเหตุหลักคือ Premarket HOT ไม่ใช่ราคาสูงกว่า Buy Zone • ใช้ Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} เป็นระดับอ้างอิง และรอ Premarket เย็นลง/เกิดฐานราคาใหม่`;
 
 }
-
-
-else if(
-x.status==="DONT_CHASE"
-){
-
-s=
-`ยังไม่ไล่ซื้อ
-•
-รอให้ราคาย่อลงใกล้ Buy Zone
-${fmt(selected.buy_low)}–${fmt(selected.buy_high)}
-แล้วตรวจ Gate ใหม่`;
-
-}
-
-
-else if(
-x.status==="BLOCK"
-){
-
-s=
-`งดเข้าใหม่ตอนนี้
-•
-รอให้เงื่อนไขที่ Block คลี่คลายก่อน
-แล้วสแกน/ประเมินใหม่`;
-
-}
-
 
 else{
 
 s=
-`ยังไม่เข้าไม้ 1
-•
-รอราคา / Market Context / Premarket
-ให้ดีขึ้น แล้วกดตรวจอีกครั้ง`;
+`ยังไม่ไล่ซื้อ • รอให้ราคาย่อลงใกล้ Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} แล้วตรวจ Gate ใหม่`;
 
 }
 
+}
 
-s+=
+else if(x.status==="BLOCK"){
+
+s=
+`งดเข้าใหม่ตอนนี้ • รอให้เงื่อนไขที่ Block คลี่คลายก่อน แล้วสแกน/ประเมินใหม่`;
+
+}
+
+else{
+
+s=
+`ยังไม่เข้าไม้ 1 • รอราคา / Market Context / Premarket ให้ดีขึ้น แล้วกดตรวจอีกครั้ง`;
+
+}
+
+s +=
 ` • 🎯 ${trg.text}`;
 
-
-document
-.getElementById("finalScenario")
-.textContent=
+document.getElementById("finalScenario").textContent=
 s;
 
 }
-
 
 async function ensureContext(){
 
@@ -1646,22 +1054,17 @@ return context;
 
 }
 
-
 const marketEl=
 document.getElementById("market");
-
 
 const healthEl=
 document.getElementById("health");
 
-
 marketEl.textContent=
 "⏳ กำลังโหลด";
 
-
 healthEl.textContent=
 "—";
-
 
 const r=
 await fetch(
@@ -1669,15 +1072,10 @@ await fetch(
 {cache:"no-store"}
 );
 
-
 const j=
 await r.json();
 
-
-if(
-!r.ok||
-!j.ok
-){
+if(!r.ok||!j.ok){
 
 throw Error(
 j.error||
@@ -1686,14 +1084,11 @@ j.error||
 
 }
 
-
 const d=
 j.data||{};
 
-
 context=
 d.auto_context||null;
-
 
 if(!context){
 
@@ -1703,62 +1098,44 @@ throw Error(
 
 }
 
-
 marketEl.textContent=
 state(context.market);
-
 
 healthEl.textContent=
 `${d.total??"—"}/${d.requested??"—"}`;
 
-
 return context;
 
 }
-
 
 async function confirmNow(){
 
 const out=
 document.getElementById("cres");
 
-
 const gateEl=
 document.getElementById("gateResult");
 
-
 if(!selected){
 
-out.className=
-"status bad";
-
-
-out.textContent=
-"กรุณาเลือกหุ้นก่อน";
-
+out.className="status bad";
+out.textContent="กรุณาเลือกหุ้นก่อน";
 
 return;
 
 }
 
-
 if(!context){
 
-gateEl.className=
-"status info";
-
+gateEl.className="status info";
 
 gateEl.textContent=
 "⏳ กำลังโหลด Auto Context จาก Scanner...";
 
-
-out.className=
-"status info";
-
+out.className="status info";
 
 out.textContent=
 "กำลังเตรียม Market Context สำหรับ Final Decision...";
-
 
 try{
 
@@ -1766,22 +1143,15 @@ await ensureContext();
 
 }catch(e){
 
-gateEl.className=
-"status bad";
-
+gateEl.className="status bad";
 
 gateEl.textContent=
 "🔴 Auto Context โหลดไม่สำเร็จ";
 
-
-out.className=
-"status bad";
-
+out.className="status bad";
 
 out.textContent=
-"ยังทำ Final Decision ไม่ได้: "
-+e.message;
-
+"ยังทำ Final Decision ไม่ได้: "+e.message;
 
 return;
 
@@ -1789,114 +1159,71 @@ return;
 
 }
 
-
 const priceRaw=
-document
-.getElementById("price")
-.value;
-
+document.getElementById("price").value;
 
 const pmRaw=
-document
-.getElementById("premarketPct")
-.value;
-
+document.getElementById("premarketPct").value;
 
 const rvRaw=
-document
-.getElementById("relVolume")
-.value;
-
+document.getElementById("relVolume").value;
 
 const p=
 signedNum(priceRaw);
 
-
 const pm=
 signedNum(pmRaw);
-
 
 const rv=
 String(rvRaw).trim()===""
 ?null
 :signedNum(rvRaw);
 
+if(p==null||p<=0){
 
-if(
-p==null||
-p<=0
-){
-
-out.className=
-"status bad";
-
+out.className="status bad";
 
 out.textContent=
 "กรุณาใส่ราคาปัจจุบันจาก Webull";
 
-
 return;
 
 }
 
+if(pm==null){
 
-if(
-pm==null
-){
-
-gateEl.className=
-"status bad";
-
+gateEl.className="status bad";
 
 gateEl.innerHTML=
-
 "<b>🔴 Premarket Gate ยังตรวจไม่ได้</b><br>ใส่ % Premarket เช่น +1.80 หรือ -4.49";
 
-
-out.className=
-"status bad";
-
+out.className="status bad";
 
 out.textContent=
 "ต้องมี % Premarket ก่อนทำ Final Decision";
 
-
 return;
 
 }
 
+if(rv!=null && rv<0){
 
-if(
-rv!=null &&
-rv<0
-){
-
-out.className=
-"status bad";
-
+out.className="status bad";
 
 out.textContent=
 "Relative Volume ต้องเป็น 0 หรือมากกว่า หรือปล่อยว่างได้";
 
-
 return;
 
 }
 
-
 gateInputs[selected.ticker]={
 
-price:
-String(priceRaw),
-
-pm:
-String(pmRaw),
-
-rv:
-String(rvRaw)
+price:String(priceRaw),
+pm:String(pmRaw),
+rv:String(rvRaw)
 
 };
-
 
 const sg=
 (
@@ -1906,22 +1233,17 @@ context.groups[selected.group]
 ||
 {state:"unknown"};
 
-
 const body={
 
 price:p,
 
-buy_low:
-selected.buy_low,
+buy_low:selected.buy_low,
 
-buy_high:
-selected.buy_high,
+buy_high:selected.buy_high,
 
-stop:
-selected.stop,
+stop:selected.stop,
 
-tp1:
-selected.tp1,
+tp1:selected.tp1,
 
 data_confidence:
 selected.confidence_code,
@@ -1949,32 +1271,22 @@ rv
 
 };
 
-
 gateEl.className=
 "status info";
 
-
 gateEl.innerHTML=
-
 `<b>⏳ กำลังตรวจ Premarket Gate</b>
 <br>
 Premarket
 ${pm>=0?"+":""}${pm.toFixed(2)}%
 •
 Relative Volume
-${rv==null
-?"—"
-:rv.toFixed(2)+"x"
-}`;
+${rv==null?"—":rv.toFixed(2)+"x"}`;
 
-
-out.className=
-"status info";
-
+out.className="status info";
 
 out.textContent=
 "กำลังคำนวณ Final Decision...";
-
 
 try{
 
@@ -1991,21 +1303,15 @@ headers:{
 
 cache:"no-store",
 
-body:
-JSON.stringify(body)
+body:JSON.stringify(body)
 
 }
 );
 
-
 const j=
 await r.json();
 
-
-if(
-!r.ok||
-!j.ok
-){
+if(!r.ok||!j.ok){
 
 throw Error(
 j.error||
@@ -2014,14 +1320,11 @@ j.error||
 
 }
 
-
 const x=
 j.data||{};
 
-
 const gate=
 x.premarket_gate||{};
-
 
 const cl=
 x.status==="CONFIRMED"
@@ -2030,23 +1333,18 @@ x.status==="CONFIRMED"
 ?"bad"
 :"warn";
 
-
 const shownPm=
 gate.premarket_pct==null
 ?pm
 :Number(gate.premarket_pct);
-
 
 const shownRv=
 gate.rel_volume==null
 ?rv
 :Number(gate.rel_volume);
 
-
 const gs=
-gate.status||
-"PASS";
-
+gate.status||"PASS";
 
 const gl=
 gate.label||
@@ -2054,10 +1352,9 @@ gate.label||
 gs==="BLOCK"
 ?"🔴 Premarket Gate Block"
 :gs==="HOT"
-?"🟡 Premarket Gate ร้อน"
-:"🟢 Premarket Gate ตรวจแล้ว"
+?"🟠 Premarket ร้อน — ไม่ไล่ราคา"
+:"🟢 Premarket Gate ผ่าน"
 );
-
 
 gateEl.className=
 "status "+
@@ -2071,9 +1368,7 @@ gs==="PASS"
 :"info"
 );
 
-
 gateEl.innerHTML=
-
 `<b>${gl}</b>
 •
 ปรับคะแนน
@@ -2093,13 +1388,10 @@ ${shownRv==null
 :shownRv.toFixed(2)+"x"
 }`;
 
-
 out.className=
 "status "+cl;
 
-
 out.innerHTML=
-
 `<b>${x.label||"Final Decision"}</b>
 •
 Decision Score
@@ -2107,91 +1399,63 @@ ${x.score??"—"}/100
 <br>
 ${x.reason||""}`;
 
-
-document
-.getElementById("checks")
-.innerHTML=
-
+document.getElementById("checks").innerHTML=
 (x.checks||[])
 .map(v=>`<li>${v}</li>`)
 .join("");
-
 
 renderFinalDecision(
 x,
 p
 );
 
-
 const miss=
 document.getElementById("missing");
-
 
 const items=
 x.missing||[];
 
-
 miss.style.display=
 "block";
 
-
-if(
-items.length
-){
+if(items.length){
 
 miss.className=
 "status info";
 
-
 miss.innerHTML=
-
 `<b>🎯 ยังขาดอะไรถึงจะดีขึ้น</b>
 <br>
-${items
-.map(v=>"• "+v)
-.join("<br>")
-}`;
+${items.map(v=>"• "+v).join("<br>")}`;
 
 }
-
 
 else{
 
 miss.className=
 "status good";
 
-
 miss.innerHTML=
-
 "<b>✅ เงื่อนไขหลักผ่านแล้ว</b><br>Decision Engine ไม่พบเงื่อนไขที่ต้องรอเพิ่ม";
 
 }
-
 
 }catch(e){
 
 gateEl.className=
 "status bad";
 
-
 gateEl.innerHTML=
-
 `<b>🔴 Premarket Gate ตรวจไม่สำเร็จ</b>
 <br>
 ค่าที่ส่ง:
 ${pm>=0?"+":""}${pm.toFixed(2)}%
-${rv==null
-?""
-:" • RV "+rv.toFixed(2)+"x"
-}`;
-
+${rv==null?"":" • RV "+rv.toFixed(2)+"x"}`;
 
 out.className=
 "status bad";
 
-
 out.textContent=
-
 "วิเคราะห์ไม่สำเร็จ: "
 +e.message
 +" • ค่าที่กรอกยังถูกเก็บไว้";
@@ -2201,6 +1465,5 @@ out.textContent=
 }
 
 </script>
-
 </body>
 </html>
