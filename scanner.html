@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V4.4.3</title>
+
+<title>AI Market Radar V4.5</title>
 
 <style>
 *{box-sizing:border-box}
@@ -369,13 +370,20 @@ button.alt{
 <div class="w">
 
 <div class="head">
-  <div>
-    <h1>AI Market Radar</h1>
-    <div class="mut">V4.4.3 • Stable Premarket Gate</div>
-  </div>
 
-  <div class="tag">Free-first</div>
+<div>
+<h1>AI Market Radar</h1>
+<div class="mut">
+V4.5 • Auto Context Self-Healing
 </div>
+</div>
+
+<div class="tag">
+Free-first
+</div>
+
+</div>
+
 
 <div class="card">
 
@@ -393,14 +401,18 @@ button.alt{
 
 </div>
 
-<button style="margin-top:12px"
+<button
+style="margin-top:12px"
 onclick="loadTopPicks(false)">
 🏆 คัด Top Pick วันนี้
 </button>
 
 <div class="status info">
-V4.4.3 แก้ <b>Premarket Gate</b>:
-รองรับ + / - โดยตรง • Relative Volume เว้นว่างได้ • เก็บค่าที่กรอกไว้
+
+V4.5 เพิ่ม
+<b>Auto Context Self-Healing</b>:
+ถ้ายังไม่มี Context ระบบจะโหลดจาก Scanner ให้อัตโนมัติก่อน Final Decision
+
 </div>
 
 <div id="st" class="status info">
@@ -415,10 +427,15 @@ V4.4.3 แก้ <b>Premarket Gate</b>:
 <h2>🏆 Top Pick Engine</h2>
 
 <div class="small">
+
 ระบบเลือก “ตัวที่ควรเฝ้าก่อน”
 จาก Technical + Entry + R/R + Data Freshness + Auto Context + Catalyst
+
 <br>
-Watch Score ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และยังไม่ใช่คำสั่งซื้อ
+
+Watch Score ไม่ใช่เปอร์เซ็นต์โอกาสชนะ
+และยังไม่ใช่คำสั่งซื้อ
+
 </div>
 
 <div id="topPickStatus" class="status info">
@@ -437,21 +454,37 @@ Watch Score ไม่ใช่เปอร์เซ็นต์โอกาส�
 <div class="ctx">
 
 <div class="box">
-<div class="small">ภาพรวม Watchlist</div>
-<div id="market" class="big">—</div>
+
+<div class="small">
+ภาพรวม Watchlist
+</div>
+
+<div id="market" class="big">
+—
+</div>
+
 </div>
 
 <div class="box">
-<div class="small">ข้อมูลที่แสดง</div>
-<div id="health" class="big">—</div>
+
+<div class="small">
+ข้อมูลที่แสดง
+</div>
+
+<div id="health" class="big">
+—
+</div>
+
 </div>
 
 </div>
 
 <div class="small" style="margin-top:10px">
+
 หมายเหตุ:
-V3.7 ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
+ระบบใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
 ไม่ได้อ้างว่าเป็นราคา QQQ แบบ real-time
+
 </div>
 
 </div>
@@ -497,11 +530,14 @@ placeholder="Relative Volume (ไม่บังคับ) เช่น 1.35">
 
 
 <div class="gateNote">
+
 % Premarket:
 ใส่ +4.00 หรือ 4.00 สำหรับบวก
 และ -2.50 สำหรับลบ
+
 •
 Relative Volume เป็นข้อมูลเสริม เว้นว่างได้
+
 </div>
 
 
@@ -518,7 +554,7 @@ onclick="confirmNow()">
 id="gateResult"
 class="status info">
 
-⚪ Premarket Gate ยังไม่ได้ตรวจ
+⚪ พร้อมตรวจ • Auto Context จะโหลดให้อัตโนมัติ
 
 </div>
 
@@ -641,11 +677,13 @@ style="display:none">
 <h2>🏆 Candidate Ranking</h2>
 
 <div class="small">
+
 Top Pick = ตัวที่ควรเฝ้าก่อน
 •
 Candidate Ranking = รายการเทคนิคทั้งหมด
 •
 แตะหุ้นเพื่อทำ Final Decision
+
 </div>
 
 <div
@@ -687,7 +725,8 @@ function signedNum(v){
 if(v===null||v===undefined)
 return null;
 
-const s=String(v)
+const s=
+String(v)
 .trim()
 .replace(",",".")
 .replace("%","");
@@ -715,15 +754,97 @@ return s==="bull"
 }
 
 
+async function ensureContext(){
+
+if(
+context &&
+context.market &&
+context.groups
+){
+
+return context;
+
+}
+
+
+const marketEl=
+document.getElementById("market");
+
+const healthEl=
+document.getElementById("health");
+
+
+marketEl.textContent=
+"⏳ กำลังโหลด";
+
+healthEl.textContent=
+"—";
+
+
+const r=
+await fetch(
+"/api/scan",
+{cache:"no-store"}
+);
+
+
+const j=
+await r.json();
+
+
+if(!r.ok||!j.ok){
+
+throw Error(
+j.error||
+("โหลด Auto Context ไม่สำเร็จ (HTTP "+r.status+")")
+);
+
+}
+
+
+const d=
+j.data||{};
+
+
+context=
+d.auto_context||null;
+
+
+if(!context){
+
+throw Error(
+"Scanner ยังไม่ส่ง Auto Context"
+);
+
+}
+
+
+marketEl.textContent=
+state(context.market);
+
+
+healthEl.textContent=
+`${d.total??"—"}/${d.requested??"—"}`;
+
+
+return context;
+
+}
+
+
 async function loadTopPicks(force){
 
 const st=
 document.getElementById("topPickStatus");
 
-st.className="status info";
+
+st.className=
+"status info";
+
 
 st.textContent=
 "กำลังคัด Top Pick และตรวจ Catalyst ของตัวอันดับต้น...";
+
 
 try{
 
@@ -732,22 +853,45 @@ force
 ?"/api/top-picks?force=1"
 :"/api/top-picks";
 
+
 const r=
 await fetch(
 url,
 {cache:"no-store"}
 );
 
+
 const j=
 await r.json();
+
 
 if(!j.ok)
 throw Error(j.error);
 
-const d=j.data;
+
+const d=
+j.data;
+
+
+/* V4.5:
+เตรียม Auto Context ล่วงหน้า
+เพื่อให้ Top Pick → Final Decision
+ทำงานได้แม้ไม่ได้กด Scan ก่อน */
+
+if(!context){
+
+try{
+
+await ensureContext();
+
+}catch(_){}
+
+}
+
 
 st.className=
 "status "+(d.missing?"warn":"good");
+
 
 st.textContent=
 `คัดเสร็จ • แสดงจาก Scanner ${d.scan_total}/${d.scan_requested} • Missing ${d.missing}`;
@@ -768,8 +912,10 @@ x.pick_code==="TOP"
 ?"backup"
 :"";
 
+
 let cat=
 x.catalyst||{};
+
 
 let catText=
 cat.sentiment==="positive"
@@ -885,6 +1031,7 @@ Relative Volume ใส่เพิ่มได้ถ้ามี
 
 }).join("");
 
+
 }catch(e){
 
 st.className="status bad";
@@ -902,9 +1049,14 @@ async function scan(force){
 let st=
 document.getElementById("st");
 
-st.className="status info";
 
-st.textContent="กำลังสแกน...";
+st.className=
+"status info";
+
+
+st.textContent=
+"กำลังสแกน...";
+
 
 try{
 
@@ -916,28 +1068,38 @@ force
 {cache:"no-store"}
 );
 
+
 let j=
 await r.json();
+
 
 if(!j.ok)
 throw Error(j.error);
 
-let d=j.data;
 
-context=d.auto_context;
+let d=
+j.data;
+
+
+context=
+d.auto_context;
+
 
 document
 .getElementById("market")
 .textContent=
 state(context.market);
 
+
 document
 .getElementById("health")
 .textContent=
 `${d.total}/${d.requested}`;
 
+
 st.className=
 "status "+(d.failed?"warn":"good");
+
 
 st.textContent=
 `สแกนสำเร็จ ${d.total}/${d.requested} • Fresh ${d.fresh_count} • Recovered ${d.recovered_count} • Cached ${d.fallback_used} • Missing ${d.failed}`;
@@ -947,7 +1109,8 @@ document
 .getElementById("rows")
 .innerHTML=
 
-d.results.map((x,i)=>`
+d.results
+.map((x,i)=>`
 
 <div
 class="row ${x.scanner_class}"
@@ -1008,11 +1171,15 @@ ${x.scanner_label}
 
 `).join("");
 
+
 loadTopPicks(false);
+
 
 }catch(e){
 
-st.className="status bad";
+st.className=
+"status bad";
+
 
 st.textContent=
 "สแกนไม่สำเร็จ: "+e.message;
@@ -1053,6 +1220,7 @@ selected=x;
 
 let c=
 document.getElementById("confirm");
+
 
 c.classList.add("show");
 
@@ -1118,7 +1286,7 @@ document
 document
 .getElementById("gateResult")
 .textContent=
-"⚪ Premarket Gate ยังไม่ได้ตรวจ";
+"⚪ พร้อมตรวจ • Auto Context จะโหลดให้อัตโนมัติ";
 
 
 document
@@ -1161,7 +1329,9 @@ block:"start"
 });
 
 
-loadCatalyst(x.ticker);
+loadCatalyst(
+x.ticker
+);
 
 }
 
@@ -1170,10 +1340,14 @@ async function loadCatalyst(ticker){
 
 catalyst=null;
 
+
 let cs=
 document.getElementById("catStatus");
 
-cs.className="status info";
+
+cs.className=
+"status info";
+
 
 cs.textContent=
 "กำลังดึง Catalyst ของ "+ticker+" ...";
@@ -1187,13 +1361,17 @@ await fetch(
 {cache:"no-store"}
 );
 
+
 let j=
 await r.json();
+
 
 if(!j.ok)
 throw Error(j.error);
 
-catalyst=j.data;
+
+catalyst=
+j.data;
 
 
 cs.className=
@@ -1208,6 +1386,7 @@ catalyst.sentiment==="positive"
 
 
 cs.innerHTML=
+
 `<b>${catalyst.label}</b>
 • Catalyst ${catalyst.score}/100
 <br>
@@ -1280,7 +1459,10 @@ score:50,
 negative_high_impact:false
 };
 
-cs.className="status warn";
+
+cs.className=
+"status warn";
+
 
 cs.textContent=
 "Catalyst โหลดไม่สำเร็จ — ระบบจะไม่เพิ่ม/ลดคะแนนข่าว";
@@ -1293,69 +1475,119 @@ cs.textContent=
 function triggerPlan(x,price){
 
 const lo=
-Number(selected.buy_low);
+Number(
+selected.buy_low
+);
+
 
 const hi=
-Number(selected.buy_high);
+Number(
+selected.buy_high
+);
+
 
 const pm=
 x?.premarket_gate?.premarket_pct;
 
 
-if(x.status==="CONFIRMED"){
+if(
+x.status==="CONFIRMED"
+){
 
 return {
-price:selected.entry1 ?? hi,
-text:"เข้าไม้ 1 ตามแผน"
+
+price:
+selected.entry1 ?? hi,
+
+text:
+"เข้าไม้ 1 ตามแผน"
+
 };
 
 }
 
 
-if(x.status==="DONT_CHASE"){
+if(
+x.status==="DONT_CHASE"
+){
 
 return {
+
 price:hi,
-text:`รอย่อ ≤ ${fmt(hi)} แล้วตรวจ Gate ใหม่`
+
+text:
+`รอย่อ ≤ ${fmt(hi)}
+แล้วตรวจ Gate ใหม่`
+
 };
 
 }
 
 
-if(x.status==="BLOCK"){
+if(
+x.status==="BLOCK"
+){
 
-if(pm!=null && Number(pm)<-5){
+if(
+pm!=null &&
+Number(pm)<-5
+){
 
 return {
+
 price:lo,
-text:`รอ Premarket ฟื้นเหนือ -5% และราคากลับ ≥ ${fmt(lo)}`
+
+text:
+`รอ Premarket ฟื้นเหนือ -5%
+และราคากลับ ≥ ${fmt(lo)}`
+
 };
 
 }
 
+
 return {
+
 price:lo,
-text:`รอราคากลับ ≥ ${fmt(lo)} พร้อม Context ฟื้น`
+
+text:
+`รอราคากลับ ≥ ${fmt(lo)}
+พร้อม Context ฟื้น`
+
 };
 
 }
 
 
-if(price<lo){
+if(
+price<lo
+){
 
 return {
+
 price:lo,
-text:`รอราคากลับเข้า Buy Zone ที่ ${fmt(lo)}`
+
+text:
+`รอราคากลับเข้า Buy Zone
+ที่ ${fmt(lo)}`
+
 };
 
 }
 
 
-if(price>hi){
+if(
+price>hi
+){
 
 return {
+
 price:hi,
-text:`รอย่อลง ≤ ${fmt(hi)} — ไม่ไล่ราคา`
+
+text:
+`รอย่อลง ≤ ${fmt(hi)}
+— ไม่ไล่ราคา`
+
 };
 
 }
@@ -1363,7 +1595,8 @@ text:`รอย่อลง ≤ ${fmt(hi)} — ไม่ไล่ราคา`
 
 return {
 
-price:selected.entry1 ?? hi,
+price:
+selected.entry1 ?? hi,
 
 text:
 "ราคาอยู่ใน Buy Zone แต่รอ Trigger/Context ยืนยัน"
@@ -1378,7 +1611,9 @@ function renderFinalDecision(x,price){
 const dash=
 document.getElementById("finalDash");
 
-dash.style.display="block";
+
+dash.style.display=
+"block";
 
 
 document
@@ -1402,11 +1637,16 @@ fmt(price);
 document
 .getElementById("fdBuy")
 .textContent=
-fmt(selected.buy_low)+"–"+fmt(selected.buy_high);
+fmt(selected.buy_low)
++"–"+
+fmt(selected.buy_high);
 
 
 const trg=
-triggerPlan(x,price);
+triggerPlan(
+x,
+price
+);
 
 
 document
@@ -1430,10 +1670,12 @@ fmt(selected.stop);
 const core=
 (x.checks||[])
 .filter(v=>
+
 v.startsWith("🟢")||
 v.startsWith("🟡")||
 v.startsWith("🔴")||
 v.startsWith("🟠")
+
 )
 .slice(0,4);
 
@@ -1450,7 +1692,9 @@ core
 let s="";
 
 
-if(x.status==="CONFIRMED"){
+if(
+x.status==="CONFIRMED"
+){
 
 s=
 `ถ้าราคายังอยู่ใน Buy Zone
@@ -1519,16 +1763,20 @@ async function confirmNow(){
 const out=
 document.getElementById("cres");
 
+
 const gateEl=
 document.getElementById("gateResult");
 
 
 if(!selected){
 
-out.className="status bad";
+out.className=
+"status bad";
+
 
 out.textContent=
 "กรุณาเลือกหุ้นก่อน";
+
 
 return;
 
@@ -1537,26 +1785,65 @@ return;
 
 if(!context){
 
-out.className="status warn";
+gateEl.className=
+"status info";
+
+
+gateEl.textContent=
+"⏳ กำลังโหลด Auto Context จาก Scanner...";
+
+
+out.className=
+"status info";
+
 
 out.textContent=
-"ยังไม่มี Auto Context — กรุณากดสแกน Watchlist ก่อน";
+"กำลังเตรียม Market Context สำหรับ Final Decision...";
+
+
+try{
+
+await ensureContext();
+
+}catch(e){
+
+gateEl.className=
+"status bad";
+
+
+gateEl.textContent=
+"🔴 Auto Context โหลดไม่สำเร็จ";
+
+
+out.className=
+"status bad";
+
+
+out.textContent=
+"ยังทำ Final Decision ไม่ได้: "
++e.message;
+
 
 return;
 
 }
 
+}
+
 
 const priceRaw=
-document.getElementById("price").value;
+document.getElementById("price")
+.value;
 
 
 const pmRaw=
-document.getElementById("premarketPct").value;
+document.getElementById("premarketPct")
+.value;
 
 
 const rvRaw=
-document.getElementById("relVolume").value;
+document.getElementById("relVolume")
+.value;
 
 
 const p=
@@ -1573,42 +1860,62 @@ String(rvRaw).trim()===""
 :signedNum(rvRaw);
 
 
-if(p==null||p<=0){
+if(
+p==null||
+p<=0
+){
 
-out.className="status bad";
+out.className=
+"status bad";
+
 
 out.textContent=
 "กรุณาใส่ราคาปัจจุบันจาก Webull";
 
+
 return;
 
 }
 
 
-if(pm==null){
+if(
+pm==null
+){
 
-gateEl.className="status bad";
+gateEl.className=
+"status bad";
+
 
 gateEl.innerHTML=
+
 "<b>🔴 Premarket Gate ยังตรวจไม่ได้</b><br>ใส่ % Premarket เช่น +1.80 หรือ -4.49";
 
 
-out.className="status bad";
+out.className=
+"status bad";
+
 
 out.textContent=
 "ต้องมี % Premarket ก่อนทำ Final Decision";
 
+
 return;
 
 }
 
 
-if(rv!=null && rv<0){
+if(
+rv!=null &&
+rv<0
+){
 
-out.className="status bad";
+out.className=
+"status bad";
+
 
 out.textContent=
 "Relative Volume ต้องเป็น 0 หรือมากกว่า หรือปล่อยว่างได้";
+
 
 return;
 
@@ -1617,11 +1924,14 @@ return;
 
 gateInputs[selected.ticker]={
 
-price:String(priceRaw),
+price:
+String(priceRaw),
 
-pm:String(pmRaw),
+pm:
+String(pmRaw),
 
-rv:String(rvRaw)
+rv:
+String(rvRaw)
 
 };
 
@@ -1639,13 +1949,17 @@ const body={
 
 price:p,
 
-buy_low:selected.buy_low,
+buy_low:
+selected.buy_low,
 
-buy_high:selected.buy_high,
+buy_high:
+selected.buy_high,
 
-stop:selected.stop,
+stop:
+selected.stop,
 
-tp1:selected.tp1,
+tp1:
+selected.tp1,
 
 data_confidence:
 selected.confidence_code,
@@ -1679,13 +1993,17 @@ gateEl.className=
 
 
 gateEl.innerHTML=
+
 `<b>⏳ กำลังตรวจ Premarket Gate</b>
 <br>
 Premarket
 ${pm>=0?"+":""}${pm.toFixed(2)}%
 •
 Relative Volume
-${rv==null?"—":rv.toFixed(2)+"x"}`;
+${rv==null
+?"—"
+:rv.toFixed(2)+"x"
+}`;
 
 
 out.className=
@@ -1702,12 +2020,18 @@ const r=
 await fetch(
 "/api/auto-confirm",
 {
+
 method:"POST",
+
 headers:{
 "Content-Type":"application/json"
 },
+
 cache:"no-store",
-body:JSON.stringify(body)
+
+body:
+JSON.stringify(body)
+
 }
 );
 
@@ -1716,12 +2040,17 @@ const j=
 await r.json();
 
 
-if(!r.ok||!j.ok)
+if(
+!r.ok||
+!j.ok
+){
 
 throw Error(
 j.error||
 ("HTTP "+r.status)
 );
+
+}
 
 
 const x=
@@ -1743,17 +2072,22 @@ x.status==="CONFIRMED"
 const shownPm=
 gate.premarket_pct==null
 ?pm
-:Number(gate.premarket_pct);
+:Number(
+gate.premarket_pct
+);
 
 
 const shownRv=
 gate.rel_volume==null
 ?rv
-:Number(gate.rel_volume);
+:Number(
+gate.rel_volume
+);
 
 
 const gs=
-gate.status||"PASS";
+gate.status||
+"PASS";
 
 
 const gl=
@@ -1843,7 +2177,9 @@ miss.style.display=
 "block";
 
 
-if(items.length){
+if(
+items.length
+){
 
 miss.className=
 "status info";
