@@ -561,7 +561,7 @@ def backtest(ticker):
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "service": "AI Market Radar", "version": "3.4"}), 200
+    return jsonify({"status": "ok", "service": "AI Market Radar", "version": "4.3.2"}), 200
 
 
 @app.errorhandler(404)
@@ -573,6 +573,14 @@ def not_found(e):
 def internal_error(e):
     return jsonify({"ok": False, "error": "เซิร์ฟเวอร์มีปัญหาชั่วคราว กรุณาลองใหม่"}), 500
 
+
+
+# Load scanner routes/UI extensions after the core app is fully defined.
+# This registers Scanner APIs and swaps the home page to the Scanner dashboard.
+try:
+    import scanner  # noqa: F401
+except Exception:
+    app.logger.exception("Failed to load scanner module")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

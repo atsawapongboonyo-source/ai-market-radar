@@ -223,6 +223,6 @@ async function confirmNow(){
   let miss=document.getElementById("missing"),items=x.missing||[];miss.style.display="block";
   if(items.length){miss.className="status info";miss.innerHTML=`<b>🎯 ยังขาดอะไรถึงจะดีขึ้น</b><br>${items.map(v=>"• "+v).join("<br>")}`;}
   else{miss.className="status good";miss.innerHTML="<b>✅ เงื่อนไขหลักผ่านแล้ว</b><br>Decision Engine ไม่พบเงื่อนไขที่ต้องรอเพิ่ม";}
- }catch(e){out.className="status bad";out.textContent="วิเคราะห์ไม่สำเร็จ: "+e.message}
+ }catch(e){out.className="status bad";out.textContent="วิเคราะห์ไม่สำเร็จ: "+e.message+" • ถ้าเพิ่ง Deploy ให้รีเฟรชหน้าอีกครั้ง"}
 }
 </script></body></html>
