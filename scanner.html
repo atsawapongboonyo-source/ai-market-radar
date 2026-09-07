@@ -1,96 +1,298 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V3.5.1</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Market Radar V3.5.2</title>
 <style>
-:root{--p:#0d1b2a;--p2:#10243a;--t:#eef5ff;--m:#93a9c3;--l:#1e3856}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#06101d,#091827 55%,#06101d);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--t)}
-.wrap{max-width:1100px;margin:auto;padding:14px}header{display:flex;justify-content:space-between;align-items:center;gap:10px}h1{font-size:26px;margin:0}.sub,.note{color:var(--m);font-size:12px;line-height:1.55}.badge{border:1px solid var(--l);border-radius:99px;padding:7px 10px}
-.card{background:var(--p);border:1px solid var(--l);border-radius:18px;padding:14px;margin-top:14px}.title{font-size:20px;font-weight:900;margin-bottom:10px}
-button,input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--l);background:#081725;color:var(--t);font:inherit}button{background:#1d568d;font-weight:850}.two,.grid4,.stats,.livegrid{display:grid;gap:9px}.two{grid-template-columns:1fr 1fr}.grid4,.stats,.livegrid{grid-template-columns:repeat(4,1fr)}
-.metric,.mini{background:var(--p2);border-radius:13px;padding:10px;border:1px solid #173451}.k,.mini span{font-size:11px;color:var(--m)}.v,.mini b{font-weight:900;font-size:19px;display:block;margin-top:3px}
-.status{padding:12px;border-radius:13px;margin-top:10px}.neutral{background:#10243a;border:1px solid var(--l)}.good{background:#0d3020;border:1px solid #1c6b43}.warn{background:#30270d;border:1px solid #6c5718}.bad{background:#331414;border:1px solid #763131}.info{background:#102b46;border:1px solid #245f94}
-.list{display:grid;gap:10px}.row{background:#0c1e30;border:1px solid var(--l);border-radius:15px;padding:13px}.candidate{border-color:#245f94}.wait{border-color:#6c5718}.chase{border-color:#80541c}.avoid{border-color:#763131}
-.rowtop{display:flex;justify-content:space-between;gap:10px}.ticker{font-size:21px;font-weight:900}.label{text-align:right;font-size:12px;font-weight:800}.rank{font-size:11px;color:var(--m);margin-top:4px}.livebox{display:none}.livebox.show{display:block}
-a{color:#9dceff;text-decoration:none}@media(max-width:700px){.grid4,.stats,.livegrid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}
+:root{
+  --p:#0d1b2a;--p2:#10243a;--t:#eef5ff;--m:#93a9c3;
+  --l:#1e3856;--good:#37d67a;--warn:#f3c95d;--bad:#ff6b6b;--info:#65b5ff
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:linear-gradient(180deg,#06101d,#091827 55%,#06101d);
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--t)
+}
+.wrap{max-width:1100px;margin:auto;padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+h1{font-size:26px;margin:0}
+.sub,.note{color:var(--m);font-size:12px;line-height:1.55}
+.badge{border:1px solid var(--l);border-radius:99px;padding:7px 10px}
+.card{
+  background:var(--p);border:1px solid var(--l);border-radius:18px;
+  padding:14px;margin-top:14px
+}
+.title{font-size:20px;font-weight:900;margin-bottom:10px}
+button,input{
+  width:100%;padding:12px;border-radius:12px;border:1px solid var(--l);
+  background:#081725;color:var(--t);font:inherit
+}
+button{background:#1d568d;font-weight:850}
+button.secondary{background:#14314d}
+button:disabled{opacity:.55}
+.two,.grid4,.stats,.livegrid{display:grid;gap:9px}
+.two{grid-template-columns:1fr 1fr}
+.grid4,.stats,.livegrid{grid-template-columns:repeat(4,1fr)}
+.metric,.mini{
+  background:var(--p2);border-radius:13px;padding:10px;border:1px solid #173451
+}
+.k,.mini span{font-size:11px;color:var(--m)}
+.v,.mini b{font-weight:900;font-size:19px;display:block;margin-top:3px}
+.status{padding:12px;border-radius:13px;margin-top:10px}
+.neutral{background:#10243a;border:1px solid var(--l)}
+.good{background:#0d3020;border:1px solid #1c6b43}
+.warn{background:#30270d;border:1px solid #6c5718}
+.bad{background:#331414;border:1px solid #763131}
+.info{background:#102b46;border:1px solid #245f94}
+.list{display:grid;gap:10px}
+.row{
+  background:#0c1e30;border:1px solid var(--l);border-radius:15px;padding:13px
+}
+.candidate{border-color:#245f94}
+.wait{border-color:#6c5718}
+.chase{border-color:#80541c}
+.avoid{border-color:#763131}
+.rowtop{display:flex;justify-content:space-between;gap:10px}
+.ticker{font-size:21px;font-weight:900}
+.label{text-align:right;font-size:12px;font-weight:800}
+.rank{font-size:11px;color:var(--m);margin-top:4px}
+.livebox{display:none}
+.livebox.show{display:block}
+a{color:#9dceff;text-decoration:none}
+@media(max-width:700px){
+  .grid4,.stats,.livegrid{grid-template-columns:1fr 1fr}
+  .two{grid-template-columns:1fr}
+}
 </style>
 </head>
-<body><div class="wrap">
-<header><div><h1>AI Market Radar</h1><div class="sub">V3.5.1 • Entry Validation</div></div><div class="badge">Free-first</div></header>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>AI Market Radar</h1>
+    <div class="sub">V3.5.2 • Scanner Reliability</div>
+  </div>
+  <div class="badge">Free-first</div>
+</header>
 
 <div class="card">
-<div class="title">🔥 วันนี้ดูตัวไหนก่อน</div>
-<div class="two"><button id="scanBtn" onclick="scan(false)">สแกน Watchlist 32 ตัว</button><button onclick="scan(true)">รีเฟรชข้อมูลใหม่</button></div>
-<div class="status info"><b>หลักการ V3.5.1:</b> Scanner ให้สถานะ “Candidate” จากราคาปิดก่อนเท่านั้น ยังไม่ถือว่าเป็นสัญญาณซื้อ จนกว่าจะใส่ราคาสดจาก Webull และผ่าน Live Entry Validation</div>
-<div id="scanStatus" class="status neutral">กดสแกนเพื่อเริ่ม</div>
+  <div class="title">🔥 วันนี้ดูตัวไหนก่อน</div>
+  <div class="two">
+    <button id="scanBtn" onclick="scan(false)">สแกน Watchlist 32 ตัว</button>
+    <button class="secondary" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
+  </div>
+  <div class="status info">
+    V3.5.2 จะลองดึงหุ้นที่พลาดซ้ำอัตโนมัติ และลดจำนวนการร้องขอพร้อมกัน
+    เพื่อให้ระบบฟรีมีโอกาสสแกนครบมากขึ้น
+  </div>
+  <div id="scanStatus" class="status neutral">กดสแกนเพื่อเริ่ม</div>
 </div>
 
-<div class="card"><div class="title">📌 สรุปสถานะ</div><div class="grid4">
-<div class="metric"><div class="k">🟦 Candidate</div><div class="v" id="cCan">—</div></div>
-<div class="metric"><div class="k">🟡 รอ</div><div class="v" id="cWait">—</div></div>
-<div class="metric"><div class="k">🟠 ไม่ไล่</div><div class="v" id="cChase">—</div></div>
-<div class="metric"><div class="k">🔴 ยังไม่เข้า</div><div class="v" id="cAvoid">—</div></div>
-</div></div>
+<div class="card">
+  <div class="title">🩺 สุขภาพ Scanner</div>
+  <div class="grid4">
+    <div class="metric">
+      <div class="k">ขอวิเคราะห์</div><div class="v" id="requested">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">สำเร็จ</div><div class="v" id="success">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">ล้มเหลว</div><div class="v" id="failed">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">Retry แล้วสำเร็จ</div><div class="v" id="retried">—</div>
+    </div>
+  </div>
+  <div id="failedList" class="note" style="margin-top:9px"></div>
+</div>
+
+<div class="card">
+  <div class="title">📌 สรุปสถานะ</div>
+  <div class="grid4">
+    <div class="metric">
+      <div class="k">🟦 Candidate</div><div class="v" id="cCan">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">🟡 รอ</div><div class="v" id="cWait">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">🟠 ไม่ไล่</div><div class="v" id="cChase">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">🔴 ยังไม่เข้า</div><div class="v" id="cAvoid">—</div>
+    </div>
+  </div>
+</div>
 
 <div class="card livebox" id="liveBox">
-<div class="title">⚡ Live Entry Validation • <span id="lt">—</span></div>
-<div class="two"><input id="lp" type="number" step="0.01" placeholder="ราคาปัจจุบันจาก Webull"><button onclick="validateLive()">ยืนยันจังหวะเข้า</button></div>
-<div id="liveStatus" class="status neutral">ใส่ราคาสดจาก Webull</div>
-<div class="livegrid">
-<div class="metric"><div class="k">Buy Zone</div><div class="v" id="lb">—</div></div>
-<div class="metric"><div class="k">ไม้ 1</div><div class="v" id="le">—</div></div>
-<div class="metric"><div class="k">TP1</div><div class="v" id="ltp">—</div></div>
-<div class="metric"><div class="k">Stop</div><div class="v" id="ls">—</div></div>
-</div>
-<div class="note">Live Validation ตรวจเฉพาะตำแหน่งราคาเทียบกับแผนเทคนิค ยังควรตรวจข่าว/Volume ก่อนส่งคำสั่งจริง • <a href="/analysis">วิเคราะห์ละเอียด V3.4 →</a></div>
+  <div class="title">⚡ Live Entry Validation • <span id="liveTicker">—</span></div>
+  <div class="two">
+    <input id="livePrice" type="number" step="0.01" placeholder="ราคาปัจจุบันจาก Webull">
+    <button onclick="validateLive()">ยืนยันจังหวะเข้า</button>
+  </div>
+  <div id="liveStatus" class="status neutral">ใส่ราคาสดจาก Webull</div>
+
+  <div class="livegrid" style="margin-top:10px">
+    <div class="metric">
+      <div class="k">Buy Zone</div><div class="v" id="liveBuy">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">ไม้ 1</div><div class="v" id="liveEntry">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">TP1</div><div class="v" id="liveTp1">—</div>
+    </div>
+    <div class="metric">
+      <div class="k">Stop</div><div class="v" id="liveStop">—</div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:8px">
+    Live Validation ตรวจตำแหน่งราคาเทียบกับแผนเทคนิคเท่านั้น
+    ยังควรตรวจข่าวและ Volume ก่อนส่งคำสั่งจริง •
+    <a href="/analysis">เปิด V3.4 แบบละเอียด →</a>
+  </div>
 </div>
 
-<div class="card"><div class="title">🏆 Candidate Ranking</div>
-<div class="note">Ranking 0–100 = คะแนนจัดลำดับ Setup ไม่ใช่เปอร์เซ็นต์โอกาสชนะ • Entry Score ก็เป็นคะแนนเงื่อนไข ไม่ใช่ความน่าจะเป็น</div>
-<div id="results" class="list" style="margin-top:10px"></div></div>
+<div class="card">
+  <div class="title">🏆 Candidate Ranking</div>
+  <div class="note">
+    Ranking 0–100 และ Entry Score เป็นคะแนนเงื่อนไข ไม่ใช่เปอร์เซ็นต์โอกาสชนะ
+  </div>
+  <div id="results" class="list" style="margin-top:10px"></div>
 </div>
+</div>
+
 <script>
-let selected=null; const fmt=x=>x==null?"—":"$"+Number(x).toFixed(2);
+let selected=null;
+const fmt=x=>x===null||x===undefined?"—":"$"+Number(x).toFixed(2);
+
 async function scan(force){
- const b=document.getElementById("scanBtn");b.disabled=true;b.textContent="กำลังสแกน...";
- try{
-  const r=await fetch(force?"/api/scan/refresh":"/api/scan",{cache:"no-store"});const j=JSON.parse(await r.text());
-  if(!j.ok)throw Error(j.error||"สแกนไม่สำเร็จ");render(j.data);
- }catch(e){let s=document.getElementById("scanStatus");s.className="status bad";s.textContent="สแกนไม่สำเร็จ: "+e.message}
- finally{b.disabled=false;b.textContent="สแกน Watchlist 32 ตัว"}
+  const btn=document.getElementById("scanBtn");
+  const status=document.getElementById("scanStatus");
+
+  btn.disabled=true;
+  btn.textContent="กำลังสแกน...";
+  status.className="status neutral";
+  status.textContent="กำลังวิเคราะห์ Watchlist — ระบบฟรีอาจใช้เวลาสักครู่";
+
+  try{
+    const response=await fetch(force?"/api/scan/refresh":"/api/scan",{cache:"no-store"});
+    const raw=await response.text();
+    const data=JSON.parse(raw);
+
+    if(!data.ok) throw new Error(data.error||"สแกนไม่สำเร็จ");
+
+    renderScan(data.data);
+  }catch(e){
+    status.className="status bad";
+    status.textContent="สแกนไม่สำเร็จ: "+e.message;
+  }finally{
+    btn.disabled=false;
+    btn.textContent="สแกน Watchlist 32 ตัว";
+  }
 }
-function render(d){
- const c=d.counts||{};
- document.getElementById("cCan").textContent=c.CANDIDATE||0;
- document.getElementById("cWait").textContent=c.WAIT||0;
- document.getElementById("cChase").textContent=c.DONT_CHASE||0;
- document.getElementById("cAvoid").textContent=c.AVOID||0;
- const s=document.getElementById("scanStatus");s.className="status good";s.textContent="สแกนสำเร็จ "+d.total+" ตัว • "+d.updated_at;
- document.getElementById("results").innerHTML=(d.results||[]).map((x,i)=>`<div class="row ${x.scanner_class}" onclick='pick(${JSON.stringify(x)})'>
- <div class="rowtop"><div><div class="ticker">${i+1}. ${x.ticker}</div><div class="rank">Ranking ${x.rank_score}/100 • ราคาปิด ${fmt(x.last_close)}</div></div><div class="label">${x.scanner_label}</div></div>
- <div class="stats" style="margin-top:9px"><div class="mini"><span>Radar</span><b>${x.radar_score}/100</b></div><div class="mini"><span>Entry</span><b>${x.entry_score}/100</b></div><div class="mini"><span>R/R TP1</span><b>${x.rr??"—"}</b></div><div class="mini"><span>Buy Zone</span><b>${fmt(x.buy_low)}–${fmt(x.buy_high)}</b></div></div></div>`).join("");
+
+function renderScan(d){
+  document.getElementById("requested").textContent=d.requested ?? "—";
+  document.getElementById("success").textContent=d.total ?? "—";
+  document.getElementById("failed").textContent=d.failed ?? "—";
+  document.getElementById("retried").textContent=d.retry_success ?? 0;
+
+  const c=d.counts||{};
+  document.getElementById("cCan").textContent=c.CANDIDATE||0;
+  document.getElementById("cWait").textContent=c.WAIT||0;
+  document.getElementById("cChase").textContent=c.DONT_CHASE||0;
+  document.getElementById("cAvoid").textContent=c.AVOID||0;
+
+  const status=document.getElementById("scanStatus");
+
+  if(d.failed===0){
+    status.className="status good";
+    status.textContent=`สแกนครบ ${d.total}/${d.requested} ตัว • ${d.updated_at}${d.from_cache?" • ใช้ Cache":""}`;
+  }else{
+    status.className="status warn";
+    status.textContent=`สแกนสำเร็จ ${d.total}/${d.requested} ตัว • ยังดึงไม่ได้ ${d.failed} ตัว • ${d.updated_at}`;
+  }
+
+  const failedList=document.getElementById("failedList");
+  if((d.errors||[]).length){
+    failedList.textContent="หุ้นที่ยังดึงไม่ได้: "+d.errors.map(x=>x.ticker).join(", ");
+  }else{
+    failedList.textContent="ไม่พบหุ้นที่ดึงข้อมูลล้มเหลว";
+  }
+
+  document.getElementById("results").innerHTML=(d.results||[]).map((x,i)=>`
+    <div class="row ${x.scanner_class}" onclick='pick(${JSON.stringify(x)})'>
+      <div class="rowtop">
+        <div>
+          <div class="ticker">${i+1}. ${x.ticker}</div>
+          <div class="rank">Ranking ${x.rank_score}/100 • ราคาปิด ${fmt(x.last_close)}</div>
+        </div>
+        <div class="label">${x.scanner_label}</div>
+      </div>
+
+      <div class="stats" style="margin-top:9px">
+        <div class="mini"><span>Radar</span><b>${x.radar_score}/100</b></div>
+        <div class="mini"><span>Entry</span><b>${x.entry_score}/100</b></div>
+        <div class="mini"><span>R/R TP1</span><b>${x.rr??"—"}</b></div>
+        <div class="mini"><span>Buy Zone</span><b style="font-size:15px">${fmt(x.buy_low)}–${fmt(x.buy_high)}</b></div>
+      </div>
+    </div>
+  `).join("");
 }
+
 function pick(x){
- selected=x;
- document.getElementById("liveBox").classList.add("show");
- document.getElementById("lt").textContent=x.ticker;
- document.getElementById("lb").textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);
- document.getElementById("le").textContent=fmt(x.entry1);
- document.getElementById("ltp").textContent=fmt(x.tp1);
- document.getElementById("ls").textContent=fmt(x.stop);
- document.getElementById("lp").value="";
- const s=document.getElementById("liveStatus");s.className="status neutral";s.textContent="ใส่ราคาสดจาก Webull เพื่อยืนยัน";
- document.getElementById("liveBox").scrollIntoView({behavior:"smooth"});
+  selected=x;
+  document.getElementById("liveBox").classList.add("show");
+  document.getElementById("liveTicker").textContent=x.ticker;
+  document.getElementById("liveBuy").textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);
+  document.getElementById("liveEntry").textContent=fmt(x.entry1);
+  document.getElementById("liveTp1").textContent=fmt(x.tp1);
+  document.getElementById("liveStop").textContent=fmt(x.stop);
+  document.getElementById("livePrice").value="";
+
+  const status=document.getElementById("liveStatus");
+  status.className="status neutral";
+  status.textContent="ใส่ราคาสดจาก Webull เพื่อยืนยัน";
+
+  document.getElementById("liveBox").scrollIntoView({behavior:"smooth",block:"start"});
 }
+
 function validateLive(){
- if(!selected)return;
- const p=parseFloat(document.getElementById("lp").value),x=selected,s=document.getElementById("liveStatus");
- if(!isFinite(p)||p<=0){s.className="status bad";s.textContent="กรุณาใส่ราคาที่ถูกต้อง";return}
- if(p<x.stop){s.className="status bad";s.textContent="🔴 ไม่ผ่าน — ราคาหลุดจุด Invalidation / Stop"}
- else if(p>=x.buy_low&&p<=x.buy_high){s.className="status good";s.textContent="🟢 ผ่าน Live Price Validation — ราคาอยู่ใน Buy Zone (ตรวจข่าวและ Volume ก่อนเข้า)"}
- else if(p<x.buy_low){s.className="status warn";s.textContent="🟡 รอ — ราคาต่ำกว่า Buy Zone ให้รอกลับมายืนเหนือแนวรับ"}
- else if(p<x.tp1){s.className="status warn";s.textContent="🟠 ยังไม่เข้า — ราคาเหนือ Buy Zone รอ Pullback ไม่ไล่ราคา"}
- else{s.className="status bad";s.textContent="🔴 ไม่เข้าใหม่ — ราคาแตะ/เหนือ TP1 แล้ว Risk/Reward ไม่คุ้มเดิม"}
+  if(!selected)return;
+
+  const p=parseFloat(document.getElementById("livePrice").value);
+  const x=selected;
+  const status=document.getElementById("liveStatus");
+
+  if(!isFinite(p)||p<=0){
+    status.className="status bad";
+    status.textContent="กรุณาใส่ราคาที่ถูกต้อง";
+    return;
+  }
+
+  if(p<x.stop){
+    status.className="status bad";
+    status.textContent="🔴 ไม่ผ่าน — ราคาหลุดจุด Invalidation / Stop";
+  }else if(p>=x.buy_low&&p<=x.buy_high){
+    status.className="status good";
+    status.textContent="🟢 ผ่าน Live Price Validation — ราคาอยู่ใน Buy Zone (ตรวจข่าวและ Volume ก่อนเข้า)";
+  }else if(p<x.buy_low){
+    status.className="status warn";
+    status.textContent="🟡 รอ — ราคาต่ำกว่า Buy Zone ให้รอกลับมายืนเหนือแนวรับ";
+  }else if(p<x.tp1){
+    status.className="status warn";
+    status.textContent="🟠 ยังไม่เข้า — ราคาเหนือ Buy Zone รอ Pullback ไม่ไล่ราคา";
+  }else{
+    status.className="status bad";
+    status.textContent="🔴 ไม่เข้าใหม่ — ราคาแตะ/เหนือ TP1 แล้ว Risk/Reward ลดลง";
+  }
 }
-</script></body></html>
+</script>
+</body>
+</html>

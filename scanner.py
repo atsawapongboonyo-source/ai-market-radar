@@ -4,12 +4,16 @@ import time
 
 from app import app, load_json, analyze_history
 
+# เก็บหน้า V3.4 เดิมไว้ที่ /analysis
 _original_home = app.view_functions.get("home")
 if _original_home:
-    app.add_url_rule("/analysis", endpoint="analysis_v34", view_func=_original_home)
+    try:
+        app.add_url_rule("/analysis", endpoint="analysis_v34", view_func=_original_home)
+    except Exception:
+        pass
 
 _SCAN_CACHE = {"ts": 0, "data": None}
-_SCAN_TTL = 10 * 60
+_SCAN_TTL = 10 * 60  # 10 นาที
 
 
 def _scan_one(ticker):
@@ -32,6 +36,7 @@ def _scan_one(ticker):
     raw_rank = radar * 0.42 + entry * 0.48 + rr_bonus + action_bonus
     rank_score = round(max(0, min(100, raw_rank)), 1)
 
+    # Scanner = Candidate เท่านั้น จนกว่าจะผ่านราคาสด Webull
     if action in ("ENTER", "SCALE"):
         scanner_label = "🟦 Candidate — รอราคาสด"
         scanner_class = "candidate"
@@ -48,12 +53,9 @@ def _scan_one(ticker):
     return {
         "ticker": ticker,
         "last_close": d.get("last_close"),
-        "trend": d.get("trend"),
         "radar_score": radar,
         "entry_score": entry,
         "rr": d.get("risk_reward_tp1"),
-        "support": d.get("support"),
-        "resistance": d.get("resistance"),
         "buy_low": d.get("buy_low"),
         "buy_high": d.get("buy_high"),
         "entry1": d.get("entry1"),
@@ -63,35 +65,87 @@ def _scan_one(ticker):
         "action_code": action,
         "scanner_label": scanner_label,
         "scanner_class": scanner_class,
-        "action_note": d.get("action_note"),
-        "watch_price": d.get("watch_price"),
-        "data_date": d.get("data_date"),
         "rank_score": rank_score,
+        "data_date": d.get("data_date"),
     }
+
+
+def _scan_with_retry(ticker, retries=2):
+    last_error = None
+    for attempt in range(retries + 1):
+        try:
+            return _scan_one(ticker), None, attempt
+        except Exception as e:
+            last_error = str(e)
+            if attempt < retries:
+                # หน่วงเพิ่มทีละนิดเพื่อลดปัญหา rate-limit
+                time.sleep(0.55 * (attempt + 1))
+
+    return None, {
+        "ticker": ticker,
+        "error": last_error or "ไม่ทราบสาเหตุ",
+    }, retries
 
 
 def scan_watchlist(force=False):
     now = time.time()
-    if not force and _SCAN_CACHE["data"] is not None and now - _SCAN_CACHE["ts"] < _SCAN_TTL:
-        return _SCAN_CACHE["data"]
+
+    if (
+        not force
+        and _SCAN_CACHE["data"] is not None
+        and now - _SCAN_CACHE["ts"] < _SCAN_TTL
+    ):
+        cached = dict(_SCAN_CACHE["data"])
+        cached["from_cache"] = True
+        return cached
 
     watchlist = load_json("watchlist.json")
     tickers = [x["ticker"] for x in watchlist]
-    results, errors = [], []
 
-    with ThreadPoolExecutor(max_workers=4) as ex:
-        futures = {ex.submit(_scan_one, t): t for t in tickers}
-        for future in as_completed(futures):
-            ticker = futures[future]
-            try:
-                results.append(future.result())
-            except Exception as e:
-                errors.append({"ticker": ticker, "error": str(e)})
+    results = []
+    errors = []
+    retry_success = 0
 
-    order = {"ENTER": 0, "SCALE": 1, "WAIT": 2, "DONT_CHASE": 3, "AVOID": 4}
-    results.sort(key=lambda x: (order.get(x["action_code"], 9), -x["rank_score"], -x["entry_score"]))
+    # ลดจาก 4 เหลือ 2 worker เพื่อให้แหล่งข้อมูลฟรีมีโอกาสตอบครบมากขึ้น
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_map = {
+            executor.submit(_scan_with_retry, ticker): ticker
+            for ticker in tickers
+        }
 
-    counts = {"CANDIDATE": 0, "WAIT": 0, "DONT_CHASE": 0, "AVOID": 0}
+        for future in as_completed(future_map):
+            result, error, retry_count = future.result()
+
+            if result:
+                results.append(result)
+                if retry_count > 0:
+                    retry_success += 1
+            elif error:
+                errors.append(error)
+
+    action_order = {
+        "ENTER": 0,
+        "SCALE": 1,
+        "WAIT": 2,
+        "DONT_CHASE": 3,
+        "AVOID": 4,
+    }
+
+    results.sort(
+        key=lambda x: (
+            action_order.get(x["action_code"], 9),
+            -x["rank_score"],
+            -x["entry_score"],
+        )
+    )
+
+    counts = {
+        "CANDIDATE": 0,
+        "WAIT": 0,
+        "DONT_CHASE": 0,
+        "AVOID": 0,
+    }
+
     for r in results:
         if r["action_code"] in ("ENTER", "SCALE"):
             counts["CANDIDATE"] += 1
@@ -100,20 +154,30 @@ def scan_watchlist(force=False):
 
     payload = {
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "requested": len(tickers),
         "total": len(results),
+        "failed": len(errors),
+        "retry_success": retry_success,
         "errors": errors,
         "counts": counts,
         "results": results,
-        "note": "Scanner ใช้ราคาปิดล่าสุดเพื่อคัด Candidate; ต้องใส่ราคาสด Webull เพื่อยืนยัน Entry",
+        "from_cache": False,
+        "note": "V3.5.2 ลด concurrency และ retry หุ้นที่โหลดพลาดอัตโนมัติ",
     }
+
     _SCAN_CACHE["ts"] = now
     _SCAN_CACHE["data"] = payload
     return payload
 
 
 def scanner_home():
-    return render_template("scanner.html", watchlist=load_json("watchlist.json"))
+    return render_template(
+        "scanner.html",
+        watchlist=load_json("watchlist.json"),
+    )
 
+
+# เปลี่ยนหน้าแรกให้เป็น Scanner
 app.view_functions["home"] = scanner_home
 
 
