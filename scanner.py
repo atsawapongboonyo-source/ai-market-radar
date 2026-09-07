@@ -4,7 +4,6 @@ import time
 
 from app import app, load_json, analyze_history
 
-# เก็บหน้า V3.4 เดิมไว้ที่ /analysis
 _original_home = app.view_functions.get("home")
 if _original_home:
     app.add_url_rule("/analysis", endpoint="analysis_v34", view_func=_original_home)
@@ -17,6 +16,7 @@ def _scan_one(ticker):
     d = analyze_history(ticker)
     rr = d.get("risk_reward_tp1") or 0
     action = d.get("action_code", "WAIT")
+
     action_bonus = {
         "ENTER": 16,
         "SCALE": 12,
@@ -29,14 +29,21 @@ def _scan_one(ticker):
     entry = d.get("entry_score") or 0
     rr_bonus = min(max(rr, 0), 3) / 3 * 8
 
-    # Ranking score = ใช้จัดลำดับเท่านั้น ไม่ใช่ % ความแม่นยำ
-    rank_score = round(
-        radar * 0.42 +
-        entry * 0.48 +
-        rr_bonus +
-        action_bonus,
-        1
-    )
+    raw_rank = radar * 0.42 + entry * 0.48 + rr_bonus + action_bonus
+    rank_score = round(max(0, min(100, raw_rank)), 1)
+
+    if action in ("ENTER", "SCALE"):
+        scanner_label = "🟦 Candidate — รอราคาสด"
+        scanner_class = "candidate"
+    elif action == "WAIT":
+        scanner_label = "🟡 รอจังหวะ"
+        scanner_class = "wait"
+    elif action == "DONT_CHASE":
+        scanner_label = "🟠 ไม่ไล่ราคา"
+        scanner_class = "chase"
+    else:
+        scanner_label = "🔴 ยังไม่เข้า"
+        scanner_class = "avoid"
 
     return {
         "ticker": ticker,
@@ -54,8 +61,8 @@ def _scan_one(ticker):
         "tp2": d.get("tp2"),
         "stop": d.get("stop"),
         "action_code": action,
-        "action_label": d.get("action_label"),
-        "action_class": d.get("action_class"),
+        "scanner_label": scanner_label,
+        "scanner_class": scanner_class,
         "action_note": d.get("action_note"),
         "watch_price": d.get("watch_price"),
         "data_date": d.get("data_date"),
@@ -65,20 +72,13 @@ def _scan_one(ticker):
 
 def scan_watchlist(force=False):
     now = time.time()
-    if (
-        not force
-        and _SCAN_CACHE["data"] is not None
-        and now - _SCAN_CACHE["ts"] < _SCAN_TTL
-    ):
+    if not force and _SCAN_CACHE["data"] is not None and now - _SCAN_CACHE["ts"] < _SCAN_TTL:
         return _SCAN_CACHE["data"]
 
     watchlist = load_json("watchlist.json")
     tickers = [x["ticker"] for x in watchlist]
+    results, errors = [], []
 
-    results = []
-    errors = []
-
-    # จำกัด worker เพื่อไม่ยิงแหล่งข้อมูลฟรีแรงเกินไป
     with ThreadPoolExecutor(max_workers=4) as ex:
         futures = {ex.submit(_scan_one, t): t for t in tickers}
         for future in as_completed(futures):
@@ -88,24 +88,15 @@ def scan_watchlist(force=False):
             except Exception as e:
                 errors.append({"ticker": ticker, "error": str(e)})
 
-    action_order = {
-        "ENTER": 0,
-        "SCALE": 1,
-        "WAIT": 2,
-        "DONT_CHASE": 3,
-        "AVOID": 4,
-    }
-    results.sort(
-        key=lambda x: (
-            action_order.get(x["action_code"], 9),
-            -x["rank_score"],
-            -x["entry_score"],
-        )
-    )
+    order = {"ENTER": 0, "SCALE": 1, "WAIT": 2, "DONT_CHASE": 3, "AVOID": 4}
+    results.sort(key=lambda x: (order.get(x["action_code"], 9), -x["rank_score"], -x["entry_score"]))
 
-    counts = {}
+    counts = {"CANDIDATE": 0, "WAIT": 0, "DONT_CHASE": 0, "AVOID": 0}
     for r in results:
-        counts[r["action_code"]] = counts.get(r["action_code"], 0) + 1
+        if r["action_code"] in ("ENTER", "SCALE"):
+            counts["CANDIDATE"] += 1
+        else:
+            counts[r["action_code"]] = counts.get(r["action_code"], 0) + 1
 
     payload = {
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -113,7 +104,7 @@ def scan_watchlist(force=False):
         "errors": errors,
         "counts": counts,
         "results": results,
-        "note": "V3.5 Scanner ใช้ราคาปิดล่าสุดและข้อมูลย้อนหลังฟรีเพื่อคัดกรองก่อน จากนั้นใช้ราคาสดจาก Webull ตรวจจังหวะอีกครั้ง",
+        "note": "Scanner ใช้ราคาปิดล่าสุดเพื่อคัด Candidate; ต้องใส่ราคาสด Webull เพื่อยืนยัน Entry",
     }
     _SCAN_CACHE["ts"] = now
     _SCAN_CACHE["data"] = payload
@@ -121,13 +112,8 @@ def scan_watchlist(force=False):
 
 
 def scanner_home():
-    return render_template(
-        "scanner.html",
-        watchlist=load_json("watchlist.json"),
-    )
+    return render_template("scanner.html", watchlist=load_json("watchlist.json"))
 
-
-# เปลี่ยนหน้า / ให้เป็น Scanner V3.5 โดยเก็บ V3.4 ที่ /analysis
 app.view_functions["home"] = scanner_home
 
 
@@ -139,7 +125,7 @@ def scanner_page():
 @app.route("/api/scan")
 def api_scan():
     try:
-        return jsonify({"ok": True, "data": scan_watchlist(force=False)}), 200
+        return jsonify({"ok": True, "data": scan_watchlist(False)}), 200
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 200
 
@@ -147,7 +133,7 @@ def api_scan():
 @app.route("/api/scan/refresh")
 def api_scan_refresh():
     try:
-        return jsonify({"ok": True, "data": scan_watchlist(force=True)}), 200
+        return jsonify({"ok": True, "data": scan_watchlist(True)}), 200
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 200
 
