@@ -1,6 +1,6 @@
 <!doctype html><html lang="th"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V4.0</title>
+<title>AI Market Radar V4.2</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
 .w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
@@ -26,9 +26,13 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 .pickScore{font-size:28px;font-weight:900}
 .pickWhy{margin:8px 0 0;padding-left:18px;color:#cbd9e8;font-size:12px;line-height:1.65}
 .pickHint{margin-top:8px;font-size:11px;color:#9eb1c6}
+
+.gateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.gateNote{font-size:11px;color:#9eb1c6;line-height:1.55;margin-top:8px}
+@media(max-width:650px){.gateGrid{grid-template-columns:1fr}}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
-<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.0 • Top Pick Engine</div></div><div class="tag">Free-first</div></div>
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.2 • Premarket Gate</div></div><div class="tag">Free-first</div></div>
 
 <div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 <div class="buttons">
@@ -36,7 +40,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
 </div>
 <button style="margin-top:12px" onclick="loadTopPicks(false)">🏆 คัด Top Pick วันนี้</button>
-<div class="status info">V4.0 เพิ่ม <b>Top Pick Engine</b> เพื่อจัดลำดับว่าควรเฝ้าตัวไหนก่อน แล้วใช้ <b>ราคาปัจจุบันจาก Webull</b> ยืนยันก่อนเข้า</div>
+<div class="status info">V4.2 เพิ่ม <b>Premarket Gate</b> หลัง Top Pick: ใส่ราคาสด + % Premarket + Relative Volume จาก Webull ก่อนให้ไฟเขียว</div>
 <div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
 
 
@@ -59,9 +63,18 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 </div>
 
 <div id="confirm" class="card confirm"><h2>⚡ Final Confirmation • <span id="ct">—</span></h2><div id="catStatus" class="status info">เลือกหุ้นเพื่อดึง Catalyst</div><div id="newsList" class="news"></div>
-<input id="price" type="number" step=".01" placeholder="ใส่ราคาปัจจุบันจาก Webull">
-<button style="margin-top:10px" onclick="confirmNow()">วิเคราะห์จังหวะเข้าอัตโนมัติ</button>
-<div id="cres" class="status info">ใส่ราคาแล้วกดวิเคราะห์</div><ul id="checks" class="checks"></ul><div id="missing" class="status info" style="display:none"></div>
+<div class="gateGrid">
+  <input id="price" type="number" step=".01" placeholder="ราคาปัจจุบันจาก Webull">
+  <input id="premarketPct" type="number" step=".01" placeholder="% Premarket เช่น 1.80">
+  <input id="relVolume" type="number" step=".01" min="0" placeholder="Relative Volume เช่น 1.35">
+</div>
+<div class="gateNote">
+% Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า • Relative Volume = Volume เทียบระดับปกติ (ถ้า Webull มี)
+</div>
+<button style="margin-top:10px" onclick="confirmNow()">ตรวจ Premarket Gate + Final Decision</button>
+<div id="gateResult" class="status info">⚪ Premarket Gate ยังไม่ได้ตรวจ</div>
+<div id="cres" class="status info">ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์</div>
+<ul id="checks" class="checks"></ul><div id="missing" class="status info" style="display:none"></div>
 <div class="metrics"><div class="m"><span class="small">Buy Zone</span><b id="bz">—</b></div><div class="m"><span class="small">ไม้ 1</span><b id="e1">—</b></div><div class="m"><span class="small">TP1</span><b id="tp">—</b></div><div class="m"><span class="small">Stop</span><b id="sp">—</b></div></div>
 </div>
 
@@ -118,8 +131,8 @@ async function loadTopPicks(force){
         <div class="pickHint">
           Market ${pickState(x.market_state)} • กลุ่ม ${pickState(x.group_state)} • Catalyst ${catText}
           ${i===0 && x.why_leads ? `<br><b>เหตุผลที่นำ:</b> ${x.why_leads}` : ""}
-          ${i>0 ? `<br><b>ห่าง Top Pick:</b> ${x.gap_from_top??"—"} คะแนน` : ""}
-          <br>แตะการ์ดนี้ → ใส่ราคาสด Webull → Final Decision
+          ${i>0 ? `<br><b>ห่าง Top Pick:</b> ${(x.gap_from_top??((d.top_picks?.[0]?.watch_score??0)-x.watch_score)).toFixed ? Number(x.gap_from_top??((d.top_picks?.[0]?.watch_score??0)-x.watch_score)).toFixed(1) : x.gap_from_top} คะแนน` : ""}
+          <br>แตะการ์ดนี้ → ใส่ราคาสด + Premarket + Relative Volume → Final Decision
         </div>
       </div>
     `;
@@ -148,10 +161,16 @@ async function scan(force){
 }
 function pick(x){
  selected=x;let c=document.getElementById("confirm");c.classList.add("show");
- document.getElementById("ct").textContent=x.ticker;document.getElementById("price").value="";
+ document.getElementById("ct").textContent=x.ticker;
+ document.getElementById("price").value="";
+ document.getElementById("premarketPct").value="";
+ document.getElementById("relVolume").value="";
  document.getElementById("bz").textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);document.getElementById("e1").textContent=fmt(x.entry1);
  document.getElementById("tp").textContent=fmt(x.tp1);document.getElementById("sp").textContent=fmt(x.stop);
- document.getElementById("cres").className="status info";document.getElementById("cres").textContent="ใส่ราคาปัจจุบันจาก Webull แล้วกดวิเคราะห์";
+ document.getElementById("gateResult").className="status info";
+ document.getElementById("gateResult").textContent="⚪ Premarket Gate ยังไม่ได้ตรวจ";
+ document.getElementById("cres").className="status info";
+ document.getElementById("cres").textContent="ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์";
  document.getElementById("checks").innerHTML="";document.getElementById("missing").style.display="none";document.getElementById("newsList").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});loadCatalyst(x.ticker);
 }
 
@@ -176,11 +195,22 @@ async function confirmNow(){
  let p=parseFloat(document.getElementById("price").value),out=document.getElementById("cres");
  if(!isFinite(p)||p<=0){out.className="status bad";out.textContent="กรุณาใส่ราคาปัจจุบันจาก Webull";return}
  let sg=context.groups[selected.group]||{state:"unknown"};
+ let pmRaw=document.getElementById("premarketPct").value;
+ let rvRaw=document.getElementById("relVolume").value;
  let body={price:p,buy_low:selected.buy_low,buy_high:selected.buy_high,stop:selected.stop,tp1:selected.tp1,
- data_confidence:selected.confidence_code,market:context.market,sector:sg.state,catalyst:catalyst?.sentiment||"unknown",catalyst_score:catalyst?.score||50,negative_high_impact:catalyst?.negative_high_impact||false};
+ data_confidence:selected.confidence_code,market:context.market,sector:sg.state,
+ catalyst:catalyst?.sentiment||"unknown",catalyst_score:catalyst?.score||50,
+ negative_high_impact:catalyst?.negative_high_impact||false,
+ premarket_pct:pmRaw===""?null:parseFloat(pmRaw),
+ rel_volume:rvRaw===""?null:parseFloat(rvRaw)};
  try{
   let r=await fetch("/api/auto-confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),j=await r.json();
   if(!j.ok)throw Error(j.error);let x=j.data,cl=x.status==="CONFIRMED"?"good":x.status==="BLOCK"?"bad":"warn";
+  let gate=x.premarket_gate||{};
+  let gateEl=document.getElementById("gateResult");
+  gateEl.className="status "+(gate.status==="PASS"?"good":gate.status==="BLOCK"?"bad":gate.status==="HOT"?"warn":"info");
+  gateEl.innerHTML=`<b>${gate.label||"⚪ Premarket Gate"}</b> • ปรับคะแนน ${gate.score_adjustment>0?"+":""}${gate.score_adjustment??0}<br>`+
+    `Premarket ${gate.premarket_pct==null?"—":Number(gate.premarket_pct).toFixed(2)+"%"} • Relative Volume ${gate.rel_volume==null?"—":Number(gate.rel_volume).toFixed(2)+"x"}`;
   out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Decision Score ${x.score}/100<br>${x.reason}`;
   document.getElementById("checks").innerHTML=(x.checks||[]).map(v=>`<li>${v}</li>`).join("");
   let miss=document.getElementById("missing"),items=x.missing||[];miss.style.display="block";
