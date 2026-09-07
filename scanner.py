@@ -285,13 +285,15 @@ def _catalyst_bonus(cat):
 
 def _top_pick_score(item, ctx, catalyst):
     """
-    V4.0 Watch Score is for prioritising what to watch first.
-    It is not a probability of winning and not a buy signal.
+    V4.1 calibrated Watch Score.
+    This is a priority/confidence score, NOT win probability and NOT a buy signal.
+    Designed to avoid 98-100 saturation and make differences meaningful.
     """
     rr = float(item.get("rr") or 0)
     radar = float(item.get("radar_score") or 0)
     entry = float(item.get("entry_score") or 0)
     rank = float(item.get("rank_score") or 0)
+    cat_score = float(catalyst.get("score") or 50)
 
     group_state = (
         ctx.get("groups", {})
@@ -300,29 +302,38 @@ def _top_pick_score(item, ctx, catalyst):
     )
     market_state = ctx.get("market", "unknown")
 
-    # Avoid easy 100/100 saturation by blending independent components
+    # Core quality: 0-70 points
     score = (
-        radar * 0.26
-        + entry * 0.30
-        + rank * 0.18
-        + min(max(rr, 0), 3) / 3 * 10
-        + _freshness_bonus(item.get("confidence_code"))
-        + _context_bonus(market_state)
-        + _context_bonus(group_state)
-        + _catalyst_bonus(catalyst)
+        radar * 0.20
+        + entry * 0.22
+        + rank * 0.12
+        + min(max(rr, 0), 3) / 3 * 8
+        + cat_score * 0.12
     )
 
-    # Penalties for weak action states
+    # Context/freshness: deliberately small so one factor cannot dominate.
+    score += min(4, max(-4, _freshness_bonus(item.get("confidence_code")) * 0.55))
+    score += min(4, max(-4, _context_bonus(market_state) * 0.65))
+    score += min(5, max(-5, _context_bonus(group_state) * 0.75))
+
+    # Catalyst direction adds a modest final adjustment.
+    sentiment = catalyst.get("sentiment", "unknown")
+    score += {"positive": 4, "negative": -6, "neutral": 0, "unknown": -1}.get(sentiment, 0)
+    if catalyst.get("negative_high_impact"):
+        score -= 10
+
     action = item.get("action_code", "WAIT")
     score += {
-        "ENTER": 5,
-        "SCALE": 3,
-        "WAIT": -4,
+        "ENTER": 4,
+        "SCALE": 2,
+        "WAIT": -5,
         "DONT_CHASE": -12,
-        "AVOID": -25,
-    }.get(action, -8)
+        "AVOID": -22,
+    }.get(action, -7)
 
-    return round(max(0, min(100, score)), 1)
+    # Calibration band: exceptional setups can reach the high 80s/low 90s,
+    # but routine candidates should not cluster at 100.
+    return round(max(0, min(94, score)), 1)
 
 
 def _top_pick_label(item, position):

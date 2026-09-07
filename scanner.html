@@ -117,6 +117,8 @@ async function loadTopPicks(force){
         <ul class="pickWhy">${(x.pick_reasons||[]).map(v=>`<li>${v}</li>`).join("")}</ul>
         <div class="pickHint">
           Market ${pickState(x.market_state)} • กลุ่ม ${pickState(x.group_state)} • Catalyst ${catText}
+          ${i===0 && x.why_leads ? `<br><b>เหตุผลที่นำ:</b> ${x.why_leads}` : ""}
+          ${i>0 ? `<br><b>ห่าง Top Pick:</b> ${x.gap_from_top??"—"} คะแนน` : ""}
           <br>แตะการ์ดนี้ → ใส่ราคาสด Webull → Final Decision
         </div>
       </div>
