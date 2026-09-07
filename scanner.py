@@ -1,5 +1,7 @@
 from flask import render_template, jsonify
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+import json
 import time
 
 from app import app, load_json, analyze_history
@@ -12,8 +14,35 @@ if _original_home:
     except Exception:
         pass
 
+BASE_DIR = Path(__file__).resolve().parent
+
 _SCAN_CACHE = {"ts": 0, "data": None}
-_SCAN_TTL = 10 * 60  # 10 นาที
+_SCAN_TTL = 10 * 60  # cache หน้า scanner 10 นาที
+
+# cache ต่อหุ้นแบบ persistent-ish บน filesystem ของ instance
+# หมายเหตุ Render Free อาจล้างไฟล์เมื่อ instance ถูกสร้างใหม่ แต่ยังช่วยระหว่าง session ได้
+_TICKER_CACHE_FILE = BASE_DIR / "scanner_cache.json"
+_TICKER_CACHE_MAX_AGE = 3 * 24 * 60 * 60  # ไม่ใช้ข้อมูลเก่ากว่า 3 วัน
+
+
+def _load_ticker_cache():
+    try:
+        if _TICKER_CACHE_FILE.exists():
+            with _TICKER_CACHE_FILE.open("r", encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, dict):
+                return raw
+    except Exception:
+        pass
+    return {}
+
+
+def _save_ticker_cache(cache):
+    try:
+        with _TICKER_CACHE_FILE.open("w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
 
 
 def _scan_one(ticker):
@@ -36,7 +65,6 @@ def _scan_one(ticker):
     raw_rank = radar * 0.42 + entry * 0.48 + rr_bonus + action_bonus
     rank_score = round(max(0, min(100, raw_rank)), 1)
 
-    # Scanner = Candidate เท่านั้น จนกว่าจะผ่านราคาสด Webull
     if action in ("ENTER", "SCALE"):
         scanner_label = "🟦 Candidate — รอราคาสด"
         scanner_class = "candidate"
@@ -67,24 +95,59 @@ def _scan_one(ticker):
         "scanner_class": scanner_class,
         "rank_score": rank_score,
         "data_date": d.get("data_date"),
+        "freshness": "fresh",
+        "freshness_label": "🟢 ข้อมูลใหม่",
+        "cache_age_minutes": 0,
     }
 
 
 def _scan_with_retry(ticker, retries=2):
     last_error = None
+
     for attempt in range(retries + 1):
         try:
-            return _scan_one(ticker), None, attempt
+            result = _scan_one(ticker)
+            return result, None, attempt
         except Exception as e:
             last_error = str(e)
+
             if attempt < retries:
-                # หน่วงเพิ่มทีละนิดเพื่อลดปัญหา rate-limit
-                time.sleep(0.55 * (attempt + 1))
+                # backoff มากกว่า V3.5.2 เล็กน้อย
+                time.sleep(0.8 * (attempt + 1))
 
     return None, {
         "ticker": ticker,
         "error": last_error or "ไม่ทราบสาเหตุ",
     }, retries
+
+
+def _cached_result_for(ticker, cache, now):
+    item = cache.get(ticker)
+    if not isinstance(item, dict):
+        return None
+
+    saved_at = item.get("_saved_at")
+    data = item.get("data")
+
+    if not saved_at or not isinstance(data, dict):
+        return None
+
+    age = now - float(saved_at)
+
+    if age < 0 or age > _TICKER_CACHE_MAX_AGE:
+        return None
+
+    result = dict(data)
+    result["freshness"] = "cached"
+    result["freshness_label"] = "⚪ ใช้ข้อมูลล่าสุดที่มี"
+    result["cache_age_minutes"] = round(age / 60, 1)
+
+    # ข้อมูล cache ห้ามถูกตีความเป็น Candidate พร้อมเข้า
+    if result.get("action_code") in ("ENTER", "SCALE"):
+        result["scanner_label"] = "⚪ Candidate จาก Cache — ต้องยืนยันใหม่"
+        result["scanner_class"] = "cached"
+
+    return result
 
 
 def scan_watchlist(force=False):
@@ -95,18 +158,23 @@ def scan_watchlist(force=False):
         and _SCAN_CACHE["data"] is not None
         and now - _SCAN_CACHE["ts"] < _SCAN_TTL
     ):
-        cached = dict(_SCAN_CACHE["data"])
-        cached["from_cache"] = True
-        return cached
+        cached_page = dict(_SCAN_CACHE["data"])
+        cached_page["from_cache"] = True
+        return cached_page
 
     watchlist = load_json("watchlist.json")
     tickers = [x["ticker"] for x in watchlist]
 
-    results = []
-    errors = []
-    retry_success = 0
+    ticker_cache = _load_ticker_cache()
 
-    # ลดจาก 4 เหลือ 2 worker เพื่อให้แหล่งข้อมูลฟรีมีโอกาสตอบครบมากขึ้น
+    fresh_results = []
+    final_results = []
+    errors = []
+
+    retry_success = 0
+    fallback_used = 0
+
+    # ลด concurrency เหลือ 2 เหมือน V3.5.2
     with ThreadPoolExecutor(max_workers=2) as executor:
         future_map = {
             executor.submit(_scan_with_retry, ticker): ticker
@@ -114,14 +182,32 @@ def scan_watchlist(force=False):
         }
 
         for future in as_completed(future_map):
+            ticker = future_map[future]
             result, error, retry_count = future.result()
 
             if result:
-                results.append(result)
+                fresh_results.append(result)
+
                 if retry_count > 0:
                     retry_success += 1
-            elif error:
-                errors.append(error)
+
+                ticker_cache[ticker] = {
+                    "_saved_at": now,
+                    "data": result,
+                }
+
+            else:
+                fallback = _cached_result_for(ticker, ticker_cache, now)
+
+                if fallback:
+                    final_results.append(fallback)
+                    fallback_used += 1
+                else:
+                    errors.append(error)
+
+    _save_ticker_cache(ticker_cache)
+
+    final_results.extend(fresh_results)
 
     action_order = {
         "ENTER": 0,
@@ -131,11 +217,18 @@ def scan_watchlist(force=False):
         "AVOID": 4,
     }
 
-    results.sort(
+    # fresh มาก่อน cached ถ้าคะแนน/สถานะใกล้กัน
+    freshness_order = {
+        "fresh": 0,
+        "cached": 1,
+    }
+
+    final_results.sort(
         key=lambda x: (
-            action_order.get(x["action_code"], 9),
-            -x["rank_score"],
-            -x["entry_score"],
+            freshness_order.get(x.get("freshness"), 9),
+            action_order.get(x.get("action_code"), 9),
+            -float(x.get("rank_score") or 0),
+            -float(x.get("entry_score") or 0),
         )
     )
 
@@ -144,29 +237,40 @@ def scan_watchlist(force=False):
         "WAIT": 0,
         "DONT_CHASE": 0,
         "AVOID": 0,
+        "CACHED": 0,
     }
 
-    for r in results:
-        if r["action_code"] in ("ENTER", "SCALE"):
+    for r in final_results:
+        if r.get("freshness") == "cached":
+            counts["CACHED"] += 1
+
+        if r.get("action_code") in ("ENTER", "SCALE"):
             counts["CANDIDATE"] += 1
         else:
-            counts[r["action_code"]] = counts.get(r["action_code"], 0) + 1
+            code = r.get("action_code", "WAIT")
+            counts[code] = counts.get(code, 0) + 1
 
     payload = {
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "requested": len(tickers),
-        "total": len(results),
+        "total": len(final_results),
+        "fresh_count": len(fresh_results),
+        "fallback_used": fallback_used,
         "failed": len(errors),
         "retry_success": retry_success,
         "errors": errors,
         "counts": counts,
-        "results": results,
+        "results": final_results,
         "from_cache": False,
-        "note": "V3.5.2 ลด concurrency และ retry หุ้นที่โหลดพลาดอัตโนมัติ",
+        "note": (
+            "V3.5.3: ถ้าดึงหุ้นใหม่ไม่ได้ ระบบจะลอง retry ก่อน "
+            "จากนั้นจึงใช้ cache ล่าสุดที่อายุไม่เกิน 3 วัน และติดป้ายชัดเจน"
+        ),
     }
 
     _SCAN_CACHE["ts"] = now
     _SCAN_CACHE["data"] = payload
+
     return payload
 
 
@@ -177,7 +281,7 @@ def scanner_home():
     )
 
 
-# เปลี่ยนหน้าแรกให้เป็น Scanner
+# หน้าแรก = Scanner
 app.view_functions["home"] = scanner_home
 
 
