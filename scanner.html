@@ -1,6 +1,6 @@
 <!doctype html><html lang="th"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V4.2</title>
+<title>AI Market Radar V4.3</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
 .w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
@@ -32,7 +32,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 @media(max-width:650px){.gateGrid{grid-template-columns:1fr}}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
-<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.2 • Premarket Gate</div></div><div class="tag">Free-first</div></div>
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.3 • Premarket Gate Lite</div></div><div class="tag">Free-first</div></div>
 
 <div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 <div class="buttons">
@@ -40,7 +40,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
 </div>
 <button style="margin-top:12px" onclick="loadTopPicks(false)">🏆 คัด Top Pick วันนี้</button>
-<div class="status info">V4.2 เพิ่ม <b>Premarket Gate</b> หลัง Top Pick: ใส่ราคาสด + % Premarket + Relative Volume จาก Webull ก่อนให้ไฟเขียว</div>
+<div class="status info">V4.3 ใช้ <b>Premarket Gate Lite</b>: ใส่ราคาสด + % Premarket ก่อนให้ไฟเขียว • Relative Volume เป็นข้อมูลเสริม ไม่บังคับ</div>
 <div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
 
 
@@ -66,10 +66,10 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <div class="gateGrid">
   <input id="price" type="number" step=".01" placeholder="ราคาปัจจุบันจาก Webull">
   <input id="premarketPct" type="number" step=".01" placeholder="% Premarket เช่น 1.80">
-  <input id="relVolume" type="number" step=".01" min="0" placeholder="Relative Volume เช่น 1.35">
+  <input id="relVolume" type="number" step=".01" min="0" placeholder="Relative Volume (ไม่บังคับ) เช่น 1.35">
 </div>
 <div class="gateNote">
-% Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า • Relative Volume = Volume เทียบระดับปกติ (ถ้า Webull มี)
+% Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า • Relative Volume = ข้อมูลเสริม ถ้า Webull มี; เว้นว่างได้และระบบจะไม่หักคะแนน
 </div>
 <button style="margin-top:10px" onclick="confirmNow()">ตรวจ Premarket Gate + Final Decision</button>
 <div id="gateResult" class="status info">⚪ Premarket Gate ยังไม่ได้ตรวจ</div>
@@ -132,7 +132,7 @@ async function loadTopPicks(force){
           Market ${pickState(x.market_state)} • กลุ่ม ${pickState(x.group_state)} • Catalyst ${catText}
           ${i===0 && x.why_leads ? `<br><b>เหตุผลที่นำ:</b> ${x.why_leads}` : ""}
           ${i>0 ? `<br><b>ห่าง Top Pick:</b> ${(x.gap_from_top??((d.top_picks?.[0]?.watch_score??0)-x.watch_score)).toFixed ? Number(x.gap_from_top??((d.top_picks?.[0]?.watch_score??0)-x.watch_score)).toFixed(1) : x.gap_from_top} คะแนน` : ""}
-          <br>แตะการ์ดนี้ → ใส่ราคาสด + Premarket + Relative Volume → Final Decision
+          <br>แตะการ์ดนี้ → ใส่ราคาสด + Premarket → Final Decision • Relative Volume ใส่เพิ่มได้ถ้ามี
         </div>
       </div>
     `;

@@ -189,7 +189,7 @@ def scan_watchlist(force=False):
       "fresh_count":len(fresh),"recovered_count":len(recovered),
       "fallback_used":len(cached),"errors":errors,"results":results,
       "auto_context":ctx,"from_cache":False,
-      "note":"V4.2 Premarket Gate: calibrated top picks + manual Webull premarket confirmation + catalyst + final decision"
+      "note":"V4.0 Top Pick Engine: scanner + auto context + catalyst ranking + live-price decision"
     }
     _SCAN_CACHE.update({"ts":now,"data":payload})
     return payload
@@ -417,7 +417,7 @@ def build_top_picks(force=False):
             "score": 50,
             "sentiment": "unknown",
             "label": "⚪ ยังไม่ได้โหลด Catalyst",
-            "reason": "V4.2 โหลดข่าวอัตโนมัติเฉพาะตัวอันดับต้นเพื่อประหยัดทรัพยากร",
+            "reason": "V4.0 โหลดข่าวอัตโนมัติเฉพาะตัวอันดับต้นเพื่อประหยัดทรัพยากร",
             "items": [],
             "negative_high_impact": False,
         })
@@ -485,41 +485,6 @@ def build_top_picks(force=False):
 
         x["pick_reasons"] = reasons[:4]
 
-
-    # V4.2: distance from #1 + concise reason why leader is ahead.
-    if ranked:
-        leader = ranked[0]
-        leader_score = float(leader.get("watch_score") or 0)
-        for item in ranked:
-            item["gap_from_top"] = round(
-                leader_score - float(item.get("watch_score") or 0), 1
-            )
-
-        if len(ranked) > 1:
-            second = ranked[1]
-            diffs = []
-            cat_gap = float(leader["catalyst"].get("score") or 50) - float(second["catalyst"].get("score") or 50)
-            rr_gap = float(leader.get("rr") or 0) - float(second.get("rr") or 0)
-            entry_gap = float(leader.get("entry_score") or 0) - float(second.get("entry_score") or 0)
-            radar_gap = float(leader.get("radar_score") or 0) - float(second.get("radar_score") or 0)
-
-            if abs(cat_gap) >= 3:
-                diffs.append(f"Catalyst {'+' if cat_gap > 0 else ''}{cat_gap:.0f}")
-            if abs(rr_gap) >= 0.15:
-                diffs.append(f"R/R {'+' if rr_gap > 0 else ''}{rr_gap:.2f}")
-            if abs(entry_gap) >= 3:
-                diffs.append(f"Entry {'+' if entry_gap > 0 else ''}{entry_gap:.0f}")
-            if abs(radar_gap) >= 3:
-                diffs.append(f"Radar {'+' if radar_gap > 0 else ''}{radar_gap:.0f}")
-
-            leader["why_leads"] = (
-                f"{leader['ticker']} นำ {second['ticker']} เพราะ " + ", ".join(diffs[:3])
-                if diffs
-                else f"{leader['ticker']} นำ {second['ticker']} จากคะแนนรวมที่ดีกว่าเล็กน้อย"
-            )
-        else:
-            leader["why_leads"] = "มี Candidate ที่ผ่านเกณฑ์เพียงตัวเดียว"
-
     top = ranked[:8]
 
     payload = {
@@ -531,7 +496,7 @@ def build_top_picks(force=False):
         "top_picks": top,
         "from_cache": False,
         "note": (
-            "V4.2 Watch Score ใช้เพื่อจัดลำดับหุ้นที่ควรเฝ้าก่อน "
+            "V4.3 Watch Score ใช้เพื่อจัดลำดับหุ้นที่ควรเฝ้าก่อน "
             "ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และยังต้องใส่ราคาสด Webull เพื่อ Final Decision"
         ),
     }
@@ -551,215 +516,160 @@ def _auto_confirm(p):
     catalyst=p.get("catalyst","unknown"); catalyst_score=float(p.get("catalyst_score") or 50)
     negative_high_impact=bool(p.get("negative_high_impact"))
 
-    # V4.2 Premarket Gate inputs are entered from Webull.
-    premarket_pct_raw=p.get("premarket_pct")
-    rel_volume_raw=p.get("rel_volume")
+    # V4.3 Premarket Gate:
+    # - Current price is required by the UI.
+    # - Premarket % is required before a CONFIRMED green light.
+    # - Relative Volume is OPTIONAL. If omitted, it is neutral: no bonus and no penalty.
+    pm_raw=p.get("premarket_pct")
+    rv_raw=p.get("rel_volume")
+    try:
+        premarket_pct=None if pm_raw in (None,"") else float(pm_raw)
+    except (TypeError,ValueError):
+        premarket_pct=None
+    try:
+        rel_volume=None if rv_raw in (None,"") else float(rv_raw)
+    except (TypeError,ValueError):
+        rel_volume=None
 
-    def optional_float(v):
-        try:
-            if v is None or v=="":
-                return None
-            return float(v)
-        except Exception:
-            return None
-
-    premarket_pct=optional_float(premarket_pct_raw)
-    rel_volume=optional_float(rel_volume_raw)
-
-    def done(status,score,label,reason,checks,missing=None,gate=None):
-        return {
-            "status":status,
-            "score":round(_clamp(score)),
-            "label":label,
-            "reason":reason,
-            "checks":checks,
-            "missing":missing or [],
-            "premarket_gate":gate or {
-                "status":"UNKNOWN",
-                "label":"⚪ Premarket Gate ยังไม่ครบ",
-                "score_adjustment":0,
-            },
-        }
-
-    if confidence=="CACHED":
-        return done("BLOCK",0,"🔴 งดเข้า","ข้อมูลหุ้นเป็น Cache — ต้องรีเฟรชก่อนตัดสินใจ",
-                    ["🔴 ข้อมูลหุ้นไม่ Fresh"],["รีเฟรชข้อมูลให้เป็น Fresh/Recovered"])
-    if price<stop:
-        return done("BLOCK",0,"🔴 งดเข้า","ราคาหลุด Stop / จุดที่แผนผิด",
-                    ["🔴 ราคาต่ำกว่า Stop"],["รอสร้างโครงสร้างราคาใหม่"])
-    if price>=tp1:
-        return done("DONT_CHASE",10,"🟠 ไม่ไล่ราคา","ราคาถึงหรือเกิน TP1 แล้ว",
-                    ["🔴 Risk/Reward ไม่เหมาะกับการเข้าใหม่"],["รอ Pullback และประเมิน Buy Zone ใหม่"])
-
-    score=50; checks=[]; missing=[]
-
-    if lo<=price<=hi:
-        score+=22; checks.append("🟢 ราคาอยู่ใน Buy Zone")
-    elif price<lo:
-        score-=8; checks.append("🟡 ราคาต่ำกว่า Buy Zone")
-        missing.append("รอราคากลับเข้า Buy Zone พร้อมแรงซื้อยืนยัน")
-    else:
-        score-=10; checks.append("🟠 ราคาเหนือ Buy Zone")
-        missing.append("รอราคาย่อลงกลับเข้า Buy Zone — ไม่ไล่ราคา")
-
-    if market=="bull":
-        score+=10; checks.append("🟢 ภาพรวม Watchlist แข็งแรง")
-    elif market=="bear":
-        score-=14; checks.append("🔴 ภาพรวม Watchlist อ่อน")
-        missing.append("รอภาพรวม Watchlist ฟื้น")
-    elif market=="neutral":
-        checks.append("⚪ ภาพรวม Watchlist กลาง")
-        missing.append("ภาพรวม Watchlist แข็งแรงขึ้นจะเพิ่มความมั่นใจ")
-    else:
-        checks.append("⚪ Market context ยังไม่พอ")
-        missing.append("รอ Market context ให้พร้อม")
-
-    if sector=="bull":
-        score+=10; checks.append("🟢 กลุ่มหุ้นเดียวกันแข็งแรง")
-    elif sector=="bear":
-        score-=14; checks.append("🔴 กลุ่มหุ้นเดียวกันอ่อน")
-        missing.append("รอกลุ่มหุ้นฟื้น")
-    elif sector=="neutral":
-        checks.append("⚪ กลุ่มหุ้นกลาง")
-        missing.append("กลุ่มหุ้นแข็งแรงขึ้นจะเพิ่มความมั่นใจ")
-    else:
-        checks.append("⚪ ข้อมูลกลุ่มยังไม่พอ")
-        missing.append("รอข้อมูลกลุ่มหุ้นให้พร้อม")
-
-    if catalyst=="positive":
-        score+=min(10,max(3,round((catalyst_score-50)/3)))
-        checks.append(f"🟢 Catalyst เป็นบวก ({round(catalyst_score)}/100)")
-    elif catalyst=="negative":
-        score-=min(20,max(8,round((50-catalyst_score)/2)))
-        checks.append(f"🔴 Catalyst เป็นลบ ({round(catalyst_score)}/100)")
-        missing.append("รอ Catalyst ลบคลี่คลายหรือมีข่าวใหม่ยืนยัน")
-    elif catalyst=="neutral":
-        checks.append("⚪ Catalyst ยังกลาง")
-        missing.append("Catalyst บวกจะช่วยเพิ่มความมั่นใจ")
-    else:
-        checks.append("⚪ ข่าวยังไม่พร้อม")
-        missing.append("รอ Catalyst/ข่าวให้พร้อม")
-
-    # ---------------- Premarket Gate ----------------
-    gate_adjust=0
+    gate_status="PASS"
+    gate_label="🟢 Premarket Gate ผ่าน"
+    gate_adjustment=0
     gate_checks=[]
-    gate_missing=[]
-    hard_block=False
-    no_chase=False
+    gate_block=False
+    gate_hot=False
 
     if premarket_pct is None:
-        gate_checks.append("⚪ ยังไม่ได้ใส่ % Premarket")
-        gate_missing.append("ใส่ % Premarket จาก Webull เพื่อยืนยันแรงก่อนเปิด")
+        gate_status="INCOMPLETE"
+        gate_label="⚪ ใส่ % Premarket เพื่อยืนยัน"
+        gate_checks.append("⚪ ยังไม่มี % Premarket — ระบบจะยังไม่ให้ CONFIRMED")
     else:
-        if -2.0 <= premarket_pct <= 3.0:
-            gate_adjust += 5
-            gate_checks.append(f"🟢 Premarket {premarket_pct:+.2f}% อยู่ในช่วงไม่ร้อนเกิน")
-        elif 3.0 < premarket_pct <= 6.0:
-            gate_adjust -= 2
-            gate_checks.append(f"🟡 Premarket {premarket_pct:+.2f}% เริ่มแรง — ระวังไล่ราคา")
-            gate_missing.append("รอให้ราคายืนยันว่าไม่เปิด Gap สูงเกิน Buy Zone")
-        elif premarket_pct > 6.0:
-            gate_adjust -= 12
-            no_chase=True
-            gate_checks.append(f"🟠 Premarket {premarket_pct:+.2f}% ร้อนเกินสำหรับการไล่ราคา")
-            gate_missing.append("รอ Pullback / ฐานราคาใหม่หลังเปิด")
-        elif -5.0 <= premarket_pct < -2.0:
-            gate_adjust -= 7
-            gate_checks.append(f"🟡 Premarket {premarket_pct:+.2f}% อ่อน")
-            gate_missing.append("รอแรงซื้อกลับก่อนเข้า")
+        if premarket_pct < -5:
+            gate_status="BLOCK"
+            gate_label="🔴 Premarket Gate Block"
+            gate_adjustment-=25
+            gate_block=True
+            gate_checks.append("🔴 Premarket ต่ำกว่า -5% — งดเข้าใหม่จนกว่าจะฟื้น")
+        elif premarket_pct > 6:
+            gate_status="HOT"
+            gate_label="🟠 Premarket ร้อน — ไม่ไล่ราคา"
+            gate_adjustment-=12
+            gate_hot=True
+            gate_checks.append("🟠 Premarket มากกว่า +6% — ระวังไล่ราคา")
+        elif 1 <= premarket_pct <= 6:
+            gate_adjustment+=6
+            gate_checks.append("🟢 Premarket เป็นบวกในช่วงที่ยอมรับได้")
+        elif -2 <= premarket_pct < 1:
+            gate_checks.append("⚪ Premarket กลาง/แกว่งแคบ")
         else:
-            gate_adjust -= 18
-            hard_block=True
-            gate_checks.append(f"🔴 Premarket {premarket_pct:+.2f}% ผิดปกติ/อ่อนมาก")
-            gate_missing.append("งดเข้าใหม่จนกว่าจะเห็นการฟื้นตัวชัด")
+            gate_adjustment-=6
+            gate_checks.append("🟡 Premarket อ่อน แต่ยังไม่ถึงระดับ Block")
 
     if rel_volume is None:
-        gate_checks.append("⚪ ยังไม่ได้ใส่ Relative Volume")
-        gate_missing.append("ใส่ Relative Volume จาก Webull ถ้ามี")
+        gate_checks.append("⚪ Relative Volume ไม่ได้กรอก — ไม่หักคะแนน")
+    elif rel_volume < 0:
+        rel_volume=None
+        gate_checks.append("⚪ Relative Volume ไม่ถูกต้อง — ไม่นำมาคิดคะแนน")
+    elif 1.2 <= rel_volume <= 3.0:
+        gate_adjustment+=7
+        gate_checks.append("🟢 Relative Volume 1.2x–3.0x ยืนยัน Momentum")
+    elif rel_volume > 3.0:
+        gate_adjustment+=2
+        gate_checks.append("🟡 Relative Volume สูงมาก — Momentum แรงแต่เสี่ยงผันผวน")
+    elif rel_volume < 0.8:
+        gate_adjustment-=4
+        gate_checks.append("🟡 Relative Volume เบา — แรงยืนยันยังไม่ชัด")
     else:
-        if 1.2 <= rel_volume <= 3.0:
-            gate_adjust += 7
-            gate_checks.append(f"🟢 Relative Volume {rel_volume:.2f}x สนับสนุนการเคลื่อนไหว")
-        elif 0.8 <= rel_volume < 1.2:
-            gate_adjust += 1
-            gate_checks.append(f"⚪ Relative Volume {rel_volume:.2f}x ปกติ")
-        elif rel_volume < 0.8:
-            gate_adjust -= 5
-            gate_checks.append(f"🟡 Relative Volume {rel_volume:.2f}x เบา")
-            gate_missing.append("รอ Volume ยืนยัน")
-        else:
-            gate_adjust += 2
-            gate_checks.append(f"🟡 Relative Volume {rel_volume:.2f}x สูงมาก — มี Momentum แต่ผันผวน")
-            gate_missing.append("อย่าไล่ราคา ใช้ Buy Zone เป็นหลัก")
-
-    score += gate_adjust
-    checks.extend(gate_checks)
-    missing.extend(gate_missing)
-
-    if hard_block:
-        gate_status="BLOCK"
-        gate_label="🔴 Premarket Gate ไม่ผ่าน"
-    elif no_chase:
-        gate_status="HOT"
-        gate_label="🟠 Premarket Gate: ร้อนเกิน"
-    elif premarket_pct is not None and rel_volume is not None and gate_adjust>=8:
-        gate_status="PASS"
-        gate_label="🟢 Premarket Gate ผ่าน"
-    elif premarket_pct is not None or rel_volume is not None:
-        gate_status="CAUTION"
-        gate_label="🟡 Premarket Gate ผ่านแบบระวัง"
-    else:
-        gate_status="UNKNOWN"
-        gate_label="⚪ Premarket Gate ยังไม่ครบ"
+        gate_checks.append("⚪ Relative Volume อยู่ระดับกลาง")
 
     gate={
         "status":gate_status,
         "label":gate_label,
-        "score_adjustment":gate_adjust,
+        "score_adjustment":gate_adjustment,
         "premarket_pct":premarket_pct,
         "rel_volume":rel_volume,
+        "rel_volume_required":False,
+        "checks":gate_checks,
     }
 
+    def done(status,score,label,reason,checks,missing=None):
+        return {"status":status,"score":round(_clamp(score)),"label":label,
+                "reason":reason,"checks":checks,"missing":missing or [],
+                "premarket_gate":gate}
+
+    if confidence=="CACHED":
+        return done("BLOCK",0,"🔴 งดเข้า","ข้อมูลหุ้นเป็น Cache — ต้องรีเฟรชก่อนตัดสินใจ",
+                    ["🔴 ข้อมูลหุ้นไม่ Fresh"]+gate_checks,["รีเฟรชข้อมูลให้เป็น Fresh/Recovered"])
+    if price<stop:
+        return done("BLOCK",0,"🔴 งดเข้า","ราคาหลุด Stop / จุดที่แผนผิด",
+                    ["🔴 ราคาต่ำกว่า Stop"]+gate_checks,["รอสร้างโครงสร้างราคาใหม่"])
+    if price>=tp1:
+        return done("DONT_CHASE",10,"🟠 ไม่ไล่ราคา","ราคาถึงหรือเกิน TP1 แล้ว",
+                    ["🔴 Risk/Reward ไม่เหมาะกับการเข้าใหม่"]+gate_checks,["รอ Pullback และประเมิน Buy Zone ใหม่"])
+
+    score=50; checks=[]; missing=[]
+    if lo<=price<=hi:
+        score+=22; checks.append("🟢 ราคาอยู่ใน Buy Zone")
+    elif price<lo:
+        score-=8; checks.append("🟡 ราคาต่ำกว่า Buy Zone"); missing.append("รอราคากลับเข้า Buy Zone พร้อมแรงซื้อยืนยัน")
+    else:
+        score-=10; checks.append("🟠 ราคาเหนือ Buy Zone"); missing.append("รอราคาย่อลงกลับเข้า Buy Zone — ไม่ไล่ราคา")
+
+    if market=="bull":
+        score+=10; checks.append("🟢 ภาพรวม Watchlist แข็งแรง")
+    elif market=="bear":
+        score-=14; checks.append("🔴 ภาพรวม Watchlist อ่อน"); missing.append("รอภาพรวม Watchlist ฟื้น")
+    elif market=="neutral":
+        checks.append("⚪ ภาพรวม Watchlist กลาง"); missing.append("ภาพรวม Watchlist แข็งแรงขึ้นจะเพิ่มความมั่นใจ")
+    else:
+        checks.append("⚪ Market context ยังไม่พอ"); missing.append("รอ Market context ให้พร้อม")
+
+    if sector=="bull":
+        score+=10; checks.append("🟢 กลุ่มหุ้นเดียวกันแข็งแรง")
+    elif sector=="bear":
+        score-=14; checks.append("🔴 กลุ่มหุ้นเดียวกันอ่อน"); missing.append("รอกลุ่มหุ้นฟื้น")
+    elif sector=="neutral":
+        checks.append("⚪ กลุ่มหุ้นกลาง"); missing.append("กลุ่มหุ้นแข็งแรงขึ้นจะเพิ่มความมั่นใจ")
+    else:
+        checks.append("⚪ ข้อมูลกลุ่มยังไม่พอ"); missing.append("รอข้อมูลกลุ่มหุ้นให้พร้อม")
+
+    if catalyst=="positive":
+        score+=min(10,max(3,round((catalyst_score-50)/3))); checks.append(f"🟢 Catalyst เป็นบวก ({round(catalyst_score)}/100)")
+    elif catalyst=="negative":
+        score-=min(20,max(8,round((50-catalyst_score)/2))); checks.append(f"🔴 Catalyst เป็นลบ ({round(catalyst_score)}/100)"); missing.append("รอ Catalyst ลบคลี่คลายหรือมีข่าวใหม่ยืนยัน")
+    elif catalyst=="neutral":
+        checks.append("⚪ Catalyst ยังกลาง"); missing.append("Catalyst บวกจะช่วยเพิ่มความมั่นใจ")
+    else:
+        checks.append("⚪ ข่าวยังไม่พร้อม"); missing.append("รอ Catalyst/ข่าวให้พร้อม")
+
+    score+=gate_adjustment
+    checks.extend(gate_checks)
     score=round(_clamp(score))
 
+    if gate_block:
+        return done("BLOCK",score,"🔴 งดเข้า","Premarket ต่ำกว่า -5% — Gate บล็อกการเข้าใหม่จนกว่าจะฟื้น",checks,
+                    ["รอ Premarket ฟื้นเหนือ -5% และประเมินราคาใหม่"])
+    if gate_hot:
+        return done("DONT_CHASE",score,"🟠 ไม่ไล่ราคา","Premarket มากกว่า +6% — Momentum ร้อนเกินไปสำหรับการไล่เข้า",checks,
+                    ["รอ Pullback / ฐานราคาใหม่ แล้วประเมินอีกครั้ง"])
     if negative_high_impact:
-        return done("BLOCK",score,"🔴 งดเข้า","พบข่าวลบ Impact สูง — รอให้ตลาดย่อยข่าวก่อน",
-                    checks,["รอผลกระทบจากข่าวลบ Impact สูงคลี่คลาย"],gate)
-    if hard_block:
-        return done("BLOCK",score,"🔴 งดเข้า","Premarket อ่อน/ผิดปกติจน Gate ไม่ผ่าน",
-                    checks,missing,gate)
+        return done("BLOCK",score,"🔴 งดเข้า","พบข่าวลบ Impact สูง — รอให้ตลาดย่อยข่าวก่อน",checks,["รอผลกระทบจากข่าวลบ Impact สูงคลี่คลาย"])
     if market=="bear" and sector=="bear":
-        return done("BLOCK",score,"🔴 งดเข้า","ภาพรวม Watchlist และกลุ่มหุ้นอ่อนพร้อมกัน",
-                    checks,missing,gate)
-    if no_chase or price>hi:
-        return done("DONT_CHASE",score,"🟠 ไม่ไล่ราคา",
-                    "ราคา/แรง Premarket ร้อนเกิน Buy Zone สำหรับการเข้าใหม่",
-                    checks,missing,gate)
+        return done("BLOCK",score,"🔴 งดเข้า","ภาพรวม Watchlist และกลุ่มหุ้นอ่อนพร้อมกัน",checks,missing)
+    if price>hi:
+        return done("DONT_CHASE",score,"🟠 ไม่ไล่ราคา","ราคาสูงกว่า Buy Zone",checks,missing)
     if price<lo:
-        return done("WAIT",score,"🟡 รอ Pullback / Trigger",
-                    "ราคายังต่ำกว่า Buy Zone — รอการยืนยันก่อนเข้าไม้ 1",
-                    checks,missing,gate)
+        return done("WAIT",score,"🟡 เฝ้ารอ Trigger","ราคายังต่ำกว่า Buy Zone — ยังไม่ใช่จังหวะเข้าไม้ 1",checks,missing)
 
-    # For a green light in V4.2, Premarket Gate must be at least partially supplied.
-    gate_has_data = premarket_pct is not None or rel_volume is not None
-    if score>=82 and gate_has_data and gate_status in ("PASS","CAUTION"):
-        return done("CONFIRMED",score,"🟢 เข้าไม้ 1",
-                    "ราคาอยู่ใน Buy Zone และ Premarket Gate + Context ผ่านเกณฑ์",
-                    checks,[],gate)
+    # Premarket % is required for CONFIRMED, but Relative Volume is not.
+    if premarket_pct is None:
+        missing.insert(0,"ใส่ % Premarket จาก Webull เพื่อผ่าน Premarket Gate")
+        return done("WAIT",score,"🟡 รอ % Premarket","เงื่อนไขหลักอาจดี แต่ยังไม่มี % Premarket สำหรับยืนยัน Gate",checks,missing)
 
-    if not gate_has_data:
-        return done("WAIT",score,"🟡 รอ Premarket Gate",
-                    "Technical/Context อาจดี แต่ยังไม่ได้ยืนยันข้อมูล Premarket จาก Webull",
-                    checks,missing,gate)
-
+    if score>=80:
+        return done("CONFIRMED",score,"🟢 เข้าไม้ 1","ราคาอยู่ใน Buy Zone และ Decision Engine + Premarket Gate ผ่านเกณฑ์",checks,[])
     if score>=64:
-        return done("WAIT",score,"🟡 เฝ้ารอ Trigger",
-                    "ราคาอยู่ใน Buy Zone แต่เงื่อนไขรวมยังไม่แข็งแรงพอสำหรับไฟเขียว",
-                    checks,missing,gate)
-
-    return done("WAIT",score,"🟡 เฝ้ารอ Trigger",
-                "Decision Engine ยังไม่ผ่านเกณฑ์เข้าไม้ 1",
-                checks,missing,gate)
+        return done("WAIT",score,"🟡 เฝ้ารอ Trigger","ราคาอยู่ใน Buy Zone แต่ Context ยังไม่แข็งแรงพอสำหรับไฟเขียว",checks,missing)
+    return done("WAIT",score,"🟡 เฝ้ารอ Trigger","Decision Engine ยังไม่ผ่านเกณฑ์เข้าไม้ 1",checks,missing)
 
 def scanner_home():
     return render_template("scanner.html",watchlist=load_json("watchlist.json"))
