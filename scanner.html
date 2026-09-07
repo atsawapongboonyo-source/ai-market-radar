@@ -1,6 +1,6 @@
 <!doctype html><html lang="th"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V4.2</title>
+<title>AI Market Radar V4.4.2</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
 .w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
@@ -43,7 +43,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 @media(max-width:650px){.gateGrid{grid-template-columns:1fr}}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
-<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.2 • Premarket Gate</div></div><div class="tag">Free-first</div></div>
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.4.2 • Trigger Price + Premarket Gate</div></div><div class="tag">Free-first</div></div>
 
 <div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 <div class="buttons">
@@ -51,7 +51,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
 </div>
 <button style="margin-top:12px" onclick="loadTopPicks(false)">🏆 คัด Top Pick วันนี้</button>
-<div class="status info">V4.2 เพิ่ม <b>Premarket Gate</b> หลัง Top Pick: ใส่ราคาสด + % Premarket + Relative Volume จาก Webull ก่อนให้ไฟเขียว</div>
+<div class="status info">V4.4.2 เพิ่ม <b>Trigger Price</b>: ถ้ายังไม่ควรเข้า ระบบจะบอกราคาที่ควรรอ พร้อม Premarket Gate และเหตุผล</div>
 <div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
 
 
@@ -94,6 +94,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
   <div class="finalGrid">
     <div class="finalMetric"><span>ราคาสด</span><b id="fdPrice">—</b></div>
     <div class="finalMetric"><span>Buy Zone</span><b id="fdBuy">—</b></div>
+    <div class="finalMetric"><span>Trigger ที่รอ</span><b id="fdTrigger">—</b></div>
     <div class="finalMetric"><span>TP1</span><b id="fdTp">—</b></div>
     <div class="finalMetric"><span>Stop</span><b id="fdStop">—</b></div>
   </div>
@@ -227,6 +228,32 @@ async function loadCatalyst(ticker){
 }
 
 
+
+function triggerPlan(x,price){
+ const lo=Number(selected.buy_low), hi=Number(selected.buy_high);
+ const pm=x?.premarket_gate?.premarket_pct;
+
+ if(x.status==="CONFIRMED"){
+   return {price:selected.entry1 ?? hi, text:"เข้าไม้ 1 ตามแผน"};
+ }
+ if(x.status==="DONT_CHASE"){
+   return {price:hi, text:`รอย่อ ≤ ${fmt(hi)} แล้วตรวจ Gate ใหม่`};
+ }
+ if(x.status==="BLOCK"){
+   if(pm!=null && Number(pm)<-5){
+     return {price:lo, text:`รอ Premarket ฟื้นเหนือ -5% และราคากลับ ≥ ${fmt(lo)}`};
+   }
+   return {price:lo, text:`รอราคากลับ ≥ ${fmt(lo)} พร้อม Context ฟื้น`};
+ }
+ if(price<lo){
+   return {price:lo, text:`รอราคากลับเข้า Buy Zone ที่ ${fmt(lo)}`};
+ }
+ if(price>hi){
+   return {price:hi, text:`รอย่อลง ≤ ${fmt(hi)} — ไม่ไล่ราคา`};
+ }
+ return {price:selected.entry1 ?? hi, text:`ราคาอยู่ใน Buy Zone แต่รอ Trigger/Context ยืนยัน`};
+}
+
 function renderFinalDecision(x,price){
  const dash=document.getElementById("finalDash");
  dash.style.display="block";
@@ -236,6 +263,8 @@ function renderFinalDecision(x,price){
 
  document.getElementById("fdPrice").textContent=fmt(price);
  document.getElementById("fdBuy").textContent=fmt(selected.buy_low)+"–"+fmt(selected.buy_high);
+ const trg=triggerPlan(x,price);
+ document.getElementById("fdTrigger").textContent=fmt(trg.price);
  document.getElementById("fdTp").textContent=fmt(selected.tp1);
  document.getElementById("fdStop").textContent=fmt(selected.stop);
 
@@ -252,6 +281,7 @@ function renderFinalDecision(x,price){
  }else{
    s=`ยังไม่เข้าไม้ 1 • รอราคา/Market Context/Premarket ให้ดีขึ้น แล้วกดตรวจอีกครั้ง`;
  }
+ s += ` • 🎯 Trigger: ${trg.text}`;
  document.getElementById("finalScenario").textContent=s;
 }
 
