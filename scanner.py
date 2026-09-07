@@ -1,7 +1,9 @@
 from flask import render_template, jsonify, request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from datetime import datetime, timezone
 import json, time
+import yfinance as yf
 
 from app import app, load_json, analyze_history
 
@@ -17,6 +19,13 @@ _SCAN_CACHE = {"ts": 0, "data": None}
 _SCAN_TTL = 10 * 60
 _TICKER_CACHE_FILE = BASE_DIR / "scanner_cache.json"
 _TICKER_CACHE_MAX_AGE = 3 * 24 * 60 * 60
+
+_CATALYST_CACHE = {}
+_CATALYST_TTL = 15 * 60
+
+POSITIVE_WORDS = ("beat","beats","raises","upgrade","record","growth","surge","strong","contract","deal","partnership","wins","launch","expands","demand","order","outperform")
+NEGATIVE_WORDS = ("miss","misses","cuts","downgrade","probe","lawsuit","warning","weak","decline","falls","delay","recall","investigation","underperform")
+HIGH_IMPACT_WORDS = ("earnings","guidance","revenue","profit","contract","deal","partnership","upgrade","downgrade","investigation","lawsuit","order","forecast","outlook")
 
 # กลุ่มสำหรับวัด breadth/sector context จากผลสแกนชุดเดียวกัน (ฟรี)
 GROUPS = {
@@ -181,6 +190,70 @@ def scan_watchlist(force=False):
     _SCAN_CACHE.update({"ts":now,"data":payload})
     return payload
 
+
+def _news_fields(item):
+    if not isinstance(item, dict): return None
+    c = item.get("content") if isinstance(item.get("content"), dict) else item
+    title = c.get("title") or c.get("headline") or item.get("title") or ""
+    provider = c.get("provider")
+    publisher = (provider.get("displayName") or provider.get("name") or "") if isinstance(provider,dict) else (c.get("publisher") or item.get("publisher") or "")
+    link = ""
+    for key in ("canonicalUrl","clickThroughUrl"):
+        v=c.get(key)
+        if isinstance(v,dict) and v.get("url"): link=v["url"]; break
+    link = link or item.get("link") or c.get("link") or ""
+    published = c.get("pubDate") or c.get("displayTime") or item.get("providerPublishTime")
+    return {"title":str(title).strip(),"publisher":str(publisher).strip(),"link":str(link).strip(),"published":published}
+
+def _age_hours(v):
+    try:
+        if v is None:return None
+        if isinstance(v,(int,float)): dt=datetime.fromtimestamp(v,tz=timezone.utc)
+        else:
+            dt=datetime.fromisoformat(str(v).replace("Z","+00:00"))
+            if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
+        return max(0,(datetime.now(timezone.utc)-dt.astimezone(timezone.utc)).total_seconds()/3600)
+    except Exception:return None
+
+def _classify_title(title):
+    t=title.lower()
+    pos=sum(1 for w in POSITIVE_WORDS if w in t)
+    neg=sum(1 for w in NEGATIVE_WORDS if w in t)
+    high=any(w in t for w in HIGH_IMPACT_WORDS)
+    return ("negative",-1,high) if neg>pos else ("positive",1,high) if pos>neg else ("neutral",0,high)
+
+def _get_catalyst(ticker, force=False):
+    now=time.time()
+    hit=_CATALYST_CACHE.get(ticker)
+    if hit and not force and now-hit["ts"]<_CATALYST_TTL:
+        d=dict(hit["data"]); d["from_cache"]=True; return d
+    try:
+        raw=yf.Ticker(ticker).news or []
+    except Exception as e:
+        return {"ticker":ticker,"score":50,"sentiment":"unknown","label":"⚪ ข่าวยังไม่พร้อม","reason":"แหล่งข่าวฟรีไม่ตอบกลับ","items":[],"negative_high_impact":False,"error":str(e)}
+    items=[]; weighted=0; total=0; neg_high=False
+    for raw_item in raw[:12]:
+        x=_news_fields(raw_item)
+        if not x or not x["title"]: continue
+        sent,base,high=_classify_title(x["title"]); age=_age_hours(x["published"])
+        rw=1.0 if age is not None and age<=24 else .7 if age is not None and age<=72 else .4 if age is not None and age<=168 else .2
+        w=rw*(1.35 if high else 1); weighted+=base*w; total+=w
+        if sent=="negative" and high and (age is None or age<=72): neg_high=True
+        x.update({"sentiment":sent,"high_impact":high,"age_hours":round(age,1) if age is not None else None})
+        items.append(x)
+        if len(items)>=6: break
+    if not items:
+        data={"ticker":ticker,"score":50,"sentiment":"neutral","label":"⚪ ยังไม่พบ Catalyst ชัด","reason":"ไม่พบหัวข้อข่าวจากแหล่งฟรี","items":[],"negative_high_impact":False}
+    else:
+        ratio=weighted/total if total else 0; score=round(max(0,min(100,50+ratio*28)))
+        if neg_high: sent,label,reason="negative","🔴 มี Risk Catalyst","พบข่าวลบ Impact สูงในช่วงล่าสุด"
+        elif score>=63: sent,label,reason="positive","🟢 Positive Catalyst","หัวข้อข่าวล่าสุดมีน้ำหนักเชิงบวก"
+        elif score<=37: sent,label,reason="negative","🔴 Negative Catalyst","หัวข้อข่าวล่าสุดมีน้ำหนักเชิงลบ"
+        else: sent,label,reason="neutral","⚪ Catalyst กลาง","ข่าวล่าสุดยังไม่ให้ทิศทางชัด"
+        data={"ticker":ticker,"score":score,"sentiment":sent,"label":label,"reason":reason,"items":items,"negative_high_impact":neg_high}
+    _CATALYST_CACHE[ticker]={"ts":now,"data":data}
+    return data
+
 def _clamp(x):return max(0,min(100,x))
 
 def _auto_confirm(p):
@@ -188,6 +261,8 @@ def _auto_confirm(p):
     stop=float(p["stop"]);tp1=float(p["tp1"])
     confidence=p.get("data_confidence","FRESH")
     market=p.get("market","unknown"); sector=p.get("sector","unknown")
+    catalyst=p.get("catalyst","unknown"); catalyst_score=float(p.get("catalyst_score") or 50)
+    negative_high_impact=bool(p.get("negative_high_impact"))
 
     if confidence=="CACHED":
         return {"status":"BLOCK","score":0,"label":"🔴 ยังไม่เข้า",
@@ -223,9 +298,19 @@ def _auto_confirm(p):
         checks.append("⚪ กลุ่มหุ้นกลาง")
     else: checks.append("⚪ ข้อมูลกลุ่มยังไม่พอ")
 
+    if catalyst=="positive":
+        score+=min(10,max(3,round((catalyst_score-50)/3))); checks.append(f"🟢 Catalyst เป็นบวก ({round(catalyst_score)}/100)")
+    elif catalyst=="negative":
+        score-=min(20,max(8,round((50-catalyst_score)/2))); checks.append(f"🔴 Catalyst เป็นลบ ({round(catalyst_score)}/100)")
+    elif catalyst=="neutral":
+        checks.append("⚪ Catalyst ยังกลาง")
+    else:
+        checks.append("⚪ ข่าวยังไม่พร้อม — ไม่เพิ่ม/ลดคะแนน")
     score=round(_clamp(score))
 
-    if market=="bear" and sector=="bear":
+    if negative_high_impact:
+        status,label,reason="BLOCK","🔴 ยังไม่เข้า","พบข่าวลบ Impact สูง — รอให้ตลาดย่อยข่าวก่อน"
+    elif market=="bear" and sector=="bear":
         status,label,reason="BLOCK","🔴 ยังไม่เข้า","ตลาดที่สแกนและกลุ่มหุ้นอ่อนพร้อมกัน"
     elif price>hi:
         status,label,reason="WAIT","🟠 ไม่ไล่ราคา","ราคาเหนือ Buy Zone"
@@ -257,6 +342,14 @@ def api_scan():
 def api_scan_refresh():
     try:return jsonify({"ok":True,"data":scan_watchlist(True)}),200
     except Exception as e:return jsonify({"ok":False,"error":str(e)}),200
+
+
+@app.route("/api/catalyst/<ticker>")
+def catalyst(ticker):
+    try:
+        return jsonify({"ok":True,"data":_get_catalyst(ticker.upper(), request.args.get("force")=="1")}),200
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),200
 
 @app.route("/api/auto-confirm",methods=["POST"])
 def auto_confirm():

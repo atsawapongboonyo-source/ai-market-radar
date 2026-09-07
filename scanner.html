@@ -1,6 +1,6 @@
 <!doctype html><html lang="th"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V3.7</title>
+<title>AI Market Radar V3.8</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
 .w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
@@ -16,13 +16,14 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 .top{display:flex;justify-content:space-between;gap:8px}.ticker{font-size:22px;font-weight:900}.label{text-align:right;font-size:12px}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.m{background:#132c44;border-radius:12px;padding:10px}.m b{display:block;font-size:17px}
 .confirm{display:none}.confirm.show{display:block}.checks{line-height:1.8;color:#cbd9e8}.pill{font-size:11px;padding:5px 8px;border-radius:20px;background:#173a58;display:inline-block;margin-top:5px}
+.news{display:grid;gap:8px;margin-top:10px}.newsitem{background:#10263c;border:1px solid #1d3e5d;border-radius:12px;padding:10px}.newsitem a{color:#dcecff;text-decoration:none;font-weight:750}.newsmeta{font-size:11px;color:#9eb1c6;margin-top:4px}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
-<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V3.7 • Auto Market Context</div></div><div class="tag">Free-first</div></div>
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V3.8 • Catalyst Intelligence</div></div><div class="tag">Free-first</div></div>
 
 <div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 <div class="buttons"><button onclick="scan(false)">สแกน Watchlist 32 ตัว</button><button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button></div>
-<div class="status info">V3.7 ลดงานกรอกเอง: ระบบประเมิน <b>ภาพรวม Watchlist + ความแข็งแรงของกลุ่มหุ้น</b> อัตโนมัติจากผลสแกนฟรี คุณใส่เพียง <b>ราคาปัจจุบันจาก Webull</b></div>
+<div class="status info">V3.8 เพิ่ม <b>ข่าว/Catalyst</b> เป็นชั้นยืนยัน โดยยังใช้ Auto Context เดิม คุณใส่เพียง <b>ราคาปัจจุบันจาก Webull</b></div>
 <div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
 
 <div class="card"><h2>🧭 Auto Context</h2>
@@ -33,7 +34,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <div class="small" style="margin-top:10px">หมายเหตุ: V3.7 ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี ไม่ได้อ้างว่าเป็นราคา QQQ แบบ real-time</div>
 </div>
 
-<div id="confirm" class="card confirm"><h2>⚡ Auto Confirmation • <span id="ct">—</span></h2>
+<div id="confirm" class="card confirm"><h2>⚡ Final Confirmation • <span id="ct">—</span></h2><div id="catStatus" class="status info">เลือกหุ้นเพื่อดึง Catalyst</div><div id="newsList" class="news"></div>
 <input id="price" type="number" step=".01" placeholder="ใส่ราคาปัจจุบันจาก Webull">
 <button style="margin-top:10px" onclick="confirmNow()">วิเคราะห์จังหวะเข้าอัตโนมัติ</button>
 <div id="cres" class="status info">ใส่ราคาแล้วกดวิเคราะห์</div><ul id="checks" class="checks"></ul>
@@ -43,7 +44,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <div class="card"><h2>🏆 Candidate Ranking</h2><div class="small">แตะหุ้น → ใส่ราคาจาก Webull → ระบบใช้ Auto Context ให้เอง</div><div id="rows" class="rows" style="margin-top:12px"></div></div>
 </div>
 <script>
-let selected=null,context=null;
+let selected=null,context=null,catalyst=null;
 const fmt=x=>x==null?"—":"$"+Number(x).toFixed(2);
 const state=s=>s==="bull"?"🟢 แข็งแรง":s==="bear"?"🔴 อ่อน":"⚪ กลาง";
 async function scan(force){
@@ -66,19 +67,36 @@ function pick(x){
  document.getElementById("bz").textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);document.getElementById("e1").textContent=fmt(x.entry1);
  document.getElementById("tp").textContent=fmt(x.tp1);document.getElementById("sp").textContent=fmt(x.stop);
  document.getElementById("cres").className="status info";document.getElementById("cres").textContent="ใส่ราคาปัจจุบันจาก Webull แล้วกดวิเคราะห์";
- document.getElementById("checks").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});
+ document.getElementById("checks").innerHTML="";document.getElementById("newsList").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});loadCatalyst(x.ticker);
 }
+
+async function loadCatalyst(ticker){
+ catalyst=null;let cs=document.getElementById("catStatus");cs.className="status info";cs.textContent="กำลังดึง Catalyst ของ "+ticker+" ...";
+ try{
+  let r=await fetch("/api/catalyst/"+encodeURIComponent(ticker),{cache:"no-store"}),j=await r.json();
+  if(!j.ok)throw Error(j.error);catalyst=j.data;
+  cs.className="status "+(catalyst.sentiment==="positive"?"good":catalyst.sentiment==="negative"?"bad":"info");
+  cs.innerHTML=`<b>${catalyst.label}</b> • Catalyst ${catalyst.score}/100<br>${catalyst.reason}`;
+  document.getElementById("newsList").innerHTML=(catalyst.items||[]).map(n=>{
+   let age=n.age_hours==null?"เวลาไม่ทราบ":n.age_hours<=24?`${n.age_hours} ชม.`:`${Math.round(n.age_hours/24)} วัน`;
+   let icon=n.sentiment==="positive"?"🟢":n.sentiment==="negative"?"🔴":"⚪";
+   let title=n.link?`<a href="${n.link}" target="_blank" rel="noopener">${n.title}</a>`:n.title;
+   return `<div class="newsitem">${icon} ${title}<div class="newsmeta">${n.publisher||"แหล่งข่าว"} • ${age}${n.high_impact?" • Impact สูง":""}</div></div>`;
+  }).join("");
+ }catch(e){catalyst={sentiment:"unknown",score:50,negative_high_impact:false};cs.className="status warn";cs.textContent="Catalyst โหลดไม่สำเร็จ — ระบบจะไม่เพิ่ม/ลดคะแนนข่าว";}
+}
+
 async function confirmNow(){
  if(!selected||!context)return;
  let p=parseFloat(document.getElementById("price").value),out=document.getElementById("cres");
  if(!isFinite(p)||p<=0){out.className="status bad";out.textContent="กรุณาใส่ราคาปัจจุบันจาก Webull";return}
  let sg=context.groups[selected.group]||{state:"unknown"};
  let body={price:p,buy_low:selected.buy_low,buy_high:selected.buy_high,stop:selected.stop,tp1:selected.tp1,
- data_confidence:selected.confidence_code,market:context.market,sector:sg.state};
+ data_confidence:selected.confidence_code,market:context.market,sector:sg.state,catalyst:catalyst?.sentiment||"unknown",catalyst_score:catalyst?.score||50,negative_high_impact:catalyst?.negative_high_impact||false};
  try{
   let r=await fetch("/api/auto-confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),j=await r.json();
   if(!j.ok)throw Error(j.error);let x=j.data,cl=x.status==="CONFIRMED"?"good":x.status==="BLOCK"?"bad":"warn";
-  out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Auto Confirmation ${x.score}/100<br>${x.reason}`;
+  out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Final Confirmation ${x.score}/100<br>${x.reason}`;
   document.getElementById("checks").innerHTML=x.checks.map(v=>`<li>${v}</li>`).join("");
  }catch(e){out.className="status bad";out.textContent="วิเคราะห์ไม่สำเร็จ: "+e.message}
 }
