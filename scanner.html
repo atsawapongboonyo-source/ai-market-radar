@@ -29,6 +29,17 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 
 .gateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .gateNote{font-size:11px;color:#9eb1c6;line-height:1.55;margin-top:8px}
+
+.finalDash{margin-top:14px;border:1px solid #2d5274;border-radius:18px;padding:16px;background:#0b2135}
+.finalAction{font-size:26px;font-weight:900;line-height:1.2}
+.finalSub{font-size:12px;color:#a8bdd3;margin-top:6px;line-height:1.55}
+.finalGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.finalMetric{background:#112b43;border-radius:13px;padding:11px}
+.finalMetric span{display:block;font-size:11px;color:#9eb1c6}
+.finalMetric b{display:block;font-size:18px;margin-top:2px}
+.finalWhy{margin:12px 0 0;padding-left:18px;color:#d6e4f2;line-height:1.7;font-size:12px}
+.scenario{margin-top:12px;background:#10263c;border-radius:13px;padding:12px;font-size:12px;line-height:1.65}
+@media(max-width:650px){.finalGrid{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){.gateGrid{grid-template-columns:1fr}}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
@@ -74,6 +85,23 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <button style="margin-top:10px" onclick="confirmNow()">ตรวจ Premarket Gate + Final Decision</button>
 <div id="gateResult" class="status info">⚪ Premarket Gate ยังไม่ได้ตรวจ</div>
 <div id="cres" class="status info">ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์</div>
+
+<div id="finalDash" class="finalDash" style="display:none">
+  <div class="small">FINAL DECISION</div>
+  <div id="finalAction" class="finalAction">—</div>
+  <div id="finalSub" class="finalSub">—</div>
+
+  <div class="finalGrid">
+    <div class="finalMetric"><span>ราคาสด</span><b id="fdPrice">—</b></div>
+    <div class="finalMetric"><span>Buy Zone</span><b id="fdBuy">—</b></div>
+    <div class="finalMetric"><span>TP1</span><b id="fdTp">—</b></div>
+    <div class="finalMetric"><span>Stop</span><b id="fdStop">—</b></div>
+  </div>
+
+  <ul id="finalWhy" class="finalWhy"></ul>
+  <div id="finalScenario" class="scenario">—</div>
+</div>
+
 <ul id="checks" class="checks"></ul><div id="missing" class="status info" style="display:none"></div>
 <div class="metrics"><div class="m"><span class="small">Buy Zone</span><b id="bz">—</b></div><div class="m"><span class="small">ไม้ 1</span><b id="e1">—</b></div><div class="m"><span class="small">TP1</span><b id="tp">—</b></div><div class="m"><span class="small">Stop</span><b id="sp">—</b></div></div>
 </div>
@@ -178,6 +206,7 @@ function pick(x){
  document.getElementById("gateResult").textContent="⚪ Premarket Gate ยังไม่ได้ตรวจ";
  document.getElementById("cres").className="status info";
  document.getElementById("cres").textContent="ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์";
+ document.getElementById("finalDash").style.display="none";
  document.getElementById("checks").innerHTML="";document.getElementById("missing").style.display="none";document.getElementById("newsList").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});loadCatalyst(x.ticker);
 }
 
@@ -195,6 +224,35 @@ async function loadCatalyst(ticker){
    return `<div class="newsitem">${icon} ${title}<div class="newsmeta">${n.publisher||"แหล่งข่าว"} • ${age}${n.high_impact?" • Impact สูง":""}</div></div>`;
   }).join("");
  }catch(e){catalyst={sentiment:"unknown",score:50,negative_high_impact:false};cs.className="status warn";cs.textContent="Catalyst โหลดไม่สำเร็จ — ระบบจะไม่เพิ่ม/ลดคะแนนข่าว";}
+}
+
+
+function renderFinalDecision(x,price){
+ const dash=document.getElementById("finalDash");
+ dash.style.display="block";
+
+ document.getElementById("finalAction").textContent=x.label||"—";
+ document.getElementById("finalSub").textContent=`Decision Score ${x.score}/100 • ${x.reason||""}`;
+
+ document.getElementById("fdPrice").textContent=fmt(price);
+ document.getElementById("fdBuy").textContent=fmt(selected.buy_low)+"–"+fmt(selected.buy_high);
+ document.getElementById("fdTp").textContent=fmt(selected.tp1);
+ document.getElementById("fdStop").textContent=fmt(selected.stop);
+
+ const core=(x.checks||[]).filter(v=>v.startsWith("🟢")||v.startsWith("🟡")||v.startsWith("🔴")||v.startsWith("🟠")).slice(0,4);
+ document.getElementById("finalWhy").innerHTML=core.map(v=>`<li>${v}</li>`).join("");
+
+ let s="";
+ if(x.status==="CONFIRMED"){
+   s=`ถ้าราคายังอยู่ใน Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} → เข้าไม้ 1 ตามแผนได้ • ถ้าราคาวิ่งเหนือ ${fmt(selected.buy_high)} มาก → หยุดไล่ราคา`;
+ }else if(x.status==="DONT_CHASE"){
+   s=`ยังไม่ไล่ซื้อ • รอให้ราคาย่อลงใกล้ Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} แล้วตรวจ Gate ใหม่`;
+ }else if(x.status==="BLOCK"){
+   s=`งดเข้าใหม่ตอนนี้ • รอให้เงื่อนไขที่ Block คลี่คลายก่อน แล้วสแกน/ประเมินใหม่`;
+ }else{
+   s=`ยังไม่เข้าไม้ 1 • รอราคา/Market Context/Premarket ให้ดีขึ้น แล้วกดตรวจอีกครั้ง`;
+ }
+ document.getElementById("finalScenario").textContent=s;
 }
 
 async function confirmNow(){
@@ -220,6 +278,7 @@ async function confirmNow(){
     `Premarket ${gate.premarket_pct==null?"—":Number(gate.premarket_pct).toFixed(2)+"%"} • Relative Volume ${gate.rel_volume==null?"—":Number(gate.rel_volume).toFixed(2)+"x"}`;
   out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Decision Score ${x.score}/100<br>${x.reason}`;
   document.getElementById("checks").innerHTML=(x.checks||[]).map(v=>`<li>${v}</li>`).join("");
+  renderFinalDecision(x,p);
   let miss=document.getElementById("missing"),items=x.missing||[];miss.style.display="block";
   if(items.length){miss.className="status info";miss.innerHTML=`<b>🎯 ยังขาดอะไรถึงจะดีขึ้น</b><br>${items.map(v=>"• "+v).join("<br>")}`;}
   else{miss.className="status good";miss.innerHTML="<b>✅ เงื่อนไขหลักผ่านแล้ว</b><br>Decision Engine ไม่พบเงื่อนไขที่ต้องรอเพิ่ม";}
