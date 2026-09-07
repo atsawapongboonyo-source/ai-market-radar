@@ -1,6 +1,6 @@
 <!doctype html><html lang="th"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V3.8</title>
+<title>AI Market Radar V3.9</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
 .w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
@@ -19,11 +19,11 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 .news{display:grid;gap:8px;margin-top:10px}.newsitem{background:#10263c;border:1px solid #1d3e5d;border-radius:12px;padding:10px}.newsitem a{color:#dcecff;text-decoration:none;font-weight:750}.newsmeta{font-size:11px;color:#9eb1c6;margin-top:4px}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
-<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V3.8 • Catalyst Intelligence</div></div><div class="tag">Free-first</div></div>
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V3.9 • Decision Engine</div></div><div class="tag">Free-first</div></div>
 
 <div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 <div class="buttons"><button onclick="scan(false)">สแกน Watchlist 32 ตัว</button><button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button></div>
-<div class="status info">V3.8 เพิ่ม <b>ข่าว/Catalyst</b> เป็นชั้นยืนยัน โดยยังใช้ Auto Context เดิม คุณใส่เพียง <b>ราคาปัจจุบันจาก Webull</b></div>
+<div class="status info">V3.9 รวม <b>Scanner + Auto Context + Catalyst + ราคาสด</b> เป็น Decision Engine คุณใส่เพียง <b>ราคาปัจจุบันจาก Webull</b></div>
 <div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
 
 <div class="card"><h2>🧭 Auto Context</h2>
@@ -37,7 +37,7 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <div id="confirm" class="card confirm"><h2>⚡ Final Confirmation • <span id="ct">—</span></h2><div id="catStatus" class="status info">เลือกหุ้นเพื่อดึง Catalyst</div><div id="newsList" class="news"></div>
 <input id="price" type="number" step=".01" placeholder="ใส่ราคาปัจจุบันจาก Webull">
 <button style="margin-top:10px" onclick="confirmNow()">วิเคราะห์จังหวะเข้าอัตโนมัติ</button>
-<div id="cres" class="status info">ใส่ราคาแล้วกดวิเคราะห์</div><ul id="checks" class="checks"></ul>
+<div id="cres" class="status info">ใส่ราคาแล้วกดวิเคราะห์</div><ul id="checks" class="checks"></ul><div id="missing" class="status info" style="display:none"></div>
 <div class="metrics"><div class="m"><span class="small">Buy Zone</span><b id="bz">—</b></div><div class="m"><span class="small">ไม้ 1</span><b id="e1">—</b></div><div class="m"><span class="small">TP1</span><b id="tp">—</b></div><div class="m"><span class="small">Stop</span><b id="sp">—</b></div></div>
 </div>
 
@@ -67,7 +67,7 @@ function pick(x){
  document.getElementById("bz").textContent=fmt(x.buy_low)+"–"+fmt(x.buy_high);document.getElementById("e1").textContent=fmt(x.entry1);
  document.getElementById("tp").textContent=fmt(x.tp1);document.getElementById("sp").textContent=fmt(x.stop);
  document.getElementById("cres").className="status info";document.getElementById("cres").textContent="ใส่ราคาปัจจุบันจาก Webull แล้วกดวิเคราะห์";
- document.getElementById("checks").innerHTML="";document.getElementById("newsList").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});loadCatalyst(x.ticker);
+ document.getElementById("checks").innerHTML="";document.getElementById("missing").style.display="none";document.getElementById("newsList").innerHTML="";c.scrollIntoView({behavior:"smooth",block:"start"});loadCatalyst(x.ticker);
 }
 
 async function loadCatalyst(ticker){
@@ -96,8 +96,11 @@ async function confirmNow(){
  try{
   let r=await fetch("/api/auto-confirm",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}),j=await r.json();
   if(!j.ok)throw Error(j.error);let x=j.data,cl=x.status==="CONFIRMED"?"good":x.status==="BLOCK"?"bad":"warn";
-  out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Final Confirmation ${x.score}/100<br>${x.reason}`;
-  document.getElementById("checks").innerHTML=x.checks.map(v=>`<li>${v}</li>`).join("");
+  out.className="status "+cl;out.innerHTML=`<b>${x.label}</b> • Decision Score ${x.score}/100<br>${x.reason}`;
+  document.getElementById("checks").innerHTML=(x.checks||[]).map(v=>`<li>${v}</li>`).join("");
+  let miss=document.getElementById("missing"),items=x.missing||[];miss.style.display="block";
+  if(items.length){miss.className="status info";miss.innerHTML=`<b>🎯 ยังขาดอะไรถึงจะดีขึ้น</b><br>${items.map(v=>"• "+v).join("<br>")}`;}
+  else{miss.className="status good";miss.innerHTML="<b>✅ เงื่อนไขหลักผ่านแล้ว</b><br>Decision Engine ไม่พบเงื่อนไขที่ต้องรอเพิ่ม";}
  }catch(e){out.className="status bad";out.textContent="วิเคราะห์ไม่สำเร็จ: "+e.message}
 }
 </script></body></html>

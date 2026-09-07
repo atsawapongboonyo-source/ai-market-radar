@@ -185,7 +185,7 @@ def scan_watchlist(force=False):
       "fresh_count":len(fresh),"recovered_count":len(recovered),
       "fallback_used":len(cached),"errors":errors,"results":results,
       "auto_context":ctx,"from_cache":False,
-      "note":"V3.7 Auto Context: watchlist breadth + sector breadth; live price remains manual"
+      "note":"V3.9 Decision Engine: scanner + auto context + catalyst + live-price decision"
     }
     _SCAN_CACHE.update({"ts":now,"data":payload})
     return payload
@@ -258,72 +258,75 @@ def _clamp(x):return max(0,min(100,x))
 
 def _auto_confirm(p):
     price=float(p["price"]); lo=float(p["buy_low"]); hi=float(p["buy_high"])
-    stop=float(p["stop"]);tp1=float(p["tp1"])
+    stop=float(p["stop"]); tp1=float(p["tp1"])
     confidence=p.get("data_confidence","FRESH")
     market=p.get("market","unknown"); sector=p.get("sector","unknown")
     catalyst=p.get("catalyst","unknown"); catalyst_score=float(p.get("catalyst_score") or 50)
     negative_high_impact=bool(p.get("negative_high_impact"))
 
-    if confidence=="CACHED":
-        return {"status":"BLOCK","score":0,"label":"🔴 ยังไม่เข้า",
-                "reason":"ข้อมูลหุ้นเป็น Cache ต้องรีเฟรชก่อน","checks":[]}
-    if price<stop:
-        return {"status":"BLOCK","score":0,"label":"🔴 ยังไม่เข้า",
-                "reason":"ราคาหลุดจุดแผนผิด","checks":["🔴 ราคาไม่ผ่าน"]}
-    if price>=tp1:
-        return {"status":"BLOCK","score":10,"label":"🔴 ไม่ไล่ราคา",
-                "reason":"ราคาถึง/เกิน TP1 แล้ว","checks":["🔴 Risk/Reward ไม่เหมาะกับการเข้าใหม่"]}
+    def done(status,score,label,reason,checks,missing=None):
+        return {"status":status,"score":round(_clamp(score)),"label":label,
+                "reason":reason,"checks":checks,"missing":missing or []}
 
-    score=50;checks=[]
+    if confidence=="CACHED":
+        return done("BLOCK",0,"🔴 งดเข้า","ข้อมูลหุ้นเป็น Cache — ต้องรีเฟรชก่อนตัดสินใจ",
+                    ["🔴 ข้อมูลหุ้นไม่ Fresh"],["รีเฟรชข้อมูลให้เป็น Fresh/Recovered"])
+    if price<stop:
+        return done("BLOCK",0,"🔴 งดเข้า","ราคาหลุด Stop / จุดที่แผนผิด",
+                    ["🔴 ราคาต่ำกว่า Stop"],["รอสร้างโครงสร้างราคาใหม่"])
+    if price>=tp1:
+        return done("DONT_CHASE",10,"🟠 ไม่ไล่ราคา","ราคาถึงหรือเกิน TP1 แล้ว",
+                    ["🔴 Risk/Reward ไม่เหมาะกับการเข้าใหม่"],["รอ Pullback และประเมิน Buy Zone ใหม่"])
+
+    score=50; checks=[]; missing=[]
     if lo<=price<=hi:
-        score+=22;checks.append("🟢 ราคาอยู่ใน Buy Zone")
+        score+=22; checks.append("🟢 ราคาอยู่ใน Buy Zone")
     elif price<lo:
-        score-=8;checks.append("🟡 ราคาต่ำกว่า Buy Zone — รอการยืนยัน")
+        score-=8; checks.append("🟡 ราคาต่ำกว่า Buy Zone"); missing.append("รอราคากลับเข้า Buy Zone พร้อมแรงซื้อยืนยัน")
     else:
-        score-=10;checks.append("🟠 ราคาเหนือ Buy Zone — ไม่ควรไล่")
+        score-=10; checks.append("🟠 ราคาเหนือ Buy Zone"); missing.append("รอราคาย่อลงกลับเข้า Buy Zone — ไม่ไล่ราคา")
 
     if market=="bull":
-        score+=10;checks.append("🟢 Watchlist breadth โดยรวมแข็งแรง")
+        score+=10; checks.append("🟢 ภาพรวม Watchlist แข็งแรง")
     elif market=="bear":
-        score-=14;checks.append("🔴 Watchlist breadth โดยรวมอ่อน")
+        score-=14; checks.append("🔴 ภาพรวม Watchlist อ่อน"); missing.append("รอภาพรวม Watchlist ฟื้น")
     elif market=="neutral":
-        checks.append("⚪ Watchlist breadth กลาง")
-    else: checks.append("⚪ Market context ยังไม่พอ")
+        checks.append("⚪ ภาพรวม Watchlist กลาง"); missing.append("ภาพรวม Watchlist แข็งแรงขึ้นจะเพิ่มความมั่นใจ")
+    else:
+        checks.append("⚪ Market context ยังไม่พอ"); missing.append("รอ Market context ให้พร้อม")
 
     if sector=="bull":
-        score+=10;checks.append("🟢 หุ้นกลุ่มเดียวกันแข็งแรง")
+        score+=10; checks.append("🟢 กลุ่มหุ้นเดียวกันแข็งแรง")
     elif sector=="bear":
-        score-=14;checks.append("🔴 หุ้นกลุ่มเดียวกันอ่อน")
+        score-=14; checks.append("🔴 กลุ่มหุ้นเดียวกันอ่อน"); missing.append("รอกลุ่มหุ้นฟื้น")
     elif sector=="neutral":
-        checks.append("⚪ กลุ่มหุ้นกลาง")
-    else: checks.append("⚪ ข้อมูลกลุ่มยังไม่พอ")
+        checks.append("⚪ กลุ่มหุ้นกลาง"); missing.append("กลุ่มหุ้นแข็งแรงขึ้นจะเพิ่มความมั่นใจ")
+    else:
+        checks.append("⚪ ข้อมูลกลุ่มยังไม่พอ"); missing.append("รอข้อมูลกลุ่มหุ้นให้พร้อม")
 
     if catalyst=="positive":
         score+=min(10,max(3,round((catalyst_score-50)/3))); checks.append(f"🟢 Catalyst เป็นบวก ({round(catalyst_score)}/100)")
     elif catalyst=="negative":
-        score-=min(20,max(8,round((50-catalyst_score)/2))); checks.append(f"🔴 Catalyst เป็นลบ ({round(catalyst_score)}/100)")
+        score-=min(20,max(8,round((50-catalyst_score)/2))); checks.append(f"🔴 Catalyst เป็นลบ ({round(catalyst_score)}/100)"); missing.append("รอ Catalyst ลบคลี่คลายหรือมีข่าวใหม่ยืนยัน")
     elif catalyst=="neutral":
-        checks.append("⚪ Catalyst ยังกลาง")
+        checks.append("⚪ Catalyst ยังกลาง"); missing.append("Catalyst บวกจะช่วยเพิ่มความมั่นใจ")
     else:
-        checks.append("⚪ ข่าวยังไม่พร้อม — ไม่เพิ่ม/ลดคะแนน")
+        checks.append("⚪ ข่าวยังไม่พร้อม"); missing.append("รอ Catalyst/ข่าวให้พร้อม")
+
     score=round(_clamp(score))
-
     if negative_high_impact:
-        status,label,reason="BLOCK","🔴 ยังไม่เข้า","พบข่าวลบ Impact สูง — รอให้ตลาดย่อยข่าวก่อน"
-    elif market=="bear" and sector=="bear":
-        status,label,reason="BLOCK","🔴 ยังไม่เข้า","ตลาดที่สแกนและกลุ่มหุ้นอ่อนพร้อมกัน"
-    elif price>hi:
-        status,label,reason="WAIT","🟠 ไม่ไล่ราคา","ราคาเหนือ Buy Zone"
-    elif price<lo:
-        status,label,reason="WAIT","🟡 รอจังหวะ","ราคายังไม่กลับเข้า Buy Zone"
-    elif score>=80:
-        status,label,reason="CONFIRMED","🟢 เข้าไม้ 1 ได้","ราคาและ Auto Context ผ่าน"
-    elif score>=64:
-        status,label,reason="CAUTION","🟡 ผ่านแบบระวัง","ราคาอยู่ในโซน แต่ Context ยังไม่เต็ม"
-    else:
-        status,label,reason="WAIT","🟡 รอก่อน","Auto Context ยังไม่แข็งแรงพอ"
-
-    return {"status":status,"score":score,"label":label,"reason":reason,"checks":checks}
+        return done("BLOCK",score,"🔴 งดเข้า","พบข่าวลบ Impact สูง — รอให้ตลาดย่อยข่าวก่อน",checks,["รอผลกระทบจากข่าวลบ Impact สูงคลี่คลาย"])
+    if market=="bear" and sector=="bear":
+        return done("BLOCK",score,"🔴 งดเข้า","ภาพรวม Watchlist และกลุ่มหุ้นอ่อนพร้อมกัน",checks,missing)
+    if price>hi:
+        return done("DONT_CHASE",score,"🟠 ไม่ไล่ราคา","ราคาสูงกว่า Buy Zone",checks,missing)
+    if price<lo:
+        return done("WAIT",score,"🟡 เฝ้ารอ Trigger","ราคายังต่ำกว่า Buy Zone — ยังไม่ใช่จังหวะเข้าไม้ 1",checks,missing)
+    if score>=80:
+        return done("CONFIRMED",score,"🟢 เข้าไม้ 1","ราคาอยู่ใน Buy Zone และ Decision Engine ผ่านเกณฑ์",checks,[])
+    if score>=64:
+        return done("WAIT",score,"🟡 เฝ้ารอ Trigger","ราคาอยู่ใน Buy Zone แต่ Context ยังไม่แข็งแรงพอสำหรับไฟเขียว",checks,missing)
+    return done("WAIT",score,"🟡 เฝ้ารอ Trigger","Decision Engine ยังไม่ผ่านเกณฑ์เข้าไม้ 1",checks,missing)
 
 def scanner_home():
     return render_template("scanner.html",watchlist=load_json("watchlist.json"))
