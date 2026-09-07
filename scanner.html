@@ -1,6 +1,6 @@
 <!doctype html><html lang="th"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V3.9</title>
+<title>AI Market Radar V4.0</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
 .w{max-width:1000px;margin:auto;padding:18px}.head{display:flex;justify-content:space-between;align-items:center}
@@ -17,14 +17,38 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.m{background:#132c44;border-radius:12px;padding:10px}.m b{display:block;font-size:17px}
 .confirm{display:none}.confirm.show{display:block}.checks{line-height:1.8;color:#cbd9e8}.pill{font-size:11px;padding:5px 8px;border-radius:20px;background:#173a58;display:inline-block;margin-top:5px}
 .news{display:grid;gap:8px;margin-top:10px}.newsitem{background:#10263c;border:1px solid #1d3e5d;border-radius:12px;padding:10px}.newsitem a{color:#dcecff;text-decoration:none;font-weight:750}.newsmeta{font-size:11px;color:#9eb1c6;margin-top:4px}
+
+.topPicks{display:grid;gap:12px;margin-top:12px}
+.pickCard{background:#10263c;border:1px solid #24425f;border-radius:17px;padding:15px}
+.pickCard.topPick{border-color:#c79b36;box-shadow:0 0 0 1px rgba(199,155,54,.15) inset}
+.pickCard.backup{border-color:#4f7395}
+.pickHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.pickScore{font-size:28px;font-weight:900}
+.pickWhy{margin:8px 0 0;padding-left:18px;color:#cbd9e8;font-size:12px;line-height:1.65}
+.pickHint{margin-top:8px;font-size:11px;color:#9eb1c6}
 @media(max-width:650px){.metrics{grid-template-columns:1fr 1fr}.ctx{grid-template-columns:1fr 1fr}}
 </style></head><body><div class="w">
-<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V3.9 • Decision Engine</div></div><div class="tag">Free-first</div></div>
+<div class="head"><div><h1>AI Market Radar</h1><div class="mut">V4.0 • Top Pick Engine</div></div><div class="tag">Free-first</div></div>
 
 <div class="card"><h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
-<div class="buttons"><button onclick="scan(false)">สแกน Watchlist 32 ตัว</button><button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button></div>
-<div class="status info">V3.9 รวม <b>Scanner + Auto Context + Catalyst + ราคาสด</b> เป็น Decision Engine คุณใส่เพียง <b>ราคาปัจจุบันจาก Webull</b></div>
+<div class="buttons">
+<button onclick="scan(false)">สแกน Watchlist 32 ตัว</button>
+<button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
+</div>
+<button style="margin-top:12px" onclick="loadTopPicks(false)">🏆 คัด Top Pick วันนี้</button>
+<div class="status info">V4.0 เพิ่ม <b>Top Pick Engine</b> เพื่อจัดลำดับว่าควรเฝ้าตัวไหนก่อน แล้วใช้ <b>ราคาปัจจุบันจาก Webull</b> ยืนยันก่อนเข้า</div>
 <div id="st" class="status info">กดสแกนเพื่อเริ่ม</div></div>
+
+
+<div class="card">
+<h2>🏆 Top Pick Engine</h2>
+<div class="small">
+ระบบเลือก “ตัวที่ควรเฝ้าก่อน” จาก Technical + Entry + R/R + Data Freshness + Auto Context + Catalyst
+<br>Watch Score ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และยังไม่ใช่คำสั่งซื้อ
+</div>
+<div id="topPickStatus" class="status info">กด “คัด Top Pick วันนี้” เพื่อเริ่ม</div>
+<div id="topPicks" class="topPicks"></div>
+</div>
 
 <div class="card"><h2>🧭 Auto Context</h2>
 <div class="ctx">
@@ -41,12 +65,70 @@ button.alt{background:#153a5b}.box{background:#112a42;border:1px solid #1c3b59;b
 <div class="metrics"><div class="m"><span class="small">Buy Zone</span><b id="bz">—</b></div><div class="m"><span class="small">ไม้ 1</span><b id="e1">—</b></div><div class="m"><span class="small">TP1</span><b id="tp">—</b></div><div class="m"><span class="small">Stop</span><b id="sp">—</b></div></div>
 </div>
 
-<div class="card"><h2>🏆 Candidate Ranking</h2><div class="small">แตะหุ้น → ใส่ราคาจาก Webull → ระบบใช้ Auto Context ให้เอง</div><div id="rows" class="rows" style="margin-top:12px"></div></div>
+<div class="card"><h2>🏆 Candidate Ranking</h2><div class="small">Top Pick = ตัวที่ควรเฝ้าก่อน • Candidate Ranking = รายการเทคนิคทั้งหมด • แตะหุ้นเพื่อทำ Final Decision</div><div id="rows" class="rows" style="margin-top:12px"></div></div>
 </div>
 <script>
 let selected=null,context=null,catalyst=null;
 const fmt=x=>x==null?"—":"$"+Number(x).toFixed(2);
 const state=s=>s==="bull"?"🟢 แข็งแรง":s==="bear"?"🔴 อ่อน":"⚪ กลาง";
+
+function pickState(s){
+ return s==="bull"?"🟢 แข็งแรง":s==="bear"?"🔴 อ่อน":"⚪ กลาง";
+}
+
+async function loadTopPicks(force){
+ const st=document.getElementById("topPickStatus");
+ st.className="status info";
+ st.textContent="กำลังคัด Top Pick และตรวจ Catalyst ของตัวอันดับต้น...";
+
+ try{
+  const url=force?"/api/top-picks?force=1":"/api/top-picks";
+  const r=await fetch(url,{cache:"no-store"});
+  const j=await r.json();
+  if(!j.ok)throw Error(j.error);
+
+  const d=j.data;
+  st.className="status "+(d.missing?"warn":"good");
+  st.textContent=`คัดเสร็จ • แสดงจาก Scanner ${d.scan_total}/${d.scan_requested} • Missing ${d.missing}`;
+
+  const box=document.getElementById("topPicks");
+  box.innerHTML=(d.top_picks||[]).map((x,i)=>{
+    let cls=x.pick_code==="TOP"?"topPick":x.pick_code==="BACKUP"?"backup":"";
+    let cat=x.catalyst||{};
+    let catText=cat.sentiment==="positive"?"🟢 บวก":cat.sentiment==="negative"?"🔴 ลบ":"⚪ กลาง/ยังไม่ชัด";
+    return `
+      <div class="pickCard ${cls}" onclick='pick(${JSON.stringify(x)})'>
+        <div class="pickHead">
+          <div>
+            <div class="ticker">${x.pick_label} • ${x.ticker}</div>
+            <div class="small">อันดับ ${x.pick_rank} • ${x.scanner_label}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="small">Watch Score</div>
+            <div class="pickScore">${x.watch_score}</div>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="m"><span class="small">Radar</span><b>${x.radar_score}/100</b></div>
+          <div class="m"><span class="small">Entry</span><b>${x.entry_score}/100</b></div>
+          <div class="m"><span class="small">R/R</span><b>${x.rr??"—"}</b></div>
+          <div class="m"><span class="small">Catalyst</span><b>${cat.score??50}/100</b></div>
+        </div>
+        <ul class="pickWhy">${(x.pick_reasons||[]).map(v=>`<li>${v}</li>`).join("")}</ul>
+        <div class="pickHint">
+          Market ${pickState(x.market_state)} • กลุ่ม ${pickState(x.group_state)} • Catalyst ${catText}
+          <br>แตะการ์ดนี้ → ใส่ราคาสด Webull → Final Decision
+        </div>
+      </div>
+    `;
+  }).join("");
+
+ }catch(e){
+  st.className="status bad";
+  st.textContent="คัด Top Pick ไม่สำเร็จ: "+e.message;
+ }
+}
+
 async function scan(force){
  let st=document.getElementById("st");st.className="status info";st.textContent="กำลังสแกน...";
  try{
@@ -59,6 +141,7 @@ async function scan(force){
   document.getElementById("rows").innerHTML=d.results.map((x,i)=>`<div class="row ${x.scanner_class}" onclick='pick(${JSON.stringify(x)})'>
    <div class="top"><div><div class="ticker">${i+1}. ${x.ticker}</div><div class="small">Ranking ${x.rank_score}/100 • ปิด ${fmt(x.last_close)}</div><div class="pill">${x.freshness_label}</div></div><div class="label">${x.scanner_label}</div></div>
    <div class="metrics"><div class="m"><span class="small">Radar</span><b>${x.radar_score}/100</b></div><div class="m"><span class="small">Entry</span><b>${x.entry_score}/100</b></div><div class="m"><span class="small">R/R</span><b>${x.rr??"—"}</b></div><div class="m"><span class="small">Buy Zone</span><b>${fmt(x.buy_low)}–${fmt(x.buy_high)}</b></div></div></div>`).join("");
+   loadTopPicks(false);
  }catch(e){st.className="status bad";st.textContent="สแกนไม่สำเร็จ: "+e.message}
 }
 function pick(x){

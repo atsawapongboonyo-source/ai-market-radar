@@ -23,6 +23,10 @@ _TICKER_CACHE_MAX_AGE = 3 * 24 * 60 * 60
 _CATALYST_CACHE = {}
 _CATALYST_TTL = 15 * 60
 
+_TOP_PICK_CACHE = {"ts": 0, "data": None}
+_TOP_PICK_TTL = 10 * 60
+_TOP_PICK_NEWS_LIMIT = 5
+
 POSITIVE_WORDS = ("beat","beats","raises","upgrade","record","growth","surge","strong","contract","deal","partnership","wins","launch","expands","demand","order","outperform")
 NEGATIVE_WORDS = ("miss","misses","cuts","downgrade","probe","lawsuit","warning","weak","decline","falls","delay","recall","investigation","underperform")
 HIGH_IMPACT_WORDS = ("earnings","guidance","revenue","profit","contract","deal","partnership","upgrade","downgrade","investigation","lawsuit","order","forecast","outlook")
@@ -185,7 +189,7 @@ def scan_watchlist(force=False):
       "fresh_count":len(fresh),"recovered_count":len(recovered),
       "fallback_used":len(cached),"errors":errors,"results":results,
       "auto_context":ctx,"from_cache":False,
-      "note":"V3.9 Decision Engine: scanner + auto context + catalyst + live-price decision"
+      "note":"V4.0 Top Pick Engine: scanner + auto context + catalyst ranking + live-price decision"
     }
     _SCAN_CACHE.update({"ts":now,"data":payload})
     return payload
@@ -253,6 +257,243 @@ def _get_catalyst(ticker, force=False):
         data={"ticker":ticker,"score":score,"sentiment":sent,"label":label,"reason":reason,"items":items,"negative_high_impact":neg_high}
     _CATALYST_CACHE[ticker]={"ts":now,"data":data}
     return data
+
+
+def _freshness_bonus(code):
+    return {"FRESH": 8, "RECOVERED": 3, "CACHED": -18}.get(code, -10)
+
+
+def _context_bonus(state):
+    return {"bull": 8, "neutral": 0, "bear": -10, "unknown": -4}.get(state, -4)
+
+
+def _catalyst_bonus(cat):
+    sent = cat.get("sentiment", "unknown")
+    score = float(cat.get("score") or 50)
+
+    if cat.get("negative_high_impact"):
+        return -28
+
+    if sent == "positive":
+        return min(12, max(4, (score - 50) * 0.35))
+    if sent == "negative":
+        return -min(20, max(8, (50 - score) * 0.45))
+    if sent == "neutral":
+        return 0
+    return -3
+
+
+def _top_pick_score(item, ctx, catalyst):
+    """
+    V4.0 Watch Score is for prioritising what to watch first.
+    It is not a probability of winning and not a buy signal.
+    """
+    rr = float(item.get("rr") or 0)
+    radar = float(item.get("radar_score") or 0)
+    entry = float(item.get("entry_score") or 0)
+    rank = float(item.get("rank_score") or 0)
+
+    group_state = (
+        ctx.get("groups", {})
+        .get(item.get("group"), {})
+        .get("state", "unknown")
+    )
+    market_state = ctx.get("market", "unknown")
+
+    # Avoid easy 100/100 saturation by blending independent components
+    score = (
+        radar * 0.26
+        + entry * 0.30
+        + rank * 0.18
+        + min(max(rr, 0), 3) / 3 * 10
+        + _freshness_bonus(item.get("confidence_code"))
+        + _context_bonus(market_state)
+        + _context_bonus(group_state)
+        + _catalyst_bonus(catalyst)
+    )
+
+    # Penalties for weak action states
+    action = item.get("action_code", "WAIT")
+    score += {
+        "ENTER": 5,
+        "SCALE": 3,
+        "WAIT": -4,
+        "DONT_CHASE": -12,
+        "AVOID": -25,
+    }.get(action, -8)
+
+    return round(max(0, min(100, score)), 1)
+
+
+def _top_pick_label(item, position):
+    score = item["watch_score"]
+    action = item.get("action_code")
+    confidence = item.get("confidence_code")
+
+    if confidence == "CACHED" or action == "AVOID":
+        return "SKIP", "🚫 Skip"
+
+    if position == 0 and score >= 72 and action in ("ENTER", "SCALE"):
+        return "TOP", "🏆 Top Pick"
+
+    if position <= 2 and score >= 64 and action in ("ENTER", "SCALE", "WAIT"):
+        return "BACKUP", "🥈 Backup Pick"
+
+    if action == "DONT_CHASE":
+        return "WAIT", "🟠 รอ Pullback"
+
+    if score >= 50:
+        return "WAIT", "⏳ Wait"
+
+    return "SKIP", "🚫 Skip"
+
+
+def build_top_picks(force=False):
+    now = time.time()
+
+    if (
+        not force
+        and _TOP_PICK_CACHE["data"] is not None
+        and now - _TOP_PICK_CACHE["ts"] < _TOP_PICK_TTL
+    ):
+        cached = dict(_TOP_PICK_CACHE["data"])
+        cached["from_cache"] = True
+        return cached
+
+    scan = scan_watchlist(force=force)
+    ctx = scan.get("auto_context") or {"market": "unknown", "groups": {}}
+
+    # Start from the technically best candidates only.
+    eligible = [
+        x for x in scan.get("results", [])
+        if x.get("confidence_code") != "CACHED"
+        and x.get("action_code") in ("ENTER", "SCALE", "WAIT", "DONT_CHASE")
+    ]
+
+    # Keep news workload small on Render Free.
+    eligible.sort(
+        key=lambda x: (
+            0 if x.get("action_code") in ("ENTER", "SCALE") else 1,
+            -float(x.get("rank_score") or 0),
+            -float(x.get("entry_score") or 0),
+        )
+    )
+
+    news_targets = eligible[:_TOP_PICK_NEWS_LIMIT]
+    catalyst_map = {}
+
+    for item in news_targets:
+        ticker = item["ticker"]
+        try:
+            catalyst_map[ticker] = _get_catalyst(ticker, False)
+        except Exception:
+            catalyst_map[ticker] = {
+                "ticker": ticker,
+                "score": 50,
+                "sentiment": "unknown",
+                "label": "⚪ ข่าวยังไม่พร้อม",
+                "reason": "โหลด Catalyst ไม่สำเร็จ",
+                "items": [],
+                "negative_high_impact": False,
+            }
+        # small pause is friendlier to free data source
+        time.sleep(0.15)
+
+    ranked = []
+    for item in eligible:
+        cat = catalyst_map.get(item["ticker"], {
+            "ticker": item["ticker"],
+            "score": 50,
+            "sentiment": "unknown",
+            "label": "⚪ ยังไม่ได้โหลด Catalyst",
+            "reason": "V4.0 โหลดข่าวอัตโนมัติเฉพาะตัวอันดับต้นเพื่อประหยัดทรัพยากร",
+            "items": [],
+            "negative_high_impact": False,
+        })
+
+        x = dict(item)
+        x["catalyst"] = {
+            "score": cat.get("score", 50),
+            "sentiment": cat.get("sentiment", "unknown"),
+            "label": cat.get("label", "⚪ ยังไม่ได้โหลด Catalyst"),
+            "reason": cat.get("reason", ""),
+            "negative_high_impact": bool(cat.get("negative_high_impact")),
+        }
+
+        group_state = (
+            ctx.get("groups", {})
+            .get(x.get("group"), {})
+            .get("state", "unknown")
+        )
+        x["market_state"] = ctx.get("market", "unknown")
+        x["group_state"] = group_state
+        x["watch_score"] = _top_pick_score(x, ctx, cat)
+        ranked.append(x)
+
+    ranked.sort(
+        key=lambda x: (
+            bool(x["catalyst"].get("negative_high_impact")),
+            -float(x.get("watch_score") or 0),
+            -float(x.get("entry_score") or 0),
+            -float(x.get("rr") or 0),
+        )
+    )
+
+    # Attach display labels after sorting
+    for i, x in enumerate(ranked):
+        code, label = _top_pick_label(x, i)
+        x["pick_code"] = code
+        x["pick_label"] = label
+        x["pick_rank"] = i + 1
+
+        reasons = []
+        if x.get("confidence_code") == "FRESH":
+            reasons.append("ข้อมูลเทคนิค Fresh")
+        elif x.get("confidence_code") == "RECOVERED":
+            reasons.append("ข้อมูลกู้กลับสำเร็จ")
+
+        if x.get("market_state") == "bull":
+            reasons.append("ภาพรวม Watchlist แข็งแรง")
+        elif x.get("market_state") == "bear":
+            reasons.append("ภาพรวม Watchlist อ่อน")
+
+        if x.get("group_state") == "bull":
+            reasons.append("กลุ่มหุ้นแข็งแรง")
+        elif x.get("group_state") == "bear":
+            reasons.append("กลุ่มหุ้นอ่อน")
+
+        if x["catalyst"].get("sentiment") == "positive":
+            reasons.append("Catalyst เชิงบวก")
+        elif x["catalyst"].get("sentiment") == "negative":
+            reasons.append("Catalyst เชิงลบ")
+        else:
+            reasons.append("Catalyst ยังไม่ชัด")
+
+        if float(x.get("rr") or 0) >= 2:
+            reasons.append("R/R ถึง TP1 ≥ 2")
+
+        x["pick_reasons"] = reasons[:4]
+
+    top = ranked[:8]
+
+    payload = {
+        "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "market": ctx.get("market", "unknown"),
+        "scan_total": scan.get("total", 0),
+        "scan_requested": scan.get("requested", 0),
+        "missing": scan.get("failed", 0),
+        "top_picks": top,
+        "from_cache": False,
+        "note": (
+            "V4.0 Watch Score ใช้เพื่อจัดลำดับหุ้นที่ควรเฝ้าก่อน "
+            "ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และยังต้องใส่ราคาสด Webull เพื่อ Final Decision"
+        ),
+    }
+
+    _TOP_PICK_CACHE["ts"] = now
+    _TOP_PICK_CACHE["data"] = payload
+    return payload
+
 
 def _clamp(x):return max(0,min(100,x))
 
@@ -345,6 +586,16 @@ def api_scan():
 def api_scan_refresh():
     try:return jsonify({"ok":True,"data":scan_watchlist(True)}),200
     except Exception as e:return jsonify({"ok":False,"error":str(e)}),200
+
+
+
+@app.route("/api/top-picks")
+def top_picks():
+    try:
+        force = request.args.get("force") == "1"
+        return jsonify({"ok": True, "data": build_top_picks(force)}), 200
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 200
 
 
 @app.route("/api/catalyst/<ticker>")
