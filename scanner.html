@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>AI Market Radar V4.5</title>
+<title>AI Market Radar V4.5.1</title>
 
 <style>
 *{box-sizing:border-box}
@@ -71,9 +71,7 @@ input{
   font-weight:800
 }
 
-button.alt{
-  background:#153a5b
-}
+button.alt{background:#153a5b}
 
 .box{
   background:#112a42;
@@ -131,13 +129,8 @@ button.alt{
   padding:15px
 }
 
-.row.candidate{
-  border-color:#2872ad
-}
-
-.row.cached{
-  opacity:.8
-}
+.row.candidate{border-color:#2872ad}
+.row.cached{opacity:.8}
 
 .top{
   display:flex;
@@ -173,13 +166,8 @@ button.alt{
   font-size:17px
 }
 
-.confirm{
-  display:none
-}
-
-.confirm.show{
-  display:block
-}
+.confirm{display:none}
+.confirm.show{display:block}
 
 .checks{
   line-height:1.8;
@@ -370,18 +358,12 @@ button.alt{
 <div class="w">
 
 <div class="head">
+  <div>
+    <h1>AI Market Radar</h1>
+    <div class="mut">V4.5.1 • Clear Entry / Trigger</div>
+  </div>
 
-<div>
-<h1>AI Market Radar</h1>
-<div class="mut">
-V4.5 • Auto Context Self-Healing
-</div>
-</div>
-
-<div class="tag">
-Free-first
-</div>
-
+  <div class="tag">Free-first</div>
 </div>
 
 
@@ -408,11 +390,9 @@ onclick="loadTopPicks(false)">
 </button>
 
 <div class="status info">
-
-V4.5 เพิ่ม
-<b>Auto Context Self-Healing</b>:
-ถ้ายังไม่มี Context ระบบจะโหลดจาก Scanner ให้อัตโนมัติก่อน Final Decision
-
+V4.5.1 แยก
+<b>เข้าได้ตอนนี้ / Trigger ที่รอ / ราคาที่รอย่อ / เงื่อนไขปลด Block</b>
+ให้ชัดเจน โดยยังคง Auto Context Self-Healing
 </div>
 
 <div id="st" class="status info">
@@ -427,15 +407,10 @@ V4.5 เพิ่ม
 <h2>🏆 Top Pick Engine</h2>
 
 <div class="small">
-
 ระบบเลือก “ตัวที่ควรเฝ้าก่อน”
 จาก Technical + Entry + R/R + Data Freshness + Auto Context + Catalyst
-
 <br>
-
-Watch Score ไม่ใช่เปอร์เซ็นต์โอกาสชนะ
-และยังไม่ใช่คำสั่งซื้อ
-
+Watch Score ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และยังไม่ใช่คำสั่งซื้อ
 </div>
 
 <div id="topPickStatus" class="status info">
@@ -454,37 +429,20 @@ Watch Score ไม่ใช่เปอร์เซ็นต์โอกาส�
 <div class="ctx">
 
 <div class="box">
-
-<div class="small">
-ภาพรวม Watchlist
-</div>
-
-<div id="market" class="big">
-—
-</div>
-
+  <div class="small">ภาพรวม Watchlist</div>
+  <div id="market" class="big">—</div>
 </div>
 
 <div class="box">
-
-<div class="small">
-ข้อมูลที่แสดง
-</div>
-
-<div id="health" class="big">
-—
-</div>
-
+  <div class="small">ข้อมูลที่แสดง</div>
+  <div id="health" class="big">—</div>
 </div>
 
 </div>
 
 <div class="small" style="margin-top:10px">
-
-หมายเหตุ:
-ระบบใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
+หมายเหตุ: V3.7 ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
 ไม่ได้อ้างว่าเป็นราคา QQQ แบบ real-time
-
 </div>
 
 </div>
@@ -524,22 +482,15 @@ id="relVolume"
 type="number"
 step=".01"
 min="0"
-placeholder="Relative Volume (ไม่บังคับ) เช่น 1.35">
+placeholder="Relative Volume เช่น 1.35">
 
 </div>
-
 
 <div class="gateNote">
-
-% Premarket:
-ใส่ +4.00 หรือ 4.00 สำหรับบวก
-และ -2.50 สำหรับลบ
-
+% Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า
 •
-Relative Volume เป็นข้อมูลเสริม เว้นว่างได้
-
+Relative Volume = Volume เทียบระดับปกติ (ถ้า Webull มี)
 </div>
-
 
 <button
 style="margin-top:10px"
@@ -549,43 +500,26 @@ onclick="confirmNow()">
 
 </button>
 
-
-<div
-id="gateResult"
-class="status info">
-
+<div id="gateResult" class="status info">
 ⚪ พร้อมตรวจ • Auto Context จะโหลดให้อัตโนมัติ
-
 </div>
 
-
-<div
-id="cres"
-class="status info">
-
+<div id="cres" class="status info">
 ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์
-
 </div>
 
 
-<div
-id="finalDash"
-class="finalDash"
-style="display:none">
+<div id="finalDash" class="finalDash" style="display:none">
 
 <div class="small">
 FINAL DECISION
 </div>
 
-<div
-id="finalAction"
-class="finalAction">
+<div id="finalAction" class="finalAction">
 —
 </div>
 
-<div
-id="finalSub"
-class="finalSub">
+<div id="finalSub" class="finalSub">
 —
 </div>
 
@@ -603,7 +537,7 @@ class="finalSub">
 </div>
 
 <div class="finalMetric">
-<span>Trigger ที่รอ</span>
+<span id="fdTriggerLabel">Trigger ที่รอ</span>
 <b id="fdTrigger">—</b>
 </div>
 
@@ -619,24 +553,16 @@ class="finalSub">
 
 </div>
 
-<ul
-id="finalWhy"
-class="finalWhy">
-</ul>
+<ul id="finalWhy" class="finalWhy"></ul>
 
-<div
-id="finalScenario"
-class="scenario">
+<div id="finalScenario" class="scenario">
 —
 </div>
 
 </div>
 
 
-<ul
-id="checks"
-class="checks">
-</ul>
+<ul id="checks" class="checks"></ul>
 
 <div
 id="missing"
@@ -677,13 +603,11 @@ style="display:none">
 <h2>🏆 Candidate Ranking</h2>
 
 <div class="small">
-
 Top Pick = ตัวที่ควรเฝ้าก่อน
 •
 Candidate Ranking = รายการเทคนิคทั้งหมด
 •
 แตะหุ้นเพื่อทำ Final Decision
-
 </div>
 
 <div
@@ -734,7 +658,8 @@ String(v)
 if(s==="")
 return null;
 
-const n=Number(s);
+const n=
+Number(s);
 
 return Number.isFinite(n)
 ?n
@@ -754,93 +679,13 @@ return s==="bull"
 }
 
 
-async function ensureContext(){
-
-if(
-context &&
-context.market &&
-context.groups
-){
-
-return context;
-
-}
-
-
-const marketEl=
-document.getElementById("market");
-
-const healthEl=
-document.getElementById("health");
-
-
-marketEl.textContent=
-"⏳ กำลังโหลด";
-
-healthEl.textContent=
-"—";
-
-
-const r=
-await fetch(
-"/api/scan",
-{cache:"no-store"}
-);
-
-
-const j=
-await r.json();
-
-
-if(!r.ok||!j.ok){
-
-throw Error(
-j.error||
-("โหลด Auto Context ไม่สำเร็จ (HTTP "+r.status+")")
-);
-
-}
-
-
-const d=
-j.data||{};
-
-
-context=
-d.auto_context||null;
-
-
-if(!context){
-
-throw Error(
-"Scanner ยังไม่ส่ง Auto Context"
-);
-
-}
-
-
-marketEl.textContent=
-state(context.market);
-
-
-healthEl.textContent=
-`${d.total??"—"}/${d.requested??"—"}`;
-
-
-return context;
-
-}
-
-
 async function loadTopPicks(force){
 
 const st=
 document.getElementById("topPickStatus");
 
-
 st.className=
 "status info";
-
 
 st.textContent=
 "กำลังคัด Top Pick และตรวจ Catalyst ของตัวอันดับต้น...";
@@ -873,10 +718,8 @@ const d=
 j.data;
 
 
-/* V4.5:
-เตรียม Auto Context ล่วงหน้า
-เพื่อให้ Top Pick → Final Decision
-ทำงานได้แม้ไม่ได้กด Scan ก่อน */
+/* V4.5.1
+เตรียม Auto Context ล่วงหน้า */
 
 if(!context){
 
@@ -904,6 +747,7 @@ document.getElementById("topPicks");
 box.innerHTML=
 (d.top_picks||[])
 .map((x,i)=>{
+
 
 let cls=
 x.pick_code==="TOP"
@@ -1034,10 +878,13 @@ Relative Volume ใส่เพิ่มได้ถ้ามี
 
 }catch(e){
 
-st.className="status bad";
+st.className=
+"status bad";
+
 
 st.textContent=
-"คัด Top Pick ไม่สำเร็จ: "+e.message;
+"คัด Top Pick ไม่สำเร็จ: "
++e.message;
 
 }
 
@@ -1182,7 +1029,8 @@ st.className=
 
 
 st.textContent=
-"สแกนไม่สำเร็จ: "+e.message;
+"สแกนไม่สำเร็จ: "
++e.message;
 
 }
 
@@ -1256,7 +1104,9 @@ saved.rv??"";
 document
 .getElementById("bz")
 .textContent=
-fmt(x.buy_low)+"–"+fmt(x.buy_high);
+fmt(x.buy_low)
++"–"+
+fmt(x.buy_high);
 
 
 document
@@ -1309,7 +1159,8 @@ document
 
 document
 .getElementById("checks")
-.innerHTML="";
+.innerHTML=
+"";
 
 
 document
@@ -1320,7 +1171,8 @@ document
 
 document
 .getElementById("newsList")
-.innerHTML="";
+.innerHTML=
+"";
 
 
 c.scrollIntoView({
@@ -1350,7 +1202,9 @@ cs.className=
 
 
 cs.textContent=
-"กำลังดึง Catalyst ของ "+ticker+" ...";
+"กำลังดึง Catalyst ของ "
++ticker+
+" ...";
 
 
 try{
@@ -1400,6 +1254,7 @@ document
 (catalyst.items||[])
 .map(n=>{
 
+
 let age=
 n.age_hours==null
 ?"เวลาไม่ทราบ"
@@ -1438,6 +1293,7 @@ ${title}
 ${n.publisher||"แหล่งข่าว"}
 •
 ${age}
+
 ${n.high_impact
 ?" • Impact สูง"
 :""}
@@ -1475,15 +1331,11 @@ cs.textContent=
 function triggerPlan(x,price){
 
 const lo=
-Number(
-selected.buy_low
-);
+Number(selected.buy_low);
 
 
 const hi=
-Number(
-selected.buy_high
-);
+Number(selected.buy_high);
 
 
 const pm=
@@ -1496,11 +1348,14 @@ x.status==="CONFIRMED"
 
 return {
 
+label:
+"เข้าได้ตอนนี้",
+
 price:
-selected.entry1 ?? hi,
+price,
 
 text:
-"เข้าไม้ 1 ตามแผน"
+`ราคาอยู่ใน Buy Zone ${fmt(lo)}–${fmt(hi)} • เข้าไม้ 1 ได้ตามแผน ณ ราคาปัจจุบัน หากยังไม่วิ่งเกินโซน`
 
 };
 
@@ -1513,11 +1368,14 @@ x.status==="DONT_CHASE"
 
 return {
 
-price:hi,
+label:
+"ราคาที่รอย่อ",
+
+price:
+hi,
 
 text:
-`รอย่อ ≤ ${fmt(hi)}
-แล้วตรวจ Gate ใหม่`
+`ยังไม่ไล่ราคา • รอย่อกลับมา ≤ ${fmt(hi)} แล้วตรวจ Gate ใหม่`
 
 };
 
@@ -1535,11 +1393,14 @@ Number(pm)<-5
 
 return {
 
-price:lo,
+label:
+"ระดับอ้างอิง",
+
+price:
+lo,
 
 text:
-`รอ Premarket ฟื้นเหนือ -5%
-และราคากลับ ≥ ${fmt(lo)}`
+`ยังไม่เข้า • รอ Premarket ฟื้นเหนือ -5% และให้ราคากลับมายืน ≥ ${fmt(lo)} ก่อนตรวจใหม่`
 
 };
 
@@ -1548,11 +1409,14 @@ text:
 
 return {
 
-price:lo,
+label:
+"ระดับอ้างอิง",
+
+price:
+lo,
 
 text:
-`รอราคากลับ ≥ ${fmt(lo)}
-พร้อม Context ฟื้น`
+`ยังไม่เข้า • รอเงื่อนไข Block คลี่คลาย และให้ราคากลับมายืน ≥ ${fmt(lo)} พร้อม Context ฟื้น`
 
 };
 
@@ -1565,11 +1429,14 @@ price<lo
 
 return {
 
-price:lo,
+label:
+"Trigger ที่รอ",
+
+price:
+lo,
 
 text:
-`รอราคากลับเข้า Buy Zone
-ที่ ${fmt(lo)}`
+`รอราคากลับเข้า Buy Zone ที่ ${fmt(lo)} แล้วตรวจ Context/Premarket อีกครั้ง`
 
 };
 
@@ -1582,11 +1449,14 @@ price>hi
 
 return {
 
-price:hi,
+label:
+"ราคาที่รอย่อ",
+
+price:
+hi,
 
 text:
-`รอย่อลง ≤ ${fmt(hi)}
-— ไม่ไล่ราคา`
+`รอย่อลง ≤ ${fmt(hi)} — ไม่ไล่ราคา`
 
 };
 
@@ -1595,11 +1465,14 @@ text:
 
 return {
 
+label:
+"Trigger ที่รอ",
+
 price:
 selected.entry1 ?? hi,
 
 text:
-"ราคาอยู่ใน Buy Zone แต่รอ Trigger/Context ยืนยัน"
+"ราคาอยู่ใน Buy Zone แต่ Decision Engine ยังรอ Context/Trigger เพิ่มก่อนเข้าไม้ 1"
 
 };
 
@@ -1650,6 +1523,12 @@ price
 
 
 document
+.getElementById("fdTriggerLabel")
+.textContent=
+trg.label;
+
+
+document
 .getElementById("fdTrigger")
 .textContent=
 fmt(trg.price);
@@ -1697,12 +1576,10 @@ x.status==="CONFIRMED"
 ){
 
 s=
-`ถ้าราคายังอยู่ใน Buy Zone
-${fmt(selected.buy_low)}–${fmt(selected.buy_high)}
+`ราคาอยู่ใน Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)}
 → เข้าไม้ 1 ตามแผนได้
 •
-ถ้าราคาวิ่งเหนือ ${fmt(selected.buy_high)}
-มาก → หยุดไล่ราคา`;
+ถ้าราคาวิ่งเหนือ ${fmt(selected.buy_high)} มาก → หยุดไล่ราคา`;
 
 }
 
@@ -1740,20 +1617,102 @@ s=
 `ยังไม่เข้าไม้ 1
 •
 รอราคา / Market Context / Premarket
-ให้ดีขึ้น
-แล้วกดตรวจอีกครั้ง`;
+ให้ดีขึ้น แล้วกดตรวจอีกครั้ง`;
 
 }
 
 
 s+=
-` • 🎯 Trigger: ${trg.text}`;
+` • 🎯 ${trg.text}`;
 
 
 document
 .getElementById("finalScenario")
 .textContent=
 s;
+
+}
+
+
+async function ensureContext(){
+
+if(
+context &&
+context.market &&
+context.groups
+){
+
+return context;
+
+}
+
+
+const marketEl=
+document.getElementById("market");
+
+
+const healthEl=
+document.getElementById("health");
+
+
+marketEl.textContent=
+"⏳ กำลังโหลด";
+
+
+healthEl.textContent=
+"—";
+
+
+const r=
+await fetch(
+"/api/scan",
+{cache:"no-store"}
+);
+
+
+const j=
+await r.json();
+
+
+if(
+!r.ok||
+!j.ok
+){
+
+throw Error(
+j.error||
+("โหลด Auto Context ไม่สำเร็จ (HTTP "+r.status+")")
+);
+
+}
+
+
+const d=
+j.data||{};
+
+
+context=
+d.auto_context||null;
+
+
+if(!context){
+
+throw Error(
+"Scanner ยังไม่ส่ง Auto Context"
+);
+
+}
+
+
+marketEl.textContent=
+state(context.market);
+
+
+healthEl.textContent=
+`${d.total??"—"}/${d.requested??"—"}`;
+
+
+return context;
 
 }
 
@@ -1832,17 +1791,20 @@ return;
 
 
 const priceRaw=
-document.getElementById("price")
+document
+.getElementById("price")
 .value;
 
 
 const pmRaw=
-document.getElementById("premarketPct")
+document
+.getElementById("premarketPct")
 .value;
 
 
 const rvRaw=
-document.getElementById("relVolume")
+document
+.getElementById("relVolume")
 .value;
 
 
@@ -2072,17 +2034,13 @@ x.status==="CONFIRMED"
 const shownPm=
 gate.premarket_pct==null
 ?pm
-:Number(
-gate.premarket_pct
-);
+:Number(gate.premarket_pct);
 
 
 const shownRv=
 gate.rel_volume==null
 ?rv
-:Number(
-gate.rel_volume
-);
+:Number(gate.rel_volume);
 
 
 const gs=
