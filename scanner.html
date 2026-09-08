@@ -3,276 +3,1132 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AI Market Radar V4.5.3</title>
+
+<title>AI Market Radar V4.6</title>
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#061423;color:#edf5ff;font-family:system-ui,-apple-system,sans-serif}
-.w{max-width:1000px;margin:auto;padding:18px}
-.head{display:flex;justify-content:space-between;align-items:center}
-h1{margin:0;font-size:28px}
-.mut{color:#94a9c1}
-.tag{border:1px solid #24425f;border-radius:30px;padding:9px 14px}
-.card{background:#0d1f31;border:1px solid #24425f;border-radius:20px;padding:18px;margin-top:18px}
-h2{margin:0 0 14px}
-.buttons,.grid,.ctx{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-button,input{width:100%;border:1px solid #24425f;border-radius:14px;padding:16px;background:#225f98;color:white;font:inherit;font-weight:800}
-button.alt{background:#153a5b}
-.box{background:#112a42;border:1px solid #1c3b59;border-radius:15px;padding:14px}
-.big{font-size:24px;font-weight:900}
-.small{font-size:12px;color:#9eb1c6}
-.status{padding:14px;border-radius:15px;margin-top:12px;line-height:1.55}
-.info{background:#123150;border:1px solid #27679d}
-.good{background:#0c3321;border:1px solid #217449}
-.warn{background:#352b0b;border:1px solid #79601a}
-.bad{background:#371515;border:1px solid #7a3030}
-.rows{display:grid;gap:12px}
-.row{background:#10263c;border:1px solid #24425f;border-radius:17px;padding:15px}
-.row.candidate{border-color:#2872ad}
-.row.cached{opacity:.8}
-.top{display:flex;justify-content:space-between;gap:8px}
-.ticker{font-size:22px;font-weight:900}
-.label{text-align:right;font-size:12px}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
-.m{background:#132c44;border-radius:12px;padding:10px}
-.m b{display:block;font-size:17px}
-.confirm{display:none}
-.confirm.show{display:block}
-.checks{line-height:1.8;color:#cbd9e8}
-.pill{font-size:11px;padding:5px 8px;border-radius:20px;background:#173a58;display:inline-block;margin-top:5px}
-.news{display:grid;gap:8px;margin-top:10px}
-.newsitem{background:#10263c;border:1px solid #1d3e5d;border-radius:12px;padding:10px}
-.newsitem a{color:#dcecff;text-decoration:none;font-weight:750}
-.newsmeta{font-size:11px;color:#9eb1c6;margin-top:4px}
-.topPicks{display:grid;gap:12px;margin-top:12px}
-.pickCard{background:#10263c;border:1px solid #24425f;border-radius:17px;padding:15px}
-.pickCard.topPick{border-color:#c79b36;box-shadow:0 0 0 1px rgba(199,155,54,.15) inset}
-.pickCard.backup{border-color:#4f7395}
-.pickHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.pickScore{font-size:28px;font-weight:900}
-.pickWhy{margin:8px 0 0;padding-left:18px;color:#cbd9e8;font-size:12px;line-height:1.65}
-.pickHint{margin-top:8px;font-size:11px;color:#9eb1c6}
-.gateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
-.gateNote{font-size:11px;color:#9eb1c6;line-height:1.55;margin-top:8px}
-.finalDash{margin-top:14px;border:1px solid #2d5274;border-radius:18px;padding:16px;background:#0b2135}
-.finalAction{font-size:26px;font-weight:900;line-height:1.2}
-.finalSub{font-size:12px;color:#a8bdd3;margin-top:6px;line-height:1.55}
-.finalGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
-.finalMetric{background:#112b43;border-radius:13px;padding:11px}
-.finalMetric span{display:block;font-size:11px;color:#9eb1c6}
-.finalMetric b{display:block;font-size:18px;margin-top:2px}
-.finalWhy{margin:12px 0 0;padding-left:18px;color:#d6e4f2;line-height:1.7;font-size:12px}
-.scenario{margin-top:12px;background:#10263c;border-radius:13px;padding:12px;font-size:12px;line-height:1.65}
+*{
+  box-sizing:border-box
+}
+
+body{
+  margin:0;
+  background:#061423;
+  color:#edf5ff;
+  font-family:system-ui,-apple-system,sans-serif
+}
+
+.w{
+  max-width:1000px;
+  margin:auto;
+  padding:18px
+}
+
+.head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px
+}
+
+h1{
+  margin:0;
+  font-size:28px
+}
+
+h2{
+  margin:0 0 14px
+}
+
+.mut{
+  color:#94a9c1
+}
+
+.tag{
+  border:1px solid #24425f;
+  border-radius:30px;
+  padding:9px 14px;
+  white-space:nowrap
+}
+
+.card{
+  background:#0d1f31;
+  border:1px solid #24425f;
+  border-radius:20px;
+  padding:18px;
+  margin-top:18px
+}
+
+.buttons,
+.grid,
+.ctx{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px
+}
+
+button,
+input{
+  width:100%;
+  border:1px solid #24425f;
+  border-radius:14px;
+  padding:16px;
+  background:#225f98;
+  color:white;
+  font:inherit;
+  font-weight:800
+}
+
+input{
+  background:#10263c
+}
+
+input::placeholder{
+  color:#8da5bc
+}
+
+button.alt{
+  background:#153a5b
+}
+
+button:disabled{
+  opacity:.5
+}
+
+.box{
+  background:#112a42;
+  border:1px solid #1c3b59;
+  border-radius:15px;
+  padding:14px
+}
+
+.big{
+  font-size:24px;
+  font-weight:900
+}
+
+.small{
+  font-size:12px;
+  color:#9eb1c6
+}
+
+.status{
+  padding:14px;
+  border-radius:15px;
+  margin-top:12px;
+  line-height:1.55
+}
+
+.info{
+  background:#123150;
+  border:1px solid #27679d
+}
+
+.good{
+  background:#0c3321;
+  border:1px solid #217449
+}
+
+.warn{
+  background:#352b0b;
+  border:1px solid #79601a
+}
+
+.bad{
+  background:#371515;
+  border:1px solid #7a3030
+}
+
+.rows{
+  display:grid;
+  gap:12px
+}
+
+.row{
+  background:#10263c;
+  border:1px solid #24425f;
+  border-radius:17px;
+  padding:15px
+}
+
+.row.candidate{
+  border-color:#2872ad
+}
+
+.row.cached{
+  opacity:.8
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:8px
+}
+
+.ticker{
+  font-size:22px;
+  font-weight:900
+}
+
+.label{
+  text-align:right;
+  font-size:12px
+}
+
+.metrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-top:10px
+}
+
+.m{
+  background:#132c44;
+  border-radius:12px;
+  padding:10px
+}
+
+.m b{
+  display:block;
+  font-size:17px
+}
+
+.confirm{
+  display:none
+}
+
+.confirm.show{
+  display:block
+}
+
+.checks{
+  line-height:1.8;
+  color:#cbd9e8
+}
+
+.pill{
+  font-size:11px;
+  padding:5px 8px;
+  border-radius:20px;
+  background:#173a58;
+  display:inline-block;
+  margin-top:5px
+}
+
+.news{
+  display:grid;
+  gap:8px;
+  margin-top:10px
+}
+
+.newsitem{
+  background:#10263c;
+  border:1px solid #1d3e5d;
+  border-radius:12px;
+  padding:10px
+}
+
+.newsitem a{
+  color:#dcecff;
+  text-decoration:none;
+  font-weight:750
+}
+
+.newsmeta{
+  font-size:11px;
+  color:#9eb1c6;
+  margin-top:4px
+}
+
+/* Top Pick */
+
+.topPicks{
+  display:grid;
+  gap:12px;
+  margin-top:12px
+}
+
+.pickCard{
+  background:#10263c;
+  border:1px solid #24425f;
+  border-radius:17px;
+  padding:15px
+}
+
+.pickCard.topPick{
+  border-color:#c79b36;
+  box-shadow:0 0 0 1px rgba(199,155,54,.15) inset
+}
+
+.pickCard.backup{
+  border-color:#4f7395
+}
+
+.pickHead{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start
+}
+
+.pickScore{
+  font-size:28px;
+  font-weight:900
+}
+
+.pickWhy{
+  margin:8px 0 0;
+  padding-left:18px;
+  color:#cbd9e8;
+  font-size:12px;
+  line-height:1.65
+}
+
+.pickHint{
+  margin-top:8px;
+  font-size:11px;
+  color:#9eb1c6
+}
+
+/* Premarket Gate */
+
+.gateGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:12px
+}
+
+.gateNote{
+  font-size:11px;
+  color:#9eb1c6;
+  line-height:1.55;
+  margin-top:8px
+}
+
+/* Final Decision */
+
+.finalDash{
+  margin-top:14px;
+  border:1px solid #2d5274;
+  border-radius:18px;
+  padding:16px;
+  background:#0b2135
+}
+
+.finalAction{
+  font-size:26px;
+  font-weight:900;
+  line-height:1.2
+}
+
+.finalSub{
+  font-size:12px;
+  color:#a8bdd3;
+  margin-top:6px;
+  line-height:1.55
+}
+
+.finalGrid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:8px;
+  margin-top:12px
+}
+
+.finalMetric{
+  background:#112b43;
+  border-radius:13px;
+  padding:11px
+}
+
+.finalMetric span{
+  display:block;
+  font-size:11px;
+  color:#9eb1c6
+}
+
+.finalMetric b{
+  display:block;
+  font-size:18px;
+  margin-top:2px
+}
+
+.finalWhy{
+  margin:12px 0 0;
+  padding-left:18px;
+  color:#d6e4f2;
+  line-height:1.7;
+  font-size:12px
+}
+
+.scenario{
+  margin-top:12px;
+  background:#10263c;
+  border-radius:13px;
+  padding:12px;
+  font-size:12px;
+  line-height:1.65
+}
+
+/* V4.6 Opening Confirmation */
+
+.sectionTitle{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+  margin-bottom:10px
+}
+
+.versionPill{
+  font-size:11px;
+  padding:6px 9px;
+  background:#153a5b;
+  border:1px solid #2f658e;
+  border-radius:20px;
+  white-space:nowrap
+}
+
+.openingCard{
+  margin-top:18px;
+  border:1px solid #315a7e;
+  background:#0b1d2e;
+  border-radius:18px;
+  padding:16px
+}
+
+.flow{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:7px;
+  margin:12px 0
+}
+
+.flowStep{
+  text-align:center;
+  background:#10263c;
+  border:1px solid #24425f;
+  border-radius:12px;
+  padding:9px 4px;
+  font-size:11px;
+  color:#9eb1c6
+}
+
+.flowStep.current{
+  color:white;
+  border-color:#3e82b8;
+  background:#153a5b;
+  font-weight:800
+}
+
+.openingGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:12px
+}
+
+.openingDash{
+  display:none;
+  margin-top:14px;
+  padding:16px;
+  border-radius:18px;
+  border:1px solid #315a7e;
+  background:#0b2135
+}
+
+.openingState{
+  font-size:28px;
+  font-weight:900
+}
+
+.openingSub{
+  font-size:12px;
+  color:#aec2d5;
+  line-height:1.6;
+  margin-top:5px
+}
+
+.openingMetrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-top:12px
+}
+
+.openingMetric{
+  background:#112b43;
+  padding:11px;
+  border-radius:13px
+}
+
+.openingMetric span{
+  display:block;
+  font-size:11px;
+  color:#9eb1c6
+}
+
+.openingMetric b{
+  display:block;
+  margin-top:3px;
+  font-size:17px
+}
+
+.nextStep{
+  margin-top:12px;
+  border-radius:13px;
+  padding:13px;
+  background:#10263c;
+  line-height:1.65;
+  font-size:13px
+}
+
+.divider{
+  height:1px;
+  background:#24425f;
+  margin:18px 0
+}
+
+@media(max-width:700px){
+  .finalGrid{
+    grid-template-columns:1fr 1fr
+  }
+
+  .gateGrid{
+    grid-template-columns:1fr
+  }
+
+  .openingGrid{
+    grid-template-columns:1fr 1fr
+  }
+
+  .openingMetrics{
+    grid-template-columns:1fr 1fr
+  }
+
+  .flow{
+    grid-template-columns:1fr
+  }
+
+  .flowStep{
+    text-align:left;
+    padding:9px 12px
+  }
+}
 
 @media(max-width:650px){
-  .finalGrid{grid-template-columns:1fr 1fr}
-  .gateGrid{grid-template-columns:1fr}
-  .metrics{grid-template-columns:1fr 1fr}
-  .ctx{grid-template-columns:1fr 1fr}
+  .metrics{
+    grid-template-columns:1fr 1fr
+  }
+
+  .ctx{
+    grid-template-columns:1fr 1fr
+  }
+
+  .buttons{
+    grid-template-columns:1fr 1fr
+  }
+
+  .head h1{
+    font-size:25px
+  }
 }
 </style>
 </head>
 
 <body>
+
 <div class="w">
 
 <div class="head">
   <div>
     <h1>AI Market Radar</h1>
-    <div class="mut">V4.5.3 • Final Gate Logic</div>
+    <div class="mut">V4.6 • Opening Confirmation Engine</div>
   </div>
+
   <div class="tag">Free-first</div>
 </div>
 
+
+<!-- ===================================================== -->
+<!-- SCANNER -->
+<!-- ===================================================== -->
+
 <div class="card">
+
 <h2>🔥 วันนี้ดูตัวไหนก่อน</h2>
 
 <div class="buttons">
-<button onclick="scan(false)">สแกน Watchlist 32 ตัว</button>
-<button class="alt" onclick="scan(true)">รีเฟรชข้อมูลใหม่</button>
+  <button onclick="scan(false)">
+    สแกน Watchlist 32 ตัว
+  </button>
+
+  <button class="alt" onclick="scan(true)">
+    รีเฟรชข้อมูลใหม่
+  </button>
 </div>
 
-<button style="margin-top:12px" onclick="loadTopPicks(false)">
-🏆 คัด Top Pick วันนี้
+<button
+  style="margin-top:12px"
+  onclick="loadTopPicks(false)"
+>
+  🏆 คัด Top Pick วันนี้
 </button>
 
 <div class="status info">
-V4.5.3 แยก <b>Premarket HOT / ราคาที่รอย่อ / Trigger / Block</b>
-ให้ถูกตามสาเหตุ และยังคง Auto Context Self-Healing
+  <b>V4.6</b> เพิ่ม Opening Confirmation หลังตลาดเปิด
+  โดยยังคง Scanner + Catalyst + Premarket Gate + Final Decision เดิมไว้ครบ
 </div>
 
 <div id="st" class="status info">
-กดสแกนเพื่อเริ่ม
-</div>
+  กดสแกนเพื่อเริ่ม
 </div>
 
+</div>
+
+
+<!-- ===================================================== -->
+<!-- TOP PICKS -->
+<!-- ===================================================== -->
+
 <div class="card">
+
 <h2>🏆 Top Pick Engine</h2>
 
 <div class="small">
 ระบบเลือก “ตัวที่ควรเฝ้าก่อน”
 จาก Technical + Entry + R/R + Data Freshness + Auto Context + Catalyst
 <br>
-Watch Score ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และยังไม่ใช่คำสั่งซื้อ
+Watch Score เป็นคะแนนจัดลำดับเฝ้าดู
+ไม่ใช่เปอร์เซ็นต์โอกาสชนะ และไม่ใช่คำสั่งซื้อ
 </div>
 
-<div id="topPickStatus" class="status info">
-กด “คัด Top Pick วันนี้” เพื่อเริ่ม
+<div
+  id="topPickStatus"
+  class="status info"
+>
+  กด “คัด Top Pick วันนี้” เพื่อเริ่ม
 </div>
 
-<div id="topPicks" class="topPicks"></div>
+<div
+  id="topPicks"
+  class="topPicks"
+></div>
+
 </div>
+
+
+<!-- ===================================================== -->
+<!-- AUTO CONTEXT -->
+<!-- ===================================================== -->
 
 <div class="card">
+
 <h2>🧭 Auto Context</h2>
 
 <div class="ctx">
-<div class="box">
-<div class="small">ภาพรวม Watchlist</div>
-<div id="market" class="big">—</div>
+
+  <div class="box">
+    <div class="small">
+      ภาพรวม Watchlist
+    </div>
+
+    <div
+      id="market"
+      class="big"
+    >
+      —
+    </div>
+  </div>
+
+
+  <div class="box">
+    <div class="small">
+      ข้อมูลที่แสดง
+    </div>
+
+    <div
+      id="health"
+      class="big"
+    >
+      —
+    </div>
+  </div>
+
 </div>
 
-<div class="box">
-<div class="small">ข้อมูลที่แสดง</div>
-<div id="health" class="big">—</div>
-</div>
-</div>
-
-<div class="small" style="margin-top:10px">
-หมายเหตุ: ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
+<div
+  class="small"
+  style="margin-top:10px"
+>
+Auto Context ใช้ breadth ของหุ้นใน Watchlist เป็น proxy ฟรี
 ไม่ได้อ้างว่าเป็นราคา QQQ แบบ real-time
 </div>
+
 </div>
 
-<div id="confirm" class="card confirm">
+
+<!-- ===================================================== -->
+<!-- FINAL CONFIRMATION -->
+<!-- ===================================================== -->
+
+<div
+  id="confirm"
+  class="card confirm"
+>
 
 <h2>
 ⚡ Final Confirmation •
 <span id="ct">—</span>
 </h2>
 
-<div id="catStatus" class="status info">
+
+<div
+  id="catStatus"
+  class="status info"
+>
 เลือกหุ้นเพื่อดึง Catalyst
 </div>
 
-<div id="newsList" class="news"></div>
+<div
+  id="newsList"
+  class="news"
+></div>
+
 
 <div class="gateGrid">
 
-<input
-id="price"
-type="number"
-step=".01"
-placeholder="ราคาปัจจุบันจาก Webull">
+  <input
+    id="price"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    placeholder="ราคาปัจจุบันจาก Webull"
+  >
 
-<input
-id="premarketPct"
-type="text"
-inputmode="decimal"
-autocomplete="off"
-placeholder="% Premarket เช่น +4.00 หรือ -2.50">
+  <input
+    id="premarketPct"
+    type="text"
+    inputmode="decimal"
+    autocomplete="off"
+    placeholder="% Premarket เช่น +4.00 หรือ -2.50"
+  >
 
-<input
-id="relVolume"
-type="number"
-step=".01"
-min="0"
-placeholder="Relative Volume (ไม่บังคับ) เช่น 1.35">
+  <input
+    id="relVolume"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    min="0"
+    placeholder="Relative Volume เช่น 1.35"
+  >
 
 </div>
+
 
 <div class="gateNote">
 % Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า
 •
-Relative Volume = Volume เทียบระดับปกติ ถ้ามี
+Relative Volume เว้นว่างได้
 </div>
 
-<button style="margin-top:10px" onclick="confirmNow()">
+
+<button
+  style="margin-top:10px"
+  onclick="confirmNow()"
+>
 ตรวจ Premarket Gate + Final Decision
 </button>
 
-<div id="gateResult" class="status info">
-⚪ พร้อมตรวจ • Auto Context จะโหลดให้อัตโนมัติ
+
+<div
+  id="gateResult"
+  class="status info"
+>
+⚪ Premarket Gate ยังไม่ได้ตรวจ
 </div>
 
-<div id="cres" class="status info">
+
+<div
+  id="cres"
+  class="status info"
+>
 ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์
 </div>
 
-<div id="finalDash" class="finalDash" style="display:none">
 
-<div class="small">FINAL DECISION</div>
+<!-- FINAL DASHBOARD -->
 
-<div id="finalAction" class="finalAction">—</div>
-<div id="finalSub" class="finalSub">—</div>
+<div
+  id="finalDash"
+  class="finalDash"
+  style="display:none"
+>
+
+<div class="small">
+FINAL DECISION
+</div>
+
+<div
+  id="finalAction"
+  class="finalAction"
+>
+—
+</div>
+
+<div
+  id="finalSub"
+  class="finalSub"
+>
+—
+</div>
+
 
 <div class="finalGrid">
 
-<div class="finalMetric">
-<span>ราคาสด</span>
-<b id="fdPrice">—</b>
+  <div class="finalMetric">
+    <span>ราคาสด</span>
+    <b id="fdPrice">—</b>
+  </div>
+
+  <div class="finalMetric">
+    <span>Buy Zone</span>
+    <b id="fdBuy">—</b>
+  </div>
+
+  <div class="finalMetric">
+    <span id="fdTriggerLabel">
+      Trigger ที่รอ
+    </span>
+
+    <b id="fdTrigger">
+      —
+    </b>
+  </div>
+
+  <div class="finalMetric">
+    <span>TP1</span>
+    <b id="fdTp">—</b>
+  </div>
+
+  <div class="finalMetric">
+    <span>Stop</span>
+    <b id="fdStop">—</b>
+  </div>
+
 </div>
 
-<div class="finalMetric">
-<span>Buy Zone</span>
-<b id="fdBuy">—</b>
-</div>
 
-<div class="finalMetric">
-<span id="fdTriggerLabel">Trigger ที่รอ</span>
-<b id="fdTrigger">—</b>
-</div>
+<ul
+  id="finalWhy"
+  class="finalWhy"
+></ul>
 
-<div class="finalMetric">
-<span>TP1</span>
-<b id="fdTp">—</b>
-</div>
-
-<div class="finalMetric">
-<span>Stop</span>
-<b id="fdStop">—</b>
+<div
+  id="finalScenario"
+  class="scenario"
+>
+—
 </div>
 
 </div>
 
-<ul id="finalWhy" class="finalWhy"></ul>
 
-<div id="finalScenario" class="scenario">—</div>
+<ul
+  id="checks"
+  class="checks"
+></ul>
 
-</div>
 
-<ul id="checks" class="checks"></ul>
+<div
+  id="missing"
+  class="status info"
+  style="display:none"
+></div>
 
-<div id="missing" class="status info" style="display:none"></div>
 
 <div class="metrics">
 
-<div class="m">
-<span class="small">Buy Zone</span>
-<b id="bz">—</b>
+  <div class="m">
+    <span class="small">
+      Buy Zone
+    </span>
+    <b id="bz">—</b>
+  </div>
+
+  <div class="m">
+    <span class="small">
+      ไม้ 1
+    </span>
+    <b id="e1">—</b>
+  </div>
+
+  <div class="m">
+    <span class="small">
+      TP1
+    </span>
+    <b id="tp">—</b>
+  </div>
+
+  <div class="m">
+    <span class="small">
+      Stop
+    </span>
+    <b id="sp">—</b>
+  </div>
+
 </div>
 
-<div class="m">
-<span class="small">ไม้ 1</span>
-<b id="e1">—</b>
+
+
+<!-- ===================================================== -->
+<!-- V4.6 OPENING CONFIRMATION -->
+<!-- ===================================================== -->
+
+<div class="openingCard">
+
+<div class="sectionTitle">
+
+<div>
+
+<h2 style="margin-bottom:5px">
+🌅 Opening Confirmation
+</h2>
+
+<div class="small">
+ใช้หลังตลาดเปิด เมื่อเริ่มเห็น Opening Range แล้ว
 </div>
 
-<div class="m">
-<span class="small">TP1</span>
-<b id="tp">—</b>
 </div>
 
-<div class="m">
-<span class="small">Stop</span>
-<b id="sp">—</b>
+<div class="versionPill">
+V4.6
 </div>
 
 </div>
+
+
+<div class="flow">
+
+  <div
+    id="flowWatch"
+    class="flowStep current"
+  >
+    1 • WATCH
+  </div>
+
+  <div
+    id="flowOpen"
+    class="flowStep"
+  >
+    2 • OPENING CHECK
+  </div>
+
+  <div
+    id="flowArmed"
+    class="flowStep"
+  >
+    3 • ARMED
+  </div>
+
+  <div
+    id="flowEntry"
+    class="flowStep"
+  >
+    4 • ENTRY 1
+  </div>
+
+  <div
+    id="flowInvalid"
+    class="flowStep"
+  >
+    5 • INVALIDATED
+  </div>
+
 </div>
+
+
+<div class="status info">
+หลังตลาดเปิด ให้ดูราคาเปิดและช่วง High / Low แรกจาก Webull
+แล้วให้ระบบตรวจว่าหุ้นกำลังสร้างฐานจริง
+หรือเป็นเพียง Gap / Spike ที่ยังไม่ควรไล่ราคา
+</div>
+
+
+<div class="openingGrid">
+
+  <input
+    id="openingPrice"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    placeholder="ราคาปัจจุบัน"
+  >
+
+  <input
+    id="openPrice"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    placeholder="ราคา Open"
+  >
+
+  <input
+    id="openingHigh"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    placeholder="Opening High"
+  >
+
+  <input
+    id="openingLow"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    placeholder="Opening Low"
+  >
+
+</div>
+
+
+<div class="openingGrid">
+
+  <input
+    id="openingRV"
+    type="number"
+    inputmode="decimal"
+    step=".01"
+    min="0"
+    placeholder="Relative Volume (ถ้ามี)"
+  >
+
+</div>
+
+
+<div class="gateNote">
+Opening High / Low ใช้ช่วงเปิดตลาดที่คุณกำลังประเมิน
+เช่นช่วงแรกประมาณ 5–15 นาที
+•
+Relative Volume ยังเป็น Optional
+</div>
+
+
+<button
+  style="margin-top:12px"
+  onclick="openingConfirm()"
+>
+🌅 ตรวจ Opening Confirmation
+</button>
+
+
+<div
+  id="openingStatus"
+  class="status info"
+>
+⚪ รอตลาดเปิดและกรอก Opening Range
+</div>
+
+
+<div
+  id="openingDash"
+  class="openingDash"
+>
+
+<div class="small">
+OPENING STATE
+</div>
+
+<div
+  id="openingState"
+  class="openingState"
+>
+—
+</div>
+
+<div
+  id="openingSub"
+  class="openingSub"
+>
+—
+</div>
+
+
+<div class="openingMetrics">
+
+  <div class="openingMetric">
+    <span>Opening Score</span>
+    <b id="ocScore">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>Open</span>
+    <b id="ocOpen">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>Opening Mid</span>
+    <b id="ocMid">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>จาก Open</span>
+    <b id="ocFromOpen">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>Opening High</span>
+    <b id="ocHigh">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>Opening Low</span>
+    <b id="ocLow">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>Range Width</span>
+    <b id="ocRange">—</b>
+  </div>
+
+  <div class="openingMetric">
+    <span>Buy Zone</span>
+    <b id="ocBuy">—</b>
+  </div>
+
+</div>
+
+
+<ul
+  id="openingChecks"
+  class="checks"
+></ul>
+
+
+<div
+  id="openingNext"
+  class="nextStep"
+>
+—
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ===================================================== -->
+<!-- CANDIDATE RANKING -->
+<!-- ===================================================== -->
 
 <div class="card">
 
-<h2>🏆 Candidate Ranking</h2>
+<h2>
+🏆 Candidate Ranking
+</h2>
 
 <div class="small">
 Top Pick = ตัวที่ควรเฝ้าก่อน
@@ -282,1188 +1138,2362 @@ Candidate Ranking = รายการเทคนิคทั้งหมด
 แตะหุ้นเพื่อทำ Final Decision
 </div>
 
-<div id="rows" class="rows" style="margin-top:12px"></div>
+<div
+  id="rows"
+  class="rows"
+  style="margin-top:12px"
+></div>
 
 </div>
 
+
 </div>
+
 
 <script>
+
+/* ========================================================
+   GLOBAL STATE
+======================================================== */
 
 let selected=null;
 let context=null;
 let catalyst=null;
 
 const gateInputs={};
+const openingInputs={};
 
-const fmt=x=>
-x==null
-?"—"
-:"$"+Number(x).toFixed(2);
 
-const state=s=>
-s==="bull"
-?"🟢 แข็งแรง"
-:s==="bear"
-?"🔴 อ่อน"
-:"⚪ กลาง";
+/* ========================================================
+   HELPERS
+======================================================== */
+
+const fmt=x=>{
+  if(x===null||x===undefined||!Number.isFinite(Number(x))){
+    return "—";
+  }
+  return "$"+Number(x).toFixed(2);
+};
+
+
+const state=s=>{
+  return s==="bull"
+    ?"🟢 แข็งแรง"
+    :s==="bear"
+      ?"🔴 อ่อน"
+      :"⚪ กลาง";
+};
+
 
 function signedNum(v){
 
-if(v===null||v===undefined)
-return null;
+  if(v===null||v===undefined){
+    return null;
+  }
 
-const s=
-String(v)
-.trim()
-.replace(",",".")
-.replace("%","");
+  const s=String(v)
+    .trim()
+    .replace(",",".")
+    .replace("%","");
 
-if(s==="")
-return null;
+  if(s===""){
+    return null;
+  }
 
-const n=Number(s);
+  const n=Number(s);
 
-return Number.isFinite(n)
-?n
-:null;
-
+  return Number.isFinite(n)
+    ?n
+    :null;
 }
+
 
 function pickState(s){
 
-return s==="bull"
-?"🟢 แข็งแรง"
-:s==="bear"
-?"🔴 อ่อน"
-:"⚪ กลาง";
-
+  return s==="bull"
+    ?"🟢 แข็งแรง"
+    :s==="bear"
+      ?"🔴 อ่อน"
+      :"⚪ กลาง";
 }
 
-async function loadTopPicks(force){
 
-const st=
-document.getElementById("topPickStatus");
 
-st.className="status info";
-
-st.textContent=
-"กำลังคัด Top Pick และตรวจ Catalyst ของตัวอันดับต้น...";
-
-try{
-
-const url=
-force
-?"/api/top-picks?force=1"
-:"/api/top-picks";
-
-const r=
-await fetch(
-url,
-{cache:"no-store"}
-);
-
-const j=
-await r.json();
-
-if(!j.ok)
-throw Error(j.error);
-
-const d=j.data;
-
-if(!context){
-try{
-await ensureContext();
-}catch(_){}
-}
-
-st.className=
-"status "+(d.missing?"warn":"good");
-
-st.textContent=
-`คัดเสร็จ • แสดงจาก Scanner ${d.scan_total}/${d.scan_requested} • Missing ${d.missing}`;
-
-const box=
-document.getElementById("topPicks");
-
-box.innerHTML=
-(d.top_picks||[])
-.map((x,i)=>{
-
-let cls=
-x.pick_code==="TOP"
-?"topPick"
-:x.pick_code==="BACKUP"
-?"backup"
-:"";
-
-let cat=
-x.catalyst||{};
-
-let catText=
-cat.sentiment==="positive"
-?"🟢 บวก"
-:cat.sentiment==="negative"
-?"🔴 ลบ"
-:"⚪ กลาง/ยังไม่ชัด";
-
-return `
-
-<div class="pickCard ${cls}" onclick='pick(${JSON.stringify(x)})'>
-
-<div class="pickHead">
-
-<div>
-
-<div class="ticker">
-${x.pick_label} • ${x.ticker}
-</div>
-
-<div class="small">
-อันดับ ${x.pick_rank} • ${x.scanner_label}
-</div>
-
-</div>
-
-<div style="text-align:right">
-<div class="small">Watch Score</div>
-<div class="pickScore">${x.watch_score}</div>
-</div>
-
-</div>
-
-<div class="metrics">
-
-<div class="m">
-<span class="small">Radar</span>
-<b>${x.radar_score}/100</b>
-</div>
-
-<div class="m">
-<span class="small">Entry</span>
-<b>${x.entry_score}/100</b>
-</div>
-
-<div class="m">
-<span class="small">R/R</span>
-<b>${x.rr??"—"}</b>
-</div>
-
-<div class="m">
-<span class="small">Catalyst</span>
-<b>${cat.score??50}/100</b>
-</div>
-
-</div>
-
-<ul class="pickWhy">
-${(x.pick_reasons||[]).map(v=>`<li>${v}</li>`).join("")}
-</ul>
-
-<div class="pickHint">
-
-Market ${pickState(x.market_state)}
-•
-กลุ่ม ${pickState(x.group_state)}
-•
-Catalyst ${catText}
-
-${i===0 && x.why_leads
-?`<br><b>เหตุผลที่นำ:</b> ${x.why_leads}`
-:""}
-
-${i>0
-?`<br><b>ห่าง Top Pick:</b> ${Number(
-x.gap_from_top ??
-((d.top_picks?.[0]?.watch_score??0)-x.watch_score)
-).toFixed(1)} คะแนน`
-:""}
-
-<br>
-แตะการ์ดนี้ → ใส่ราคาสด + Premarket → Final Decision
-<br>
-Relative Volume ใส่เพิ่มได้ถ้ามี
-
-</div>
-
-</div>
-
-`;
-
-}).join("");
-
-}catch(e){
-
-st.className="status bad";
-
-st.textContent=
-"คัด Top Pick ไม่สำเร็จ: "+e.message;
-
-}
-
-}
-
-async function scan(force){
-
-let st=
-document.getElementById("st");
-
-st.className="status info";
-st.textContent="กำลังสแกน...";
-
-try{
-
-let r=
-await fetch(
-force
-?"/api/scan/refresh"
-:"/api/scan",
-{cache:"no-store"}
-);
-
-let j=
-await r.json();
-
-if(!j.ok)
-throw Error(j.error);
-
-let d=j.data;
-
-context=d.auto_context;
-
-document.getElementById("market").textContent=
-state(context.market);
-
-document.getElementById("health").textContent=
-`${d.total}/${d.requested}`;
-
-st.className=
-"status "+(d.failed?"warn":"good");
-
-st.textContent=
-`สแกนสำเร็จ ${d.total}/${d.requested} • Fresh ${d.fresh_count} • Recovered ${d.recovered_count} • Cached ${d.fallback_used} • Missing ${d.failed}`;
-
-document.getElementById("rows").innerHTML=
-
-d.results.map((x,i)=>`
-
-<div class="row ${x.scanner_class}" onclick='pick(${JSON.stringify(x)})'>
-
-<div class="top">
-
-<div>
-
-<div class="ticker">
-${i+1}. ${x.ticker}
-</div>
-
-<div class="small">
-Ranking ${x.rank_score}/100
-•
-ปิด ${fmt(x.last_close)}
-</div>
-
-<div class="pill">
-${x.freshness_label}
-</div>
-
-</div>
-
-<div class="label">
-${x.scanner_label}
-</div>
-
-</div>
-
-<div class="metrics">
-
-<div class="m">
-<span class="small">Radar</span>
-<b>${x.radar_score}/100</b>
-</div>
-
-<div class="m">
-<span class="small">Entry</span>
-<b>${x.entry_score}/100</b>
-</div>
-
-<div class="m">
-<span class="small">R/R</span>
-<b>${x.rr??"—"}</b>
-</div>
-
-<div class="m">
-<span class="small">Buy Zone</span>
-<b>${fmt(x.buy_low)}–${fmt(x.buy_high)}</b>
-</div>
-
-</div>
-
-</div>
-
-`).join("");
-
-loadTopPicks(false);
-
-}catch(e){
-
-st.className="status bad";
-st.textContent="สแกนไม่สำเร็จ: "+e.message;
-
-}
-
-}
-
-function pick(x){
-
-if(selected){
-
-gateInputs[selected.ticker]={
-
-price:document.getElementById("price").value,
-pm:document.getElementById("premarketPct").value,
-rv:document.getElementById("relVolume").value
-
-};
-
-}
-
-selected=x;
-
-let c=
-document.getElementById("confirm");
-
-c.classList.add("show");
-
-document.getElementById("ct").textContent=
-x.ticker;
-
-const saved=
-gateInputs[x.ticker]||{};
-
-document.getElementById("price").value=
-saved.price??"";
-
-document.getElementById("premarketPct").value=
-saved.pm??"";
-
-document.getElementById("relVolume").value=
-saved.rv??"";
-
-document.getElementById("bz").textContent=
-fmt(x.buy_low)+"–"+fmt(x.buy_high);
-
-document.getElementById("e1").textContent=
-fmt(x.entry1);
-
-document.getElementById("tp").textContent=
-fmt(x.tp1);
-
-document.getElementById("sp").textContent=
-fmt(x.stop);
-
-document.getElementById("gateResult").className=
-"status info";
-
-document.getElementById("gateResult").textContent=
-"⚪ พร้อมตรวจ • Auto Context จะโหลดให้อัตโนมัติ";
-
-document.getElementById("cres").className=
-"status info";
-
-document.getElementById("cres").textContent=
-"ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์";
-
-document.getElementById("finalDash").style.display=
-"none";
-
-document.getElementById("checks").innerHTML=
-"";
-
-document.getElementById("missing").style.display=
-"none";
-
-document.getElementById("newsList").innerHTML=
-"";
-
-c.scrollIntoView({
-behavior:"smooth",
-block:"start"
-});
-
-loadCatalyst(x.ticker);
-
-}
-
-async function loadCatalyst(ticker){
-
-catalyst=null;
-
-let cs=
-document.getElementById("catStatus");
-
-cs.className="status info";
-cs.textContent=
-"กำลังดึง Catalyst ของ "+ticker+" ...";
-
-try{
-
-let r=
-await fetch(
-"/api/catalyst/"+encodeURIComponent(ticker),
-{cache:"no-store"}
-);
-
-let j=
-await r.json();
-
-if(!j.ok)
-throw Error(j.error);
-
-catalyst=j.data;
-
-cs.className=
-"status "+
-(
-catalyst.sentiment==="positive"
-?"good"
-:catalyst.sentiment==="negative"
-?"bad"
-:"info"
-);
-
-cs.innerHTML=
-`<b>${catalyst.label}</b>
-• Catalyst ${catalyst.score}/100
-<br>
-${catalyst.reason}`;
-
-document.getElementById("newsList").innerHTML=
-
-(catalyst.items||[])
-.map(n=>{
-
-let age=
-n.age_hours==null
-?"เวลาไม่ทราบ"
-:n.age_hours<=24
-?`${n.age_hours} ชม.`
-:`${Math.round(n.age_hours/24)} วัน`;
-
-let icon=
-n.sentiment==="positive"
-?"🟢"
-:n.sentiment==="negative"
-?"🔴"
-:"⚪";
-
-let title=
-n.link
-?`<a href="${n.link}" target="_blank" rel="noopener">${n.title}</a>`
-:n.title;
-
-return `
-
-<div class="newsitem">
-
-${icon}
-${title}
-
-<div class="newsmeta">
-
-${n.publisher||"แหล่งข่าว"}
-•
-${age}
-${n.high_impact?" • Impact สูง":""}
-
-</div>
-
-</div>
-
-`;
-
-}).join("");
-
-}catch(e){
-
-catalyst={
-sentiment:"unknown",
-score:50,
-negative_high_impact:false
-};
-
-cs.className="status warn";
-
-cs.textContent=
-"Catalyst โหลดไม่สำเร็จ — ระบบจะไม่เพิ่ม/ลดคะแนนข่าว";
-
-}
-
-}
-
-function triggerPlan(x,price){
-
-const lo=
-Number(selected.buy_low);
-
-const hi=
-Number(selected.buy_high);
-
-const pm=
-x?.premarket_gate?.premarket_pct;
-
-const gateStatus=
-x?.premarket_gate?.status;
-
-if(x.status==="CONFIRMED"){
-
-return {
-
-label:"เข้าได้ตอนนี้",
-
-display:fmt(price),
-
-text:
-`ราคาอยู่ใน Buy Zone ${fmt(lo)}–${fmt(hi)} • เข้าไม้ 1 ได้ตามแผน ณ ราคาปัจจุบัน หากยังไม่วิ่งเกินโซน`
-
-};
-
-}
-
-if(
-x.status==="DONT_CHASE" &&
-gateStatus==="HOT"
-){
-
-return {
-
-label:"เงื่อนไขที่รอ",
-
-display:"PM < +5%",
-
-text:
-`Premarket ${
-pm==null
-?"—"
-:(Number(pm)>=0?"+":"")+Number(pm).toFixed(2)+"%"
-} ร้อนเกินไป • รอให้ Premarket ต่ำกว่า +5% หรือเกิด Pullback/ฐานราคาใหม่ แล้วตรวจ Gate อีกครั้ง`
-
-};
-
-}
-
-if(x.status==="DONT_CHASE"){
-
-return {
-
-label:"ราคาที่รอย่อ",
-
-display:fmt(hi),
-
-text:
-`ยังไม่ไล่ราคา • รอย่อกลับมา ≤ ${fmt(hi)} แล้วตรวจ Gate ใหม่`
-
-};
-
-}
-
-if(x.status==="BLOCK"){
-
-if(
-pm!=null &&
-Number(pm)<-5
-){
-
-return {
-
-label:"เงื่อนไขปลด Block",
-
-display:"PM > -5%",
-
-text:
-`ยังไม่เข้า • รอ Premarket ฟื้นเหนือ -5% และให้ราคากลับมายืน ≥ ${fmt(lo)} ก่อนตรวจใหม่`
-
-};
-
-}
-
-return {
-
-label:"ระดับอ้างอิง",
-
-display:fmt(lo),
-
-text:
-`ยังไม่เข้า • รอเงื่อนไข Block คลี่คลาย และให้ราคากลับมายืน ≥ ${fmt(lo)} พร้อม Context ฟื้น`
-
-};
-
-}
-
-if(price<lo){
-
-return {
-
-label:"Trigger ที่รอ",
-
-display:fmt(lo),
-
-text:
-`รอราคากลับเข้า Buy Zone ที่ ${fmt(lo)} แล้วตรวจ Context/Premarket อีกครั้ง`
-
-};
-
-}
-
-if(price>hi){
-
-return {
-
-label:"ราคาที่รอย่อ",
-
-display:fmt(hi),
-
-text:
-`รอย่อลง ≤ ${fmt(hi)} — ไม่ไล่ราคา`
-
-};
-
-}
-
-return {
-
-label:"Trigger ที่รอ",
-
-display:
-fmt(selected.entry1 ?? hi),
-
-text:
-"ราคาอยู่ใน Buy Zone แต่ Decision Engine ยังรอ Context/Trigger เพิ่มก่อนเข้าไม้ 1"
-
-};
-
-}
-
-function renderFinalDecision(x,price){
-
-const dash=
-document.getElementById("finalDash");
-
-dash.style.display="block";
-
-document.getElementById("finalAction").textContent=
-x.label||"—";
-
-document.getElementById("finalSub").textContent=
-`Decision Score ${x.score}/100 • ${x.reason||""}`;
-
-document.getElementById("fdPrice").textContent=
-fmt(price);
-
-document.getElementById("fdBuy").textContent=
-fmt(selected.buy_low)+"–"+fmt(selected.buy_high);
-
-const trg=
-triggerPlan(x,price);
-
-document.getElementById("fdTriggerLabel").textContent=
-trg.label;
-
-document.getElementById("fdTrigger").textContent=
-trg.display;
-
-document.getElementById("fdTp").textContent=
-fmt(selected.tp1);
-
-document.getElementById("fdStop").textContent=
-fmt(selected.stop);
-
-const core=
-(x.checks||[])
-.filter(v=>
-v.startsWith("🟢")||
-v.startsWith("🟡")||
-v.startsWith("🔴")||
-v.startsWith("🟠")
-)
-.slice(0,4);
-
-document.getElementById("finalWhy").innerHTML=
-core.map(v=>`<li>${v}</li>`).join("");
-
-let s="";
-
-if(x.status==="CONFIRMED"){
-
-s=
-`ถ้าราคายังอยู่ใน Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} → เข้าไม้ 1 ตามแผนได้ • ถ้าราคาวิ่งเหนือ ${fmt(selected.buy_high)} มาก → หยุดไล่ราคา`;
-
-}
-
-else if(x.status==="DONT_CHASE"){
-
-if(
-x?.premarket_gate?.status==="HOT"
-){
-
-s=
-`ยังไม่ไล่ซื้อ • สาเหตุหลักคือ Premarket HOT ไม่ใช่ราคาสูงกว่า Buy Zone • ใช้ Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} เป็นระดับอ้างอิง และรอ Premarket เย็นลง/เกิดฐานราคาใหม่`;
-
-}
-
-else{
-
-s=
-`ยังไม่ไล่ซื้อ • รอให้ราคาย่อลงใกล้ Buy Zone ${fmt(selected.buy_low)}–${fmt(selected.buy_high)} แล้วตรวจ Gate ใหม่`;
-
-}
-
-}
-
-else if(x.status==="BLOCK"){
-
-s=
-`งดเข้าใหม่ตอนนี้ • รอให้เงื่อนไขที่ Block คลี่คลายก่อน แล้วสแกน/ประเมินใหม่`;
-
-}
-
-else{
-
-s=
-`ยังไม่เข้าไม้ 1 • รอราคา / Market Context / Premarket ให้ดีขึ้น แล้วกดตรวจอีกครั้ง`;
-
-}
-
-s +=
-` • 🎯 ${trg.text}`;
-
-document.getElementById("finalScenario").textContent=
-s;
-
-}
+/* ========================================================
+   AUTO CONTEXT SELF HEALING
+======================================================== */
 
 async function ensureContext(){
 
-if(
-context &&
-context.market &&
-context.groups
+  if(
+    context &&
+    context.market &&
+    context.groups
+  ){
+    return context;
+  }
+
+  const st=document.getElementById("st");
+
+  st.className="status info";
+  st.textContent="กำลังโหลด Auto Context อัตโนมัติ...";
+
+  try{
+
+    const r=await fetch(
+      "/api/scan",
+      {cache:"no-store"}
+    );
+
+    const j=await r.json();
+
+    if(!r.ok||!j.ok){
+      throw Error(
+        j.error||("HTTP "+r.status)
+      );
+    }
+
+    const d=j.data||{};
+
+    context=d.auto_context||null;
+
+    if(!context){
+      throw Error(
+        "ไม่พบ Auto Context"
+      );
+    }
+
+    document.getElementById(
+      "market"
+    ).textContent=state(
+      context.market
+    );
+
+    document.getElementById(
+      "health"
+    ).textContent=
+      `${d.total??0}/${d.requested??0}`;
+
+    st.className=
+      "status "+
+      ((d.failed??0)?"warn":"good");
+
+    st.textContent=
+      `Auto Context พร้อม • `+
+      `${d.total??0}/${d.requested??0} `+
+      `• Fresh ${d.fresh_count??0} `+
+      `• Recovered ${d.recovered_count??0} `+
+      `• Cached ${d.fallback_used??0} `+
+      `• Missing ${d.failed??0}`;
+
+    return context;
+
+  }catch(e){
+
+    st.className="status bad";
+    st.textContent=
+      "โหลด Auto Context ไม่สำเร็จ: "+
+      e.message;
+
+    return null;
+  }
+}
+
+
+
+/* ========================================================
+   TOP PICKS
+======================================================== */
+
+async function loadTopPicks(force){
+
+  const st=document.getElementById(
+    "topPickStatus"
+  );
+
+  st.className="status info";
+
+  st.textContent=
+    "กำลังคัด Top Pick และตรวจ Catalyst ของตัวอันดับต้น...";
+
+  try{
+
+    const url=force
+      ?"/api/top-picks?force=1"
+      :"/api/top-picks";
+
+    const r=await fetch(
+      url,
+      {cache:"no-store"}
+    );
+
+    const j=await r.json();
+
+    if(!r.ok||!j.ok){
+      throw Error(
+        j.error||("HTTP "+r.status)
+      );
+    }
+
+    const d=j.data||{};
+
+    st.className=
+      "status "+
+      ((d.missing??0)?"warn":"good");
+
+    st.textContent=
+      `คัดเสร็จ • Scanner `+
+      `${d.scan_total??0}/${d.scan_requested??0}`+
+      ` • Missing ${d.missing??0}`;
+
+
+    const box=document.getElementById(
+      "topPicks"
+    );
+
+
+    box.innerHTML=(
+      d.top_picks||[]
+    ).map((x,i)=>{
+
+      let cls=
+        x.pick_code==="TOP"
+        ?"topPick"
+        :x.pick_code==="BACKUP"
+          ?"backup"
+          :"";
+
+
+      let cat=x.catalyst||{};
+
+
+      let catText=
+        cat.sentiment==="positive"
+        ?"🟢 บวก"
+        :cat.sentiment==="negative"
+          ?"🔴 ลบ"
+          :"⚪ กลาง/ยังไม่ชัด";
+
+
+      let gapText="";
+
+      if(i>0){
+
+        const gap=
+          Number(
+            x.gap_from_top ??
+            (
+              Number(
+                d.top_picks?.[0]?.watch_score??0
+              )
+              -
+              Number(
+                x.watch_score??0
+              )
+            )
+          );
+
+        gapText=
+          `<br><b>ห่าง Top Pick:</b> `+
+          `${Number.isFinite(gap)?gap.toFixed(1):"—"} คะแนน`;
+      }
+
+
+      return `
+
+      <div
+        class="pickCard ${cls}"
+        onclick='pick(${JSON.stringify(x)})'
+      >
+
+        <div class="pickHead">
+
+          <div>
+
+            <div class="ticker">
+              ${x.pick_label||""}
+              •
+              ${x.ticker}
+            </div>
+
+            <div class="small">
+              อันดับ ${x.pick_rank??i+1}
+              •
+              ${x.scanner_label||""}
+            </div>
+
+          </div>
+
+
+          <div style="text-align:right">
+
+            <div class="small">
+              Watch Score
+            </div>
+
+            <div class="pickScore">
+              ${x.watch_score??"—"}
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="metrics">
+
+          <div class="m">
+            <span class="small">
+              Radar
+            </span>
+            <b>${x.radar_score??"—"}/100</b>
+          </div>
+
+          <div class="m">
+            <span class="small">
+              Entry
+            </span>
+            <b>${x.entry_score??"—"}/100</b>
+          </div>
+
+          <div class="m">
+            <span class="small">
+              R/R
+            </span>
+            <b>${x.rr??"—"}</b>
+          </div>
+
+          <div class="m">
+            <span class="small">
+              Catalyst
+            </span>
+            <b>${cat.score??50}/100</b>
+          </div>
+
+        </div>
+
+
+        <ul class="pickWhy">
+
+          ${
+            (x.pick_reasons||[])
+            .map(
+              v=>`<li>${v}</li>`
+            )
+            .join("")
+          }
+
+        </ul>
+
+
+        <div class="pickHint">
+
+          Market
+          ${pickState(x.market_state)}
+
+          • กลุ่ม
+          ${pickState(x.group_state)}
+
+          • Catalyst
+          ${catText}
+
+
+          ${
+            i===0 && x.why_leads
+            ?`<br><b>เหตุผลที่นำ:</b> ${x.why_leads}`
+            :""
+          }
+
+          ${gapText}
+
+          <br>
+
+          แตะการ์ด →
+          Premarket Gate →
+          Final Decision →
+          Opening Confirmation
+
+        </div>
+
+      </div>
+
+      `;
+
+    }).join("");
+
+
+  }catch(e){
+
+    st.className="status bad";
+
+    st.textContent=
+      "คัด Top Pick ไม่สำเร็จ: "+
+      e.message;
+  }
+}
+
+
+
+/* ========================================================
+   SCANNER
+======================================================== */
+
+async function scan(force){
+
+  let st=document.getElementById("st");
+
+  st.className="status info";
+  st.textContent="กำลังสแกน...";
+
+  try{
+
+    let r=await fetch(
+      force
+      ?"/api/scan/refresh"
+      :"/api/scan",
+      {cache:"no-store"}
+    );
+
+    let j=await r.json();
+
+    if(!r.ok||!j.ok){
+      throw Error(
+        j.error||("HTTP "+r.status)
+      );
+    }
+
+    let d=j.data||{};
+
+    context=d.auto_context||null;
+
+
+    document.getElementById(
+      "market"
+    ).textContent=
+      state(context?.market);
+
+
+    document.getElementById(
+      "health"
+    ).textContent=
+      `${d.total??0}/${d.requested??0}`;
+
+
+    st.className=
+      "status "+
+      ((d.failed??0)?"warn":"good");
+
+
+    st.textContent=
+      `สแกนสำเร็จ `+
+      `${d.total??0}/${d.requested??0}`+
+      ` • Fresh ${d.fresh_count??0}`+
+      ` • Recovered ${d.recovered_count??0}`+
+      ` • Cached ${d.fallback_used??0}`+
+      ` • Missing ${d.failed??0}`;
+
+
+    document.getElementById(
+      "rows"
+    ).innerHTML=(
+      d.results||[]
+    ).map((x,i)=>`
+
+      <div
+        class="row ${x.scanner_class||""}"
+        onclick='pick(${JSON.stringify(x)})'
+      >
+
+        <div class="top">
+
+          <div>
+
+            <div class="ticker">
+              ${i+1}. ${x.ticker}
+            </div>
+
+            <div class="small">
+              Ranking ${x.rank_score??"—"}/100
+              • ปิด ${fmt(x.last_close)}
+            </div>
+
+            <div class="pill">
+              ${x.freshness_label||"—"}
+            </div>
+
+          </div>
+
+          <div class="label">
+            ${x.scanner_label||""}
+          </div>
+
+        </div>
+
+
+        <div class="metrics">
+
+          <div class="m">
+            <span class="small">
+              Radar
+            </span>
+            <b>
+              ${x.radar_score??"—"}/100
+            </b>
+          </div>
+
+          <div class="m">
+            <span class="small">
+              Entry
+            </span>
+            <b>
+              ${x.entry_score??"—"}/100
+            </b>
+          </div>
+
+          <div class="m">
+            <span class="small">
+              R/R
+            </span>
+            <b>
+              ${x.rr??"—"}
+            </b>
+          </div>
+
+          <div class="m">
+            <span class="small">
+              Buy Zone
+            </span>
+            <b>
+              ${fmt(x.buy_low)}
+              –
+              ${fmt(x.buy_high)}
+            </b>
+          </div>
+
+        </div>
+
+      </div>
+
+    `).join("");
+
+
+    loadTopPicks(false);
+
+
+  }catch(e){
+
+    st.className="status bad";
+
+    st.textContent=
+      "สแกนไม่สำเร็จ: "+
+      e.message;
+  }
+}
+
+
+
+/* ========================================================
+   PICK STOCK
+======================================================== */
+
+function pick(x){
+
+  if(selected){
+
+    gateInputs[selected.ticker]={
+      price:
+        document.getElementById(
+          "price"
+        ).value,
+
+      pm:
+        document.getElementById(
+          "premarketPct"
+        ).value,
+
+      rv:
+        document.getElementById(
+          "relVolume"
+        ).value
+    };
+
+
+    openingInputs[selected.ticker]={
+      price:
+        document.getElementById(
+          "openingPrice"
+        ).value,
+
+      open:
+        document.getElementById(
+          "openPrice"
+        ).value,
+
+      high:
+        document.getElementById(
+          "openingHigh"
+        ).value,
+
+      low:
+        document.getElementById(
+          "openingLow"
+        ).value,
+
+      rv:
+        document.getElementById(
+          "openingRV"
+        ).value
+    };
+  }
+
+
+  selected=x;
+
+
+  let c=document.getElementById(
+    "confirm"
+  );
+
+  c.classList.add("show");
+
+
+  document.getElementById(
+    "ct"
+  ).textContent=x.ticker;
+
+
+  const saved=
+    gateInputs[x.ticker]||{};
+
+
+  document.getElementById(
+    "price"
+  ).value=saved.price??"";
+
+
+  document.getElementById(
+    "premarketPct"
+  ).value=saved.pm??"";
+
+
+  document.getElementById(
+    "relVolume"
+  ).value=saved.rv??"";
+
+
+  const opSaved=
+    openingInputs[x.ticker]||{};
+
+
+  document.getElementById(
+    "openingPrice"
+  ).value=opSaved.price??"";
+
+
+  document.getElementById(
+    "openPrice"
+  ).value=opSaved.open??"";
+
+
+  document.getElementById(
+    "openingHigh"
+  ).value=opSaved.high??"";
+
+
+  document.getElementById(
+    "openingLow"
+  ).value=opSaved.low??"";
+
+
+  document.getElementById(
+    "openingRV"
+  ).value=opSaved.rv??"";
+
+
+  document.getElementById(
+    "bz"
+  ).textContent=
+    fmt(x.buy_low)+
+    "–"+
+    fmt(x.buy_high);
+
+
+  document.getElementById(
+    "e1"
+  ).textContent=
+    fmt(x.entry1);
+
+
+  document.getElementById(
+    "tp"
+  ).textContent=
+    fmt(x.tp1);
+
+
+  document.getElementById(
+    "sp"
+  ).textContent=
+    fmt(x.stop);
+
+
+  document.getElementById(
+    "gateResult"
+  ).className=
+    "status info";
+
+
+  document.getElementById(
+    "gateResult"
+  ).textContent=
+    "⚪ Premarket Gate ยังไม่ได้ตรวจ";
+
+
+  document.getElementById(
+    "cres"
+  ).className=
+    "status info";
+
+
+  document.getElementById(
+    "cres"
+  ).textContent=
+    "ใส่ข้อมูลจาก Webull แล้วกดวิเคราะห์";
+
+
+  document.getElementById(
+    "finalDash"
+  ).style.display=
+    "none";
+
+
+  document.getElementById(
+    "openingDash"
+  ).style.display=
+    "none";
+
+
+  document.getElementById(
+    "openingStatus"
+  ).className=
+    "status info";
+
+
+  document.getElementById(
+    "openingStatus"
+  ).textContent=
+    "⚪ รอตลาดเปิดและกรอก Opening Range";
+
+
+  document.getElementById(
+    "checks"
+  ).innerHTML="";
+
+
+  document.getElementById(
+    "missing"
+  ).style.display=
+    "none";
+
+
+  document.getElementById(
+    "newsList"
+  ).innerHTML="";
+
+
+  setOpeningFlow(
+    "WATCH"
+  );
+
+
+  c.scrollIntoView({
+    behavior:"smooth",
+    block:"start"
+  });
+
+
+  loadCatalyst(
+    x.ticker
+  );
+}
+
+
+
+/* ========================================================
+   CATALYST
+======================================================== */
+
+async function loadCatalyst(ticker){
+
+  catalyst=null;
+
+
+  let cs=document.getElementById(
+    "catStatus"
+  );
+
+
+  cs.className="status info";
+
+  cs.textContent=
+    "กำลังดึง Catalyst ของ "+
+    ticker+
+    " ...";
+
+
+  try{
+
+    let r=await fetch(
+      "/api/catalyst/"+
+      encodeURIComponent(ticker),
+      {cache:"no-store"}
+    );
+
+
+    let j=await r.json();
+
+
+    if(!r.ok||!j.ok){
+      throw Error(
+        j.error||("HTTP "+r.status)
+      );
+    }
+
+
+    catalyst=j.data||{};
+
+
+    cs.className=
+      "status "+
+      (
+        catalyst.sentiment==="positive"
+        ?"good"
+        :catalyst.sentiment==="negative"
+          ?"bad"
+          :"info"
+      );
+
+
+    cs.innerHTML=
+      `<b>${catalyst.label||"Catalyst"}</b>`+
+      ` • Catalyst ${catalyst.score??50}/100`+
+      `<br>${catalyst.reason||""}`;
+
+
+    document.getElementById(
+      "newsList"
+    ).innerHTML=(
+      catalyst.items||[]
+    ).map(n=>{
+
+
+      let age=
+        n.age_hours==null
+        ?"เวลาไม่ทราบ"
+        :n.age_hours<=24
+          ?`${n.age_hours} ชม.`
+          :`${Math.round(n.age_hours/24)} วัน`;
+
+
+      let icon=
+        n.sentiment==="positive"
+        ?"🟢"
+        :n.sentiment==="negative"
+          ?"🔴"
+          :"⚪";
+
+
+      let title=
+        n.link
+        ?`<a href="${n.link}" target="_blank" rel="noopener">${n.title}</a>`
+        :n.title;
+
+
+      return `
+
+        <div class="newsitem">
+
+          ${icon}
+          ${title}
+
+          <div class="newsmeta">
+
+            ${n.publisher||"แหล่งข่าว"}
+            •
+            ${age}
+
+            ${
+              n.high_impact
+              ?" • Impact สูง"
+              :""
+            }
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
+
+
+  }catch(e){
+
+    catalyst={
+      sentiment:"unknown",
+      score:50,
+      negative_high_impact:false
+    };
+
+
+    cs.className="status warn";
+
+
+    cs.textContent=
+      "Catalyst โหลดไม่สำเร็จ — ระบบจะไม่เพิ่ม/ลดคะแนนข่าว";
+  }
+}
+
+
+
+/* ========================================================
+   V4.5.3 TRIGGER PLAN
+======================================================== */
+
+function triggerPlan(x,price){
+
+  const lo=
+    Number(
+      selected.buy_low
+    );
+
+
+  const hi=
+    Number(
+      selected.buy_high
+    );
+
+
+  const pm=
+    x?.premarket_gate?.premarket_pct;
+
+
+  const gateStatus=
+    x?.premarket_gate?.status;
+
+
+  if(x.status==="CONFIRMED"){
+
+    return {
+
+      label:"เข้าได้ตอนนี้",
+
+      display:fmt(price),
+
+      text:
+        `ราคาอยู่ใน Buy Zone `+
+        `${fmt(lo)}–${fmt(hi)}`+
+        ` • เข้าไม้ 1 ได้ตามแผน ณ ราคาปัจจุบัน`+
+        ` หากยังไม่วิ่งเกินโซน`
+
+    };
+  }
+
+
+  if(
+    x.status==="DONT_CHASE" &&
+    gateStatus==="HOT"
+  ){
+
+    return {
+
+      label:"เงื่อนไขที่รอ",
+
+      display:"PM < +5%",
+
+      text:
+        `Premarket `+
+        `${
+          pm==null
+          ?"—"
+          :(
+            Number(pm)>=0?"+":""
+          )+
+          Number(pm).toFixed(2)+
+          "%"
+        } ร้อนเกินไป`+
+        ` • รอให้ Premarket ต่ำกว่า +5%`+
+        ` หรือเกิด Pullback/ฐานราคาใหม่`+
+        ` แล้วตรวจ Gate อีกครั้ง`
+
+    };
+  }
+
+
+  if(x.status==="DONT_CHASE"){
+
+    return {
+
+      label:"ราคาที่รอย่อ",
+
+      display:fmt(hi),
+
+      text:
+        `ยังไม่ไล่ราคา`+
+        ` • รอย่อกลับมา ≤ ${fmt(hi)}`+
+        ` แล้วตรวจ Gate ใหม่`
+
+    };
+  }
+
+
+  if(x.status==="BLOCK"){
+
+    if(
+      pm!=null &&
+      Number(pm)<-5
+    ){
+
+      return {
+
+        label:"เงื่อนไขปลด Block",
+
+        display:"PM > -5%",
+
+        text:
+          `ยังไม่เข้า`+
+          ` • รอ Premarket ฟื้นเหนือ -5%`+
+          ` และให้ราคากลับมายืน ≥ ${fmt(lo)}`+
+          ` ก่อนตรวจใหม่`
+
+      };
+    }
+
+
+    return {
+
+      label:"ระดับอ้างอิง",
+
+      display:fmt(lo),
+
+      text:
+        `ยังไม่เข้า`+
+        ` • รอเงื่อนไข Block คลี่คลาย`+
+        ` และให้ราคากลับมายืน ≥ ${fmt(lo)}`+
+        ` พร้อม Context ฟื้น`
+
+    };
+  }
+
+
+  if(price<lo){
+
+    return {
+
+      label:"Trigger ที่รอ",
+
+      display:fmt(lo),
+
+      text:
+        `รอราคากลับเข้า Buy Zone ที่ ${fmt(lo)}`+
+        ` แล้วตรวจ Context/Premarket อีกครั้ง`
+
+    };
+  }
+
+
+  if(price>hi){
+
+    return {
+
+      label:"ราคาที่รอย่อ",
+
+      display:fmt(hi),
+
+      text:
+        `รอย่อลง ≤ ${fmt(hi)}`+
+        ` — ไม่ไล่ราคา`
+
+    };
+  }
+
+
+  return {
+
+    label:"Trigger ที่รอ",
+
+    display:
+      fmt(
+        selected.entry1 ??
+        hi
+      ),
+
+    text:
+      "ราคาอยู่ใน Buy Zone แต่ Decision Engine "+
+      "ยังรอ Context/Trigger เพิ่มก่อนเข้าไม้ 1"
+
+  };
+}
+
+
+
+/* ========================================================
+   FINAL DECISION DISPLAY
+======================================================== */
+
+function renderFinalDecision(
+  x,
+  price
 ){
 
-return context;
+  const dash=
+    document.getElementById(
+      "finalDash"
+    );
 
+
+  dash.style.display="block";
+
+
+  document.getElementById(
+    "finalAction"
+  ).textContent=
+    x.label||"—";
+
+
+  document.getElementById(
+    "finalSub"
+  ).textContent=
+    `Decision Score ${x.score??"—"}/100`+
+    ` • ${x.reason||""}`;
+
+
+  document.getElementById(
+    "fdPrice"
+  ).textContent=
+    fmt(price);
+
+
+  document.getElementById(
+    "fdBuy"
+  ).textContent=
+    fmt(selected.buy_low)+
+    "–"+
+    fmt(selected.buy_high);
+
+
+  const trg=
+    triggerPlan(
+      x,
+      price
+    );
+
+
+  document.getElementById(
+    "fdTriggerLabel"
+  ).textContent=
+    trg.label;
+
+
+  document.getElementById(
+    "fdTrigger"
+  ).textContent=
+    trg.display;
+
+
+  document.getElementById(
+    "fdTp"
+  ).textContent=
+    fmt(selected.tp1);
+
+
+  document.getElementById(
+    "fdStop"
+  ).textContent=
+    fmt(selected.stop);
+
+
+  const core=(
+    x.checks||[]
+  ).filter(v=>
+
+    v.startsWith("🟢")||
+    v.startsWith("🟡")||
+    v.startsWith("🔴")||
+    v.startsWith("🟠")
+
+  ).slice(0,5);
+
+
+  document.getElementById(
+    "finalWhy"
+  ).innerHTML=
+    core.map(
+      v=>`<li>${v}</li>`
+    ).join("");
+
+
+  let s="";
+
+
+  if(x.status==="CONFIRMED"){
+
+    s=
+      `ถ้าราคายังอยู่ใน Buy Zone `+
+      `${fmt(selected.buy_low)}–${fmt(selected.buy_high)}`+
+      ` → Premarket Decision ผ่าน`+
+      ` • หลังตลาดเปิดยังใช้ Opening Confirmation`+
+      ` ก่อนยืนยัน Entry 1`;
+
+  }
+
+  else if(
+    x.status==="DONT_CHASE" &&
+    x?.premarket_gate?.status==="HOT"
+  ){
+
+    s=
+      `ยังไม่ไล่ซื้อ`+
+      ` • สาเหตุหลักคือ Premarket HOT`+
+      ` ไม่ใช่ราคาสูงกว่า Buy Zone`+
+      ` • ใช้ Buy Zone `+
+      `${fmt(selected.buy_low)}–${fmt(selected.buy_high)}`+
+      ` เป็นระดับอ้างอิง`+
+      ` และรอ Premarket เย็นลง/เกิดฐานราคาใหม่`;
+
+  }
+
+  else if(
+    x.status==="DONT_CHASE"
+  ){
+
+    s=
+      `ยังไม่ไล่ซื้อ`+
+      ` • รอราคาย่อกลับใกล้ Buy Zone `+
+      `${fmt(selected.buy_low)}–${fmt(selected.buy_high)}`+
+      ` แล้วตรวจ Gate ใหม่`;
+
+  }
+
+  else if(
+    x.status==="BLOCK"
+  ){
+
+    s=
+      `งดเข้าใหม่ตอนนี้`+
+      ` • รอเงื่อนไขที่ Block คลี่คลาย`+
+      ` แล้วสแกน/ประเมินใหม่`;
+
+  }
+
+  else{
+
+    s=
+      `ยังไม่เข้าไม้ 1`+
+      ` • รอราคา / Market Context / Premarket`+
+      ` ให้ดีขึ้น แล้วตรวจอีกครั้ง`;
+
+  }
+
+
+  s+=
+    ` • 🎯 ${trg.text}`;
+
+
+  document.getElementById(
+    "finalScenario"
+  ).textContent=s;
 }
 
-const marketEl=
-document.getElementById("market");
 
-const healthEl=
-document.getElementById("health");
 
-marketEl.textContent=
-"⏳ กำลังโหลด";
-
-healthEl.textContent=
-"—";
-
-const r=
-await fetch(
-"/api/scan",
-{cache:"no-store"}
-);
-
-const j=
-await r.json();
-
-if(!r.ok||!j.ok){
-
-throw Error(
-j.error||
-("โหลด Auto Context ไม่สำเร็จ (HTTP "+r.status+")")
-);
-
-}
-
-const d=
-j.data||{};
-
-context=
-d.auto_context||null;
-
-if(!context){
-
-throw Error(
-"Scanner ยังไม่ส่ง Auto Context"
-);
-
-}
-
-marketEl.textContent=
-state(context.market);
-
-healthEl.textContent=
-`${d.total??"—"}/${d.requested??"—"}`;
-
-return context;
-
-}
+/* ========================================================
+   PREMARKET CONFIRM
+======================================================== */
 
 async function confirmNow(){
 
-const out=
-document.getElementById("cres");
+  const out=
+    document.getElementById(
+      "cres"
+    );
 
-const gateEl=
-document.getElementById("gateResult");
 
-if(!selected){
+  const gateEl=
+    document.getElementById(
+      "gateResult"
+    );
 
-out.className="status bad";
-out.textContent="กรุณาเลือกหุ้นก่อน";
 
-return;
+  if(!selected){
 
+    out.className=
+      "status bad";
+
+    out.textContent=
+      "กรุณาเลือกหุ้นก่อน";
+
+    return;
+  }
+
+
+  const ctx=
+    await ensureContext();
+
+
+  if(!ctx){
+
+    out.className=
+      "status bad";
+
+    out.textContent=
+      "ยังโหลด Auto Context ไม่สำเร็จ";
+
+    return;
+  }
+
+
+  const priceRaw=
+    document.getElementById(
+      "price"
+    ).value;
+
+
+  const pmRaw=
+    document.getElementById(
+      "premarketPct"
+    ).value;
+
+
+  const rvRaw=
+    document.getElementById(
+      "relVolume"
+    ).value;
+
+
+  const p=
+    signedNum(
+      priceRaw
+    );
+
+
+  const pm=
+    signedNum(
+      pmRaw
+    );
+
+
+  const rv=
+    String(rvRaw).trim()===""
+    ?null
+    :signedNum(rvRaw);
+
+
+  if(
+    p==null ||
+    p<=0
+  ){
+
+    out.className=
+      "status bad";
+
+    out.textContent=
+      "กรุณาใส่ราคาปัจจุบันจาก Webull";
+
+    return;
+  }
+
+
+  if(pm==null){
+
+    gateEl.className=
+      "status bad";
+
+    gateEl.innerHTML=
+      "<b>🔴 Premarket Gate ยังตรวจไม่ได้</b>"+
+      "<br>ใส่ % Premarket เช่น +1.80 หรือ -4.49";
+
+
+    out.className=
+      "status bad";
+
+
+    out.textContent=
+      "ต้องมี % Premarket ก่อนทำ Final Decision";
+
+
+    return;
+  }
+
+
+  if(
+    rv!=null &&
+    rv<0
+  ){
+
+    out.className=
+      "status bad";
+
+    out.textContent=
+      "Relative Volume ต้องเป็น 0 หรือมากกว่า หรือปล่อยว่างได้";
+
+    return;
+  }
+
+
+  gateInputs[selected.ticker]={
+
+    price:String(priceRaw),
+
+    pm:String(pmRaw),
+
+    rv:String(rvRaw)
+
+  };
+
+
+  const sg=
+    (
+      ctx.groups &&
+      ctx.groups[selected.group]
+    )
+    ||
+    {state:"unknown"};
+
+
+  const body={
+
+    price:p,
+
+    buy_low:selected.buy_low,
+
+    buy_high:selected.buy_high,
+
+    stop:selected.stop,
+
+    tp1:selected.tp1,
+
+    data_confidence:
+      selected.confidence_code,
+
+    market:
+      ctx.market,
+
+    sector:
+      sg.state,
+
+    catalyst:
+      catalyst?.sentiment||
+      "unknown",
+
+    catalyst_score:
+      catalyst?.score??
+      50,
+
+    negative_high_impact:
+      catalyst?.negative_high_impact||
+      false,
+
+    premarket_pct:
+      pm,
+
+    rel_volume:
+      rv
+  };
+
+
+  gateEl.className=
+    "status info";
+
+
+  gateEl.innerHTML=
+    `<b>⏳ กำลังตรวจ Premarket Gate</b>`+
+    `<br>`+
+    `Premarket `+
+    `${pm>=0?"+":""}${pm.toFixed(2)}%`+
+    ` • Relative Volume `+
+    `${rv==null?"—":rv.toFixed(2)+"x"}`;
+
+
+  out.className=
+    "status info";
+
+
+  out.textContent=
+    "กำลังคำนวณ Final Decision...";
+
+
+  try{
+
+    const r=
+      await fetch(
+        "/api/auto-confirm",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          cache:"no-store",
+
+          body:
+            JSON.stringify(
+              body
+            )
+        }
+      );
+
+
+    const j=
+      await r.json();
+
+
+    if(
+      !r.ok ||
+      !j.ok
+    ){
+
+      throw Error(
+        j.error||
+        ("HTTP "+r.status)
+      );
+    }
+
+
+    const x=
+      j.data||{};
+
+
+    const gate=
+      x.premarket_gate||{};
+
+
+    const cl=
+      x.status==="CONFIRMED"
+      ?"good"
+      :x.status==="BLOCK"
+        ?"bad"
+        :"warn";
+
+
+    const shownPm=
+      gate.premarket_pct==null
+      ?pm
+      :Number(
+        gate.premarket_pct
+      );
+
+
+    const shownRv=
+      gate.rel_volume==null
+      ?rv
+      :Number(
+        gate.rel_volume
+      );
+
+
+    const gs=
+      gate.status||
+      "PASS";
+
+
+    const gl=
+      gate.label||
+      (
+        gs==="BLOCK"
+        ?"🔴 Premarket Gate Block"
+        :gs==="HOT"
+          ?"🟠 Premarket Gate ร้อน"
+          :"🟢 Premarket Gate ตรวจแล้ว"
+      );
+
+
+    gateEl.className=
+      "status "+
+      (
+        gs==="PASS"
+        ?"good"
+        :gs==="BLOCK"
+          ?"bad"
+          :gs==="HOT"
+            ?"warn"
+            :"info"
+      );
+
+
+    gateEl.innerHTML=
+      `<b>${gl}</b>`+
+      ` • ปรับคะแนน `+
+      `${
+        Number(
+          gate.score_adjustment??0
+        )>0
+        ?"+"
+        :""
+      }`+
+      `${gate.score_adjustment??0}`+
+      `<br>`+
+      `Premarket `+
+      `${
+        shownPm==null
+        ?"—"
+        :(
+          shownPm>=0?"+":""
+        )+
+        shownPm.toFixed(2)+
+        "%"
+      }`+
+      ` • Relative Volume `+
+      `${
+        shownRv==null
+        ?"—"
+        :shownRv.toFixed(2)+"x"
+      }`;
+
+
+    out.className=
+      "status "+cl;
+
+
+    out.innerHTML=
+      `<b>${x.label||"Final Decision"}</b>`+
+      ` • Decision Score ${x.score??"—"}/100`+
+      `<br>${x.reason||""}`;
+
+
+    document.getElementById(
+      "checks"
+    ).innerHTML=
+      (x.checks||[])
+      .map(
+        v=>`<li>${v}</li>`
+      )
+      .join("");
+
+
+    renderFinalDecision(
+      x,
+      p
+    );
+
+
+    /*
+      ถ้า Premarket HOT
+      Opening Confirmation ยังสามารถใช้หลังเปิดตลาดได้
+      จึงไม่ซ่อนส่วน Opening
+    */
+
+
+    const miss=
+      document.getElementById(
+        "missing"
+      );
+
+
+    const items=
+      x.missing||[];
+
+
+    miss.style.display=
+      "block";
+
+
+    if(items.length){
+
+      miss.className=
+        "status info";
+
+
+      miss.innerHTML=
+        `<b>🎯 ยังขาดอะไรถึงจะดีขึ้น</b>`+
+        `<br>`+
+        items.map(
+          v=>"• "+v
+        ).join("<br>");
+
+    }
+
+    else{
+
+      miss.className=
+        "status good";
+
+
+      miss.innerHTML=
+        "<b>✅ Premarket เงื่อนไขหลักผ่านแล้ว</b>"+
+        "<br>หลังตลาดเปิดให้ใช้ Opening Confirmation อีกครั้ง";
+    }
+
+
+  }catch(e){
+
+    gateEl.className=
+      "status bad";
+
+
+    gateEl.innerHTML=
+      `<b>🔴 Premarket Gate ตรวจไม่สำเร็จ</b>`+
+      `<br>`+
+      `ค่าที่ส่ง: `+
+      `${pm>=0?"+":""}${pm.toFixed(2)}%`+
+      `${
+        rv==null
+        ?""
+        :" • RV "+rv.toFixed(2)+"x"
+      }`;
+
+
+    out.className=
+      "status bad";
+
+
+    out.textContent=
+      "วิเคราะห์ไม่สำเร็จ: "+
+      e.message+
+      " • ค่าที่กรอกยังถูกเก็บไว้";
+  }
 }
 
-if(!context){
 
-gateEl.className="status info";
 
-gateEl.textContent=
-"⏳ กำลังโหลด Auto Context จาก Scanner...";
+/* ========================================================
+   OPENING FLOW UI
+======================================================== */
 
-out.className="status info";
+function setOpeningFlow(
+  stateName
+){
 
-out.textContent=
-"กำลังเตรียม Market Context สำหรับ Final Decision...";
+  const ids=[
+    "flowWatch",
+    "flowOpen",
+    "flowArmed",
+    "flowEntry",
+    "flowInvalid"
+  ];
 
-try{
 
-await ensureContext();
+  ids.forEach(id=>{
 
-}catch(e){
+    document
+      .getElementById(id)
+      .classList
+      .remove("current");
 
-gateEl.className="status bad";
+  });
 
-gateEl.textContent=
-"🔴 Auto Context โหลดไม่สำเร็จ";
 
-out.className="status bad";
+  let id=
+    "flowWatch";
 
-out.textContent=
-"ยังทำ Final Decision ไม่ได้: "+e.message;
 
-return;
+  if(
+    stateName==="OPENING"
+  ){
+    id="flowOpen";
+  }
 
+  else if(
+    stateName==="ARMED"
+  ){
+    id="flowArmed";
+  }
+
+  else if(
+    stateName==="ENTRY1"
+  ){
+    id="flowEntry";
+  }
+
+  else if(
+    stateName==="INVALIDATED"
+  ){
+    id="flowInvalid";
+  }
+
+
+  document
+    .getElementById(id)
+    .classList
+    .add("current");
 }
 
+
+
+/* ========================================================
+   OPENING DASHBOARD
+======================================================== */
+
+function renderOpening(
+  x
+){
+
+  const dash=
+    document.getElementById(
+      "openingDash"
+    );
+
+
+  dash.style.display=
+    "block";
+
+
+  document.getElementById(
+    "openingState"
+  ).textContent=
+    x.label||
+    x.state||
+    "—";
+
+
+  document.getElementById(
+    "openingSub"
+  ).textContent=
+    `Opening Score ${x.score??"—"}/100`+
+    ` • ${x.reason||""}`;
+
+
+  document.getElementById(
+    "ocScore"
+  ).textContent=
+    `${x.score??"—"}/100`;
+
+
+  const o=
+    x.opening||{};
+
+
+  document.getElementById(
+    "ocOpen"
+  ).textContent=
+    fmt(o.open);
+
+
+  document.getElementById(
+    "ocMid"
+  ).textContent=
+    fmt(o.mid);
+
+
+  document.getElementById(
+    "ocHigh"
+  ).textContent=
+    fmt(o.high);
+
+
+  document.getElementById(
+    "ocLow"
+  ).textContent=
+    fmt(o.low);
+
+
+  document.getElementById(
+    "ocFromOpen"
+  ).textContent=
+    o.change_from_open_pct==null
+    ?"—"
+    :(
+      Number(
+        o.change_from_open_pct
+      )>=0
+      ?"+"
+      :""
+    )+
+    Number(
+      o.change_from_open_pct
+    ).toFixed(2)+
+    "%";
+
+
+  document.getElementById(
+    "ocRange"
+  ).textContent=
+    o.range_pct==null
+    ?"—"
+    :Number(
+      o.range_pct
+    ).toFixed(2)+
+    "%";
+
+
+  document.getElementById(
+    "ocBuy"
+  ).textContent=
+    fmt(selected.buy_low)+
+    "–"+
+    fmt(selected.buy_high);
+
+
+  document.getElementById(
+    "openingChecks"
+  ).innerHTML=
+    (x.checks||[])
+    .map(
+      v=>`<li>${v}</li>`
+    )
+    .join("");
+
+
+  document.getElementById(
+    "openingNext"
+  ).innerHTML=
+    `<b>🎯 สิ่งที่ต้องทำต่อ</b>`+
+    `<br>`+
+    `${x.next_step||"รอข้อมูลเพิ่มแล้วตรวจอีกครั้ง"}`;
+
+
+  if(
+    x.state==="ENTRY1"
+  ){
+
+    setOpeningFlow(
+      "ENTRY1"
+    );
+  }
+
+  else if(
+    x.state==="ARMED"
+  ){
+
+    setOpeningFlow(
+      "ARMED"
+    );
+  }
+
+  else if(
+    x.state==="INVALIDATED"
+  ){
+
+    setOpeningFlow(
+      "INVALIDATED"
+    );
+  }
+
+  else{
+
+    setOpeningFlow(
+      "OPENING"
+    );
+  }
 }
 
-const priceRaw=
-document.getElementById("price").value;
 
-const pmRaw=
-document.getElementById("premarketPct").value;
 
-const rvRaw=
-document.getElementById("relVolume").value;
+/* ========================================================
+   V4.6 OPENING CONFIRMATION REQUEST
+======================================================== */
 
-const p=
-signedNum(priceRaw);
+async function openingConfirm(){
 
-const pm=
-signedNum(pmRaw);
+  const st=
+    document.getElementById(
+      "openingStatus"
+    );
 
-const rv=
-String(rvRaw).trim()===""
-?null
-:signedNum(rvRaw);
 
-if(p==null||p<=0){
+  if(!selected){
 
-out.className="status bad";
+    st.className=
+      "status bad";
 
-out.textContent=
-"กรุณาใส่ราคาปัจจุบันจาก Webull";
 
-return;
+    st.textContent=
+      "กรุณาเลือกหุ้นก่อน";
 
-}
 
-if(pm==null){
+    return;
+  }
 
-gateEl.className="status bad";
 
-gateEl.innerHTML=
-"<b>🔴 Premarket Gate ยังตรวจไม่ได้</b><br>ใส่ % Premarket เช่น +1.80 หรือ -4.49";
+  const ctx=
+    await ensureContext();
 
-out.className="status bad";
 
-out.textContent=
-"ต้องมี % Premarket ก่อนทำ Final Decision";
+  if(!ctx){
 
-return;
+    st.className=
+      "status bad";
 
-}
 
-if(rv!=null && rv<0){
+    st.textContent=
+      "ยังโหลด Auto Context ไม่สำเร็จ";
 
-out.className="status bad";
 
-out.textContent=
-"Relative Volume ต้องเป็น 0 หรือมากกว่า หรือปล่อยว่างได้";
+    return;
+  }
 
-return;
 
-}
+  const current=
+    signedNum(
+      document.getElementById(
+        "openingPrice"
+      ).value
+    );
 
-gateInputs[selected.ticker]={
 
-price:String(priceRaw),
-pm:String(pmRaw),
-rv:String(rvRaw)
+  const open=
+    signedNum(
+      document.getElementById(
+        "openPrice"
+      ).value
+    );
 
-};
 
-const sg=
-(
-context.groups &&
-context.groups[selected.group]
-)
-||
-{state:"unknown"};
+  const high=
+    signedNum(
+      document.getElementById(
+        "openingHigh"
+      ).value
+    );
 
-const body={
 
-price:p,
+  const low=
+    signedNum(
+      document.getElementById(
+        "openingLow"
+      ).value
+    );
 
-buy_low:selected.buy_low,
 
-buy_high:selected.buy_high,
+  const rvRaw=
+    document.getElementById(
+      "openingRV"
+    ).value;
 
-stop:selected.stop,
 
-tp1:selected.tp1,
+  const rv=
+    String(rvRaw).trim()===""
+    ?null
+    :signedNum(rvRaw);
 
-data_confidence:
-selected.confidence_code,
 
-market:
-context.market,
+  const pm=
+    signedNum(
+      document.getElementById(
+        "premarketPct"
+      ).value
+    );
 
-sector:
-sg.state,
 
-catalyst:
-catalyst?.sentiment||"unknown",
+  if(
+    current==null ||
+    current<=0
+  ){
 
-catalyst_score:
-catalyst?.score??50,
+    st.className=
+      "status bad";
 
-negative_high_impact:
-catalyst?.negative_high_impact||false,
 
-premarket_pct:
-pm,
+    st.textContent=
+      "กรุณาใส่ราคาปัจจุบันหลังตลาดเปิด";
 
-rel_volume:
-rv
 
-};
+    return;
+  }
 
-gateEl.className=
-"status info";
-
-gateEl.innerHTML=
-`<b>⏳ กำลังตรวจ Premarket Gate</b>
-<br>
-Premarket
-${pm>=0?"+":""}${pm.toFixed(2)}%
-•
-Relative Volume
-${rv==null?"—":rv.toFixed(2)+"x"}`;
-
-out.className="status info";
-
-out.textContent=
-"กำลังคำนวณ Final Decision...";
-
-try{
-
-const r=
-await fetch(
-"/api/auto-confirm",
-{
-
-method:"POST",
-
-headers:{
-"Content-Type":"application/json"
-},
-
-cache:"no-store",
-
-body:JSON.stringify(body)
-
-}
-);
-
-const j=
-await r.json();
-
-if(!r.ok||!j.ok){
-
-throw Error(
-j.error||
-("HTTP "+r.status)
-);
-
-}
-
-const x=
-j.data||{};
-
-const gate=
-x.premarket_gate||{};
-
-const cl=
-x.status==="CONFIRMED"
-?"good"
-:x.status==="BLOCK"
-?"bad"
-:"warn";
-
-const shownPm=
-gate.premarket_pct==null
-?pm
-:Number(gate.premarket_pct);
-
-const shownRv=
-gate.rel_volume==null
-?rv
-:Number(gate.rel_volume);
-
-const gs=
-gate.status||"PASS";
-
-const gl=
-gate.label||
-(
-gs==="BLOCK"
-?"🔴 Premarket Gate Block"
-:gs==="HOT"
-?"🟠 Premarket ร้อน — ไม่ไล่ราคา"
-:"🟢 Premarket Gate ผ่าน"
-);
-
-gateEl.className=
-"status "+
-(
-gs==="PASS"
-?"good"
-:gs==="BLOCK"
-?"bad"
-:gs==="HOT"
-?"warn"
-:"info"
-);
-
-gateEl.innerHTML=
-`<b>${gl}</b>
-•
-ปรับคะแนน
-${Number(gate.score_adjustment??0)>0?"+":""}
-${gate.score_adjustment??0}
-<br>
-Premarket
-${shownPm==null
-?"—"
-:(shownPm>=0?"+":"")
-+shownPm.toFixed(2)+"%"
-}
-•
-Relative Volume
-${shownRv==null
-?"—"
-:shownRv.toFixed(2)+"x"
-}`;
-
-out.className=
-"status "+cl;
-
-out.innerHTML=
-`<b>${x.label||"Final Decision"}</b>
-•
-Decision Score
-${x.score??"—"}/100
-<br>
-${x.reason||""}`;
-
-document.getElementById("checks").innerHTML=
-(x.checks||[])
-.map(v=>`<li>${v}</li>`)
-.join("");
-
-renderFinalDecision(
-x,
-p
-);
-
-const miss=
-document.getElementById("missing");
-
-const items=
-x.missing||[];
-
-miss.style.display=
-"block";
-
-if(items.length){
-
-miss.className=
-"status info";
-
-miss.innerHTML=
-`<b>🎯 ยังขาดอะไรถึงจะดีขึ้น</b>
-<br>
-${items.map(v=>"• "+v).join("<br>")}`;
-
-}
-
-else{
-
-miss.className=
-"status good";
-
-miss.innerHTML=
-"<b>✅ เงื่อนไขหลักผ่านแล้ว</b><br>Decision Engine ไม่พบเงื่อนไขที่ต้องรอเพิ่ม";
-
-}
-
-}catch(e){
-
-gateEl.className=
-"status bad";
-
-gateEl.innerHTML=
-`<b>🔴 Premarket Gate ตรวจไม่สำเร็จ</b>
-<br>
-ค่าที่ส่ง:
-${pm>=0?"+":""}${pm.toFixed(2)}%
-${rv==null?"":" • RV "+rv.toFixed(2)+"x"}`;
-
-out.className=
-"status bad";
-
-out.textContent=
-"วิเคราะห์ไม่สำเร็จ: "
-+e.message
-+" • ค่าที่กรอกยังถูกเก็บไว้";
-
-}
 
+  if(
+    open==null ||
+    open<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาใส่ราคา Open";
+
+
+    return;
+  }
+
+
+  if(
+    high==null ||
+    high<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาใส่ Opening High";
+
+
+    return;
+  }
+
+
+  if(
+    low==null ||
+    low<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาใส่ Opening Low";
+
+
+    return;
+  }
+
+
+  if(low>high){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "Opening Low ต้องไม่สูงกว่า Opening High";
+
+
+    return;
+  }
+
+
+  if(
+    rv!=null &&
+    rv<0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "Relative Volume ต้องเป็น 0 หรือมากกว่า หรือปล่อยว่างได้";
+
+
+    return;
+  }
+
+
+  openingInputs[
+    selected.ticker
+  ]={
+
+    price:
+      document.getElementById(
+        "openingPrice"
+      ).value,
+
+    open:
+      document.getElementById(
+        "openPrice"
+      ).value,
+
+    high:
+      document.getElementById(
+        "openingHigh"
+      ).value,
+
+    low:
+      document.getElementById(
+        "openingLow"
+      ).value,
+
+    rv:
+      document.getElementById(
+        "openingRV"
+      ).value
+
+  };
+
+
+  const sg=
+    (
+      ctx.groups &&
+      ctx.groups[
+        selected.group
+      ]
+    )
+    ||
+    {state:"unknown"};
+
+
+  const body={
+
+    price:
+      current,
+
+    open_price:
+      open,
+
+    opening_high:
+      high,
+
+    opening_low:
+      low,
+
+    buy_low:
+      selected.buy_low,
+
+    buy_high:
+      selected.buy_high,
+
+    stop:
+      selected.stop,
+
+    tp1:
+      selected.tp1,
+
+    premarket_pct:
+      pm,
+
+    rel_volume:
+      rv,
+
+    market:
+      ctx.market,
+
+    sector:
+      sg.state,
+
+    catalyst:
+      catalyst?.sentiment||
+      "unknown",
+
+    catalyst_score:
+      catalyst?.score??
+      50,
+
+    negative_high_impact:
+      catalyst?.negative_high_impact||
+      false,
+
+    data_confidence:
+      selected.confidence_code||
+      "FRESH"
+
+  };
+
+
+  setOpeningFlow(
+    "OPENING"
+  );
+
+
+  st.className=
+    "status info";
+
+
+  st.innerHTML=
+    `<b>⏳ กำลังตรวจ Opening Structure</b>`+
+    `<br>`+
+    `Current ${fmt(current)}`+
+    ` • Open ${fmt(open)}`+
+    ` • Range ${fmt(low)}–${fmt(high)}`;
+
+
+  try{
+
+    const r=
+      await fetch(
+        "/api/opening-confirm",
+        {
+
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          cache:"no-store",
+
+          body:
+            JSON.stringify(
+              body
+            )
+        }
+      );
+
+
+    const j=
+      await r.json();
+
+
+    if(
+      !r.ok ||
+      !j.ok
+    ){
+
+      throw Error(
+        j.error||
+        ("HTTP "+r.status)
+      );
+    }
+
+
+    const x=
+      j.data||{};
+
+
+    let cls="warn";
+
+
+    if(
+      x.state==="ENTRY1"
+    ){
+
+      cls="good";
+
+    }
+
+    else if(
+      x.state==="INVALIDATED"
+    ){
+
+      cls="bad";
+
+    }
+
+    else if(
+      x.state==="ARMED"
+    ){
+
+      cls="info";
+
+    }
+
+
+    st.className=
+      "status "+cls;
+
+
+    st.innerHTML=
+      `<b>${x.label||x.state||"Opening Confirmation"}</b>`+
+      ` • ${x.score??"—"}/100`+
+      `<br>`+
+      `${x.reason||""}`;
+
+
+    renderOpening(
+      x
+    );
+
+
+  }catch(e){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "Opening Confirmation ไม่สำเร็จ: "+
+      e.message+
+      " • ถ้าเพิ่ง Deploy ให้รีเฟรชหน้าแล้วลองใหม่";
+  }
 }
 
 </script>
+
 </body>
 </html>
