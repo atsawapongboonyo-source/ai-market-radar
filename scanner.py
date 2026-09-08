@@ -2063,3 +2063,825 @@ if __name__ == "__main__":
         port=5000,
         debug=False
     )
+
+
+# ============================================================
+# AI MARKET RADAR V4.6
+# Opening Confirmation Engine
+#
+# เพิ่มต่อจาก V4.5.2 โดยไม่แก้ Premarket Gate เดิม
+#
+# Workflow:
+# PREMARKET -> WATCH -> OPENING CHECK -> ARMED -> ENTRY 1
+#
+# ใช้ข้อมูลจาก Webull แบบ Manual / Free-first
+# ============================================================
+
+
+def _opening_float(value, default=None):
+    try:
+        if value in (None, ""):
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _opening_clamp(value):
+    return max(0, min(100, value))
+
+
+def _opening_confirmation(p):
+    """
+    V4.6 Opening Confirmation Engine
+
+    Required:
+    - price             ราคาปัจจุบัน
+    - open_price        ราคาเปิดตลาด
+    - opening_high      High ของ Opening Range
+    - opening_low       Low ของ Opening Range
+    - buy_low
+    - buy_high
+    - stop
+    - tp1
+
+    Optional:
+    - premarket_pct
+    - rel_volume
+    - market
+    - sector
+    - catalyst
+    - catalyst_score
+    - negative_high_impact
+
+    แนวคิด:
+    - Premarket HOT ไม่ได้แปลว่าโดนตัดทิ้งทั้งวัน
+    - หลังตลาดเปิด หุ้น HOT สามารถกลับมา ARMED ได้
+      ถ้าราคาสร้างฐาน / Pullback รับอยู่ / Momentum ยืนยัน
+    - Catalyst บวกช่วยได้ แต่ไม่ Override Chase Protection
+    """
+
+    price = _opening_float(p.get("price"))
+    open_price = _opening_float(p.get("open_price"))
+    opening_high = _opening_float(p.get("opening_high"))
+    opening_low = _opening_float(p.get("opening_low"))
+
+    buy_low = _opening_float(p.get("buy_low"))
+    buy_high = _opening_float(p.get("buy_high"))
+    stop = _opening_float(p.get("stop"))
+    tp1 = _opening_float(p.get("tp1"))
+
+    premarket_pct = _opening_float(
+        p.get("premarket_pct")
+    )
+
+    rel_volume = _opening_float(
+        p.get("rel_volume")
+    )
+
+    market = p.get(
+        "market",
+        "unknown"
+    )
+
+    sector = p.get(
+        "sector",
+        "unknown"
+    )
+
+    catalyst = p.get(
+        "catalyst",
+        "unknown"
+    )
+
+    catalyst_score = _opening_float(
+        p.get("catalyst_score"),
+        50
+    )
+
+    negative_high_impact = bool(
+        p.get("negative_high_impact")
+    )
+
+    confidence = p.get(
+        "data_confidence",
+        "FRESH"
+    )
+
+    required = {
+        "price": price,
+        "open_price": open_price,
+        "opening_high": opening_high,
+        "opening_low": opening_low,
+        "buy_low": buy_low,
+        "buy_high": buy_high,
+        "stop": stop,
+        "tp1": tp1
+    }
+
+    missing_fields = [
+        k
+        for k, v in required.items()
+        if v is None
+    ]
+
+    if missing_fields:
+        return {
+            "status": "INCOMPLETE",
+            "state": "WATCH",
+            "score": 0,
+            "label": "⚪ Opening Check ยังไม่ครบ",
+            "reason": (
+                "กรอกข้อมูล Opening Range ให้ครบก่อน"
+            ),
+            "checks": [
+                "⚪ ข้อมูลยังไม่ครบ: "
+                + ", ".join(missing_fields)
+            ],
+            "next_step": (
+                "ใส่ราคาเปิด, Opening High/Low "
+                "และราคาปัจจุบันจาก Webull"
+            )
+        }
+
+    if opening_low > opening_high:
+        return {
+            "status": "INVALID",
+            "state": "WATCH",
+            "score": 0,
+            "label": "⚪ ข้อมูล Opening Range ผิด",
+            "reason": (
+                "Opening Low สูงกว่า Opening High"
+            ),
+            "checks": [
+                "⚪ ตรวจตัวเลข Opening High / Low อีกครั้ง"
+            ],
+            "next_step": (
+                "แก้ Opening Range แล้วตรวจใหม่"
+            )
+        }
+
+    checks = []
+    score = 50
+
+    opening_mid = (
+        opening_high + opening_low
+    ) / 2
+
+    change_from_open = (
+        (price / open_price - 1) * 100
+        if open_price > 0
+        else 0
+    )
+
+    range_pct = (
+        (
+            opening_high
+            - opening_low
+        )
+        / open_price
+        * 100
+        if open_price > 0
+        else 0
+    )
+
+    hot_premarket = (
+        premarket_pct is not None
+        and premarket_pct >= 5
+    )
+
+    # --------------------------------------------------------
+    # HARD INVALIDATION
+    # --------------------------------------------------------
+
+    if confidence == "CACHED":
+        return {
+            "status": "BLOCK",
+            "state": "INVALIDATED",
+            "score": 0,
+            "label": "🔴 INVALIDATED",
+            "reason": (
+                "ข้อมูลหุ้นยังเป็น Cache"
+            ),
+            "checks": [
+                "🔴 ต้อง Refresh ข้อมูลก่อนใช้ Opening Check"
+            ],
+            "next_step": (
+                "รีเฟรช Scanner ให้ข้อมูลเป็น Fresh/Recovered"
+            )
+        }
+
+    if price < stop:
+        return {
+            "status": "BLOCK",
+            "state": "INVALIDATED",
+            "score": 0,
+            "label": "🔴 INVALIDATED",
+            "reason": (
+                "ราคาหลุด Stop / แผนเดิมผิด"
+            ),
+            "checks": [
+                "🔴 ราคาต่ำกว่า Stop"
+            ],
+            "next_step": (
+                "ไม่เข้าใหม่ รอสร้าง Setup ใหม่"
+            )
+        }
+
+    if negative_high_impact:
+        return {
+            "status": "BLOCK",
+            "state": "INVALIDATED",
+            "score": 20,
+            "label": "🔴 INVALIDATED",
+            "reason": (
+                "มีข่าวลบ Impact สูง"
+            ),
+            "checks": [
+                "🔴 Catalyst Risk ยังไม่คลี่คลาย"
+            ],
+            "next_step": (
+                "รอให้ตลาดย่อยข่าวและประเมินใหม่"
+            )
+        }
+
+    if (
+        market == "bear"
+        and sector == "bear"
+    ):
+        return {
+            "status": "BLOCK",
+            "state": "WATCH",
+            "score": 25,
+            "label": "🔴 ยังไม่เข้า",
+            "reason": (
+                "Market + Group อ่อนพร้อมกัน"
+            ),
+            "checks": [
+                "🔴 ภาพรวมตลาดและกลุ่มยังไม่สนับสนุน"
+            ],
+            "next_step": (
+                "รอ Market/Group ฟื้นก่อน"
+            )
+        }
+
+    if price >= tp1:
+        return {
+            "status": "DONT_CHASE",
+            "state": "WATCH",
+            "score": 20,
+            "label": "🟠 ไม่ไล่ราคา",
+            "reason": (
+                "ราคาถึงหรือเกิน TP1 แล้ว"
+            ),
+            "checks": [
+                "🟠 Risk/Reward ไม่เหมาะกับ Entry ใหม่"
+            ],
+            "next_step": (
+                "รอ Setup / Buy Zone ใหม่"
+            )
+        }
+
+    # --------------------------------------------------------
+    # PRICE STRUCTURE
+    # --------------------------------------------------------
+
+    if buy_low <= price <= buy_high:
+        score += 18
+
+        checks.append(
+            "🟢 ราคาปัจจุบันอยู่ใน Buy Zone"
+        )
+
+    elif price < buy_low:
+        score -= 8
+
+        checks.append(
+            "🟡 ราคายังต่ำกว่า Buy Zone"
+        )
+
+    else:
+        score -= 15
+
+        checks.append(
+            "🟠 ราคาเหนือ Buy Zone — ไม่ไล่"
+        )
+
+    # --------------------------------------------------------
+    # OPENING RANGE STRUCTURE
+    # --------------------------------------------------------
+
+    if price < opening_low:
+        score -= 24
+
+        checks.append(
+            "🔴 ราคาหลุด Opening Low"
+        )
+
+    elif price >= opening_mid:
+        score += 12
+
+        checks.append(
+            "🟢 ราคายืนเหนือกึ่งกลาง Opening Range"
+        )
+
+    else:
+        score -= 5
+
+        checks.append(
+            "🟡 ราคาอยู่ครึ่งล่างของ Opening Range"
+        )
+
+    # ราคาเทียบราคาเปิด
+    if price >= open_price:
+        score += 8
+
+        checks.append(
+            "🟢 ราคายืนเหนือราคาเปิด"
+        )
+
+    else:
+        score -= 6
+
+        checks.append(
+            "🟡 ราคายังต่ำกว่าราคาเปิด"
+        )
+
+    # --------------------------------------------------------
+    # OPENING RANGE WIDTH
+    # --------------------------------------------------------
+
+    if range_pct >= 5:
+        score -= 7
+
+        checks.append(
+            "🟡 Opening Range กว้างมาก "
+            "ความผันผวนสูง"
+        )
+
+    elif range_pct <= 2.5:
+        score += 4
+
+        checks.append(
+            "🟢 Opening Range ไม่กว้างเกินไป"
+        )
+
+    else:
+        checks.append(
+            "⚪ Opening Range อยู่ระดับกลาง"
+        )
+
+    # --------------------------------------------------------
+    # RELATIVE VOLUME
+    # --------------------------------------------------------
+
+    if rel_volume is None:
+        checks.append(
+            "⚪ Relative Volume ไม่ได้กรอก — "
+            "ไม่หักคะแนน"
+        )
+
+    elif rel_volume >= 1.2 and rel_volume <= 3:
+        score += 9
+
+        checks.append(
+            "🟢 Relative Volume ยืนยันแรงซื้อ"
+        )
+
+    elif rel_volume > 3:
+        score += 4
+
+        checks.append(
+            "🟡 Relative Volume สูงมาก "
+            "Momentum แรงแต่ผันผวน"
+        )
+
+    elif rel_volume < 0.8:
+        score -= 6
+
+        checks.append(
+            "🟡 Volume ยังไม่ยืนยัน"
+        )
+
+    else:
+        checks.append(
+            "⚪ Relative Volume ระดับกลาง"
+        )
+
+    # --------------------------------------------------------
+    # MARKET / GROUP CONTEXT
+    # --------------------------------------------------------
+
+    if market == "bull":
+        score += 7
+
+        checks.append(
+            "🟢 Market Context สนับสนุน"
+        )
+
+    elif market == "bear":
+        score -= 9
+
+        checks.append(
+            "🔴 Market Context อ่อน"
+        )
+
+    else:
+        checks.append(
+            "⚪ Market Context กลาง"
+        )
+
+    if sector == "bull":
+        score += 7
+
+        checks.append(
+            "🟢 Group Context สนับสนุน"
+        )
+
+    elif sector == "bear":
+        score -= 9
+
+        checks.append(
+            "🔴 Group Context อ่อน"
+        )
+
+    else:
+        checks.append(
+            "⚪ Group Context กลาง"
+        )
+
+    # --------------------------------------------------------
+    # CATALYST
+    # Catalyst ช่วย Priority ได้
+    # แต่ไม่สามารถยกเลิก Stop / Chase Protection
+    # --------------------------------------------------------
+
+    if catalyst == "positive":
+        catalyst_bonus = min(
+            7,
+            max(
+                2,
+                round(
+                    (
+                        catalyst_score
+                        - 50
+                    ) / 5
+                )
+            )
+        )
+
+        score += catalyst_bonus
+
+        checks.append(
+            f"🟢 Positive Catalyst "
+            f"({round(catalyst_score)}/100)"
+        )
+
+    elif catalyst == "negative":
+        score -= 8
+
+        checks.append(
+            "🔴 Catalyst เชิงลบ"
+        )
+
+    else:
+        checks.append(
+            "⚪ Catalyst ยังไม่ชัด"
+        )
+
+    # --------------------------------------------------------
+    # PREMARKET HOT RECOVERY LOGIC
+    #
+    # จุดสำคัญของ V4.6:
+    # +5% ขึ้นไปไม่ถูกตัดทิ้งทั้งวัน
+    #
+    # แต่ต้องมี Opening Confirmation เพิ่ม
+    # --------------------------------------------------------
+
+    if hot_premarket:
+        checks.append(
+            f"🟠 Premarket HOT "
+            f"{premarket_pct:+.2f}%"
+        )
+
+        hot_recovered = (
+            price >= open_price
+            and price >= opening_mid
+            and buy_low <= price <= buy_high
+        )
+
+        strong_volume = (
+            rel_volume is not None
+            and rel_volume >= 1.2
+        )
+
+        if hot_recovered:
+            checks.append(
+                "🟢 Gap-up เริ่มสร้างฐาน "
+                "และยืนเหนือ Opening Mid"
+            )
+
+            # HOT stock ต้องการ Volume มากกว่าหุ้นปกติ
+            if strong_volume:
+                score += 5
+
+                checks.append(
+                    "🟢 HOT Gap มี Volume สนับสนุน"
+                )
+
+            else:
+                score -= 7
+
+                checks.append(
+                    "🟡 HOT Gap ยังขาด Volume ยืนยัน"
+                )
+
+        else:
+            score -= 15
+
+            checks.append(
+                "🟠 HOT Gap ยังไม่สร้างฐานที่ดีพอ"
+            )
+
+    score = round(
+        _opening_clamp(score)
+    )
+
+    # --------------------------------------------------------
+    # STATE MACHINE
+    # --------------------------------------------------------
+
+    # หลุด Opening Low
+    if price < opening_low:
+        return {
+            "status": "WAIT",
+            "state": "WATCH",
+            "score": score,
+            "label": "🟡 WATCH",
+            "reason": (
+                "ราคาหลุด Opening Low "
+                "ยังไม่ผ่าน Opening Confirmation"
+            ),
+            "checks": checks,
+            "next_step": (
+                "รอราคากลับเหนือ Opening Low "
+                "และ Opening Mid ก่อนตรวจใหม่"
+            ),
+            "opening": {
+                "open": open_price,
+                "high": opening_high,
+                "low": opening_low,
+                "mid": round(opening_mid, 2),
+                "change_from_open_pct": round(
+                    change_from_open,
+                    2
+                ),
+                "range_pct": round(
+                    range_pct,
+                    2
+                )
+            }
+        }
+
+    # ราคาเหนือ Buy Zone
+    if price > buy_high:
+        return {
+            "status": "DONT_CHASE",
+            "state": "WATCH",
+            "score": score,
+            "label": "🟠 ไม่ไล่ราคา",
+            "reason": (
+                "Opening Structure อาจดี "
+                "แต่ราคาเหนือ Buy Zone"
+            ),
+            "checks": checks,
+            "next_step": (
+                f"รอ Pullback กลับ ≤ "
+                f"${buy_high:.2f}"
+            ),
+            "opening": {
+                "open": open_price,
+                "high": opening_high,
+                "low": opening_low,
+                "mid": round(opening_mid, 2),
+                "change_from_open_pct": round(
+                    change_from_open,
+                    2
+                ),
+                "range_pct": round(
+                    range_pct,
+                    2
+                )
+            }
+        }
+
+    # ต่ำกว่า Buy Zone
+    if price < buy_low:
+        return {
+            "status": "WAIT",
+            "state": "WATCH",
+            "score": score,
+            "label": "🟡 WATCH",
+            "reason": (
+                "ราคายังต่ำกว่า Buy Zone"
+            ),
+            "checks": checks,
+            "next_step": (
+                f"รอราคากลับ ≥ "
+                f"${buy_low:.2f}"
+            ),
+            "opening": {
+                "open": open_price,
+                "high": opening_high,
+                "low": opening_low,
+                "mid": round(opening_mid, 2),
+                "change_from_open_pct": round(
+                    change_from_open,
+                    2
+                ),
+                "range_pct": round(
+                    range_pct,
+                    2
+                )
+            }
+        }
+
+    # HOT Premarket ต้องเข้มกว่า
+    if hot_premarket:
+        hot_ready = (
+            price >= open_price
+            and price >= opening_mid
+            and (
+                rel_volume is None
+                or rel_volume >= 1.0
+            )
+        )
+
+        if not hot_ready:
+            return {
+                "status": "WAIT",
+                "state": "WATCH",
+                "score": score,
+                "label": "🟡 WATCH",
+                "reason": (
+                    "Premarket HOT "
+                    "แต่ Opening Confirmation "
+                    "ยังไม่แข็งแรงพอ"
+                ),
+                "checks": checks,
+                "next_step": (
+                    "รอให้ราคายืนเหนือ Open + "
+                    "Opening Mid และดู Volume ยืนยัน"
+                ),
+                "opening": {
+                    "open": open_price,
+                    "high": opening_high,
+                    "low": opening_low,
+                    "mid": round(
+                        opening_mid,
+                        2
+                    ),
+                    "change_from_open_pct": round(
+                        change_from_open,
+                        2
+                    ),
+                    "range_pct": round(
+                        range_pct,
+                        2
+                    )
+                }
+            }
+
+    # --------------------------------------------------------
+    # FINAL STATE
+    # --------------------------------------------------------
+
+    if score >= 82:
+        return {
+            "status": "CONFIRMED",
+            "state": "ENTRY1",
+            "score": score,
+            "label": "🟢 ENTRY 1",
+            "reason": (
+                "ราคาอยู่ใน Buy Zone "
+                "และ Opening Structure ผ่าน"
+            ),
+            "checks": checks,
+            "next_step": (
+                "เข้าไม้ 1 ตามแผน "
+                "และใช้ Stop เดิมเป็น Invalidation"
+            ),
+            "opening": {
+                "open": open_price,
+                "high": opening_high,
+                "low": opening_low,
+                "mid": round(
+                    opening_mid,
+                    2
+                ),
+                "change_from_open_pct": round(
+                    change_from_open,
+                    2
+                ),
+                "range_pct": round(
+                    range_pct,
+                    2
+                )
+            }
+        }
+
+    if score >= 68:
+        return {
+            "status": "ARMED",
+            "state": "ARMED",
+            "score": score,
+            "label": "🟦 ARMED",
+            "reason": (
+                "Setup ดีขึ้นและใกล้พร้อม "
+                "แต่ยังต้องการ Confirmation เพิ่ม"
+            ),
+            "checks": checks,
+            "next_step": (
+                "เฝ้าราคายืนเหนือ Opening Mid/Open "
+                "และ Volume ไม่อ่อนลง"
+            ),
+            "opening": {
+                "open": open_price,
+                "high": opening_high,
+                "low": opening_low,
+                "mid": round(
+                    opening_mid,
+                    2
+                ),
+                "change_from_open_pct": round(
+                    change_from_open,
+                    2
+                ),
+                "range_pct": round(
+                    range_pct,
+                    2
+                )
+            }
+        }
+
+    return {
+        "status": "WAIT",
+        "state": "WATCH",
+        "score": score,
+        "label": "🟡 WATCH",
+        "reason": (
+            "Opening Confirmation "
+            "ยังไม่ผ่านเกณฑ์"
+        ),
+        "checks": checks,
+        "next_step": (
+            "รอ Structure / Context / Volume "
+            "ดีขึ้นแล้วตรวจใหม่"
+        ),
+        "opening": {
+            "open": open_price,
+            "high": opening_high,
+            "low": opening_low,
+            "mid": round(
+                opening_mid,
+                2
+            ),
+            "change_from_open_pct": round(
+                change_from_open,
+                2
+            ),
+            "range_pct": round(
+                range_pct,
+                2
+            )
+        }
+    }
+
+
+@app.route(
+    "/api/opening-confirm",
+    methods=["POST"]
+)
+def opening_confirm():
+    try:
+        payload = (
+            request.get_json(
+                silent=True
+            )
+            or {}
+        )
+
+        return jsonify({
+            "ok": True,
+            "version": "4.6",
+            "data": _opening_confirmation(
+                payload
+            )
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "version": "4.6",
+            "error": str(e)
+        }), 200
