@@ -2885,3 +2885,1393 @@ def opening_confirm():
             "version": "4.6",
             "error": str(e)
         }), 200
+# ============================================================
+# AI MARKET RADAR V4.7
+# POSITION ENGINE
+#
+# Append-only extension for V4.6
+#
+# Workflow:
+# WATCH -> HOLD -> ADD ARMED -> ADD
+#       -> TAKE PROFIT
+#       -> INVALIDATED
+#
+# Core rules:
+# - Having a position prevents repeated "ENTRY 1" instructions
+# - Falling price alone NEVER unlocks ADD
+# - ADD needs reclaim + Opening Confirmation
+# - Price below average cost = no automatic averaging down
+# - Stop is not moved lower automatically
+# ============================================================
+
+
+def _position_float(value, default=None):
+    try:
+        if value in (None, ""):
+            return default
+
+        return float(value)
+
+    except (TypeError, ValueError):
+        return default
+
+
+def _position_clamp(value):
+    return max(
+        0,
+        min(
+            100,
+            value
+        )
+    )
+
+
+def _position_manage(p):
+
+    ticker = str(
+        p.get("ticker")
+        or ""
+    ).upper().strip()
+
+
+    # --------------------------------------------------------
+    # POSITION DATA
+    # --------------------------------------------------------
+
+    shares = _position_float(
+        p.get("shares")
+    )
+
+    avg_cost = _position_float(
+        p.get("avg_cost")
+    )
+
+    price = _position_float(
+        p.get("price")
+    )
+
+
+    # --------------------------------------------------------
+    # PLAN LEVELS
+    # --------------------------------------------------------
+
+    buy_low = _position_float(
+        p.get("buy_low")
+    )
+
+    buy_high = _position_float(
+        p.get("buy_high")
+    )
+
+    stop = _position_float(
+        p.get("stop")
+    )
+
+    tp1 = _position_float(
+        p.get("tp1")
+    )
+
+    tp2 = _position_float(
+        p.get("tp2")
+    )
+
+
+    # --------------------------------------------------------
+    # OPTIONAL POSITION SIZE GUARD
+    # --------------------------------------------------------
+
+    max_position_value = _position_float(
+        p.get("max_position_value")
+    )
+
+
+    # --------------------------------------------------------
+    # OPENING CONFIRMATION
+    # --------------------------------------------------------
+
+    opening_state = str(
+        p.get("opening_state")
+        or "UNKNOWN"
+    ).upper()
+
+    opening_score = _position_float(
+        p.get("opening_score"),
+        0
+    )
+
+    open_price = _position_float(
+        p.get("open_price")
+    )
+
+    opening_mid = _position_float(
+        p.get("opening_mid")
+    )
+
+    opening_low = _position_float(
+        p.get("opening_low")
+    )
+
+
+    # --------------------------------------------------------
+    # CONTEXT
+    # --------------------------------------------------------
+
+    market = str(
+        p.get("market")
+        or "unknown"
+    ).lower()
+
+    sector = str(
+        p.get("sector")
+        or "unknown"
+    ).lower()
+
+    catalyst = str(
+        p.get("catalyst")
+        or "unknown"
+    ).lower()
+
+    catalyst_score = _position_float(
+        p.get("catalyst_score"),
+        50
+    )
+
+    negative_high_impact = bool(
+        p.get(
+            "negative_high_impact"
+        )
+    )
+
+    confidence = str(
+        p.get("data_confidence")
+        or "FRESH"
+    ).upper()
+
+
+    # --------------------------------------------------------
+    # VALIDATION
+    # --------------------------------------------------------
+
+    required = {
+        "shares": shares,
+        "avg_cost": avg_cost,
+        "price": price,
+        "buy_low": buy_low,
+        "buy_high": buy_high,
+        "stop": stop,
+        "tp1": tp1
+    }
+
+
+    missing = [
+        key
+        for key, value
+        in required.items()
+        if value is None
+    ]
+
+
+    if missing:
+
+        return {
+            "status": "INCOMPLETE",
+            "state": "WATCH",
+            "action": "WAIT",
+            "score": 0,
+            "add_allowed": False,
+
+            "label":
+                "⚪ Position ข้อมูลยังไม่ครบ",
+
+            "reason":
+                "กรอกข้อมูล Position ให้ครบก่อน",
+
+            "checks": [
+                "⚪ ข้อมูลยังไม่ครบ: "
+                + ", ".join(missing)
+            ],
+
+            "next_step":
+                "ใส่ Shares, Average Cost "
+                "และ Current Price"
+        }
+
+
+    if shares <= 0:
+
+        return {
+            "status": "NO_POSITION",
+            "state": "WATCH",
+            "action": "WAIT",
+            "score": 0,
+            "add_allowed": False,
+
+            "label":
+                "⚪ ยังไม่มี Position",
+
+            "reason":
+                "Shares ต้องมากกว่า 0 "
+                "จึงจะใช้ Position Engine",
+
+            "checks": [
+                "⚪ Shares = 0"
+            ],
+
+            "next_step":
+                "หุ้นที่ยังไม่ได้ถือ "
+                "ให้ใช้ Premarket Gate + "
+                "Opening Confirmation"
+        }
+
+
+    if (
+        avg_cost <= 0
+        or price <= 0
+        or buy_low <= 0
+        or buy_high <= 0
+        or stop <= 0
+        or tp1 <= 0
+    ):
+
+        return {
+            "status": "INVALID",
+            "state": "WATCH",
+            "action": "WAIT",
+            "score": 0,
+            "add_allowed": False,
+
+            "label":
+                "⚪ Position ข้อมูลไม่ถูกต้อง",
+
+            "reason":
+                "ราคาและจำนวนต้องมากกว่า 0",
+
+            "checks": [
+                "⚪ ตรวจตัวเลขอีกครั้ง"
+            ],
+
+            "next_step":
+                "แก้ข้อมูลแล้วตรวจใหม่"
+        }
+
+
+    if buy_low > buy_high:
+
+        return {
+            "status": "INVALID",
+            "state": "WATCH",
+            "action": "WAIT",
+            "score": 0,
+            "add_allowed": False,
+
+            "label":
+                "⚪ Buy Zone ไม่ถูกต้อง",
+
+            "reason":
+                "Buy Low สูงกว่า Buy High",
+
+            "checks": [
+                "⚪ Refresh Scanner "
+                "แล้วตรวจ Buy Zone ใหม่"
+            ],
+
+            "next_step":
+                "ตรวจ Buy Zone ใหม่"
+        }
+
+
+    # --------------------------------------------------------
+    # POSITION METRICS
+    # --------------------------------------------------------
+
+    position_value = (
+        price
+        * shares
+    )
+
+    cost_value = (
+        avg_cost
+        * shares
+    )
+
+    pnl_usd = (
+        price
+        - avg_cost
+    ) * shares
+
+    pnl_pct = (
+        (
+            price
+            / avg_cost
+            - 1
+        )
+        * 100
+    )
+
+
+    risk_to_stop_usd = max(
+        0,
+        (
+            avg_cost
+            - stop
+        )
+        * shares
+    )
+
+
+    upside_to_tp1_pct = (
+        (
+            tp1
+            / price
+            - 1
+        )
+        * 100
+    )
+
+
+    # --------------------------------------------------------
+    # POSITION SIZE GUARD
+    # --------------------------------------------------------
+
+    guard_configured = (
+        max_position_value is not None
+        and max_position_value > 0
+    )
+
+
+    remaining_budget = None
+    guard_block = False
+
+
+    if guard_configured:
+
+        remaining_budget = max(
+            0,
+            max_position_value
+            - position_value
+        )
+
+        guard_block = (
+            position_value
+            >= max_position_value
+        )
+
+
+    # --------------------------------------------------------
+    # ADD TRIGGER
+    #
+    # ต้อง reclaim อย่างน้อย:
+    # Buy Low + Average Cost
+    #
+    # ถ้ามี Opening data:
+    # Open + Opening Mid จะถูกใช้ด้วย
+    # --------------------------------------------------------
+
+    trigger_candidates = [
+        buy_low,
+        avg_cost
+    ]
+
+
+    if (
+        open_price is not None
+        and open_price > 0
+    ):
+
+        trigger_candidates.append(
+            open_price
+        )
+
+
+    if (
+        opening_mid is not None
+        and opening_mid > 0
+    ):
+
+        trigger_candidates.append(
+            opening_mid
+        )
+
+
+    add_trigger = max(
+        trigger_candidates
+    )
+
+
+    trigger_inside_zone = (
+        add_trigger
+        <= buy_high
+    )
+
+
+    # --------------------------------------------------------
+    # POSITION SCORE
+    # --------------------------------------------------------
+
+    score = 50
+    checks = []
+
+
+    # Data freshness
+
+    if confidence == "CACHED":
+
+        score -= 25
+
+        checks.append(
+            "🔴 ข้อมูล Scanner เป็น Cache"
+        )
+
+
+    elif confidence == "RECOVERED":
+
+        score += 2
+
+        checks.append(
+            "🟡 ข้อมูล Scanner เป็น Recovered"
+        )
+
+
+    else:
+
+        score += 5
+
+        checks.append(
+            "🟢 ข้อมูล Scanner Fresh"
+        )
+
+
+    # P/L
+
+    if pnl_pct >= 0:
+
+        score += 6
+
+        checks.append(
+            f"🟢 Position บวก "
+            f"{pnl_pct:+.2f}%"
+        )
+
+
+    else:
+
+        score -= 4
+
+        checks.append(
+            f"🟡 Position ติดลบ "
+            f"{pnl_pct:+.2f}%"
+        )
+
+
+    # Buy Zone
+
+    if (
+        buy_low
+        <= price
+        <= buy_high
+    ):
+
+        score += 10
+
+        checks.append(
+            "🟢 ราคาอยู่ใน Buy Zone"
+        )
+
+
+    elif price < buy_low:
+
+        score -= 10
+
+        checks.append(
+            "🟡 ราคาต่ำกว่า Buy Zone — "
+            "ไม่ถัวเพราะราคาลงอย่างเดียว"
+        )
+
+
+    else:
+
+        score -= 8
+
+        checks.append(
+            "🟠 ราคาเหนือ Buy Zone — "
+            "ไม่ไล่เพิ่ม"
+        )
+
+
+    # Opening Confirmation
+
+    if opening_state == "ENTRY1":
+
+        score += 18
+
+        checks.append(
+            "🟢 Opening Confirmation "
+            "= ENTRY 1"
+        )
+
+
+    elif opening_state == "ARMED":
+
+        score += 10
+
+        checks.append(
+            "🟦 Opening Confirmation "
+            "= ARMED"
+        )
+
+
+    elif opening_state == "INVALIDATED":
+
+        score -= 25
+
+        checks.append(
+            "🔴 Opening Setup "
+            "ถูก Invalidated"
+        )
+
+
+    else:
+
+        score -= 8
+
+        checks.append(
+            "🟡 Opening Confirmation "
+            "ยังเป็น WATCH/ยังไม่ได้ตรวจ"
+        )
+
+
+    # Market
+
+    if market == "bull":
+
+        score += 6
+
+        checks.append(
+            "🟢 Market Context สนับสนุน"
+        )
+
+
+    elif market == "bear":
+
+        score -= 8
+
+        checks.append(
+            "🔴 Market Context อ่อน"
+        )
+
+
+    else:
+
+        checks.append(
+            "⚪ Market Context กลาง"
+        )
+
+
+    # Group
+
+    if sector == "bull":
+
+        score += 6
+
+        checks.append(
+            "🟢 Group Context สนับสนุน"
+        )
+
+
+    elif sector == "bear":
+
+        score -= 8
+
+        checks.append(
+            "🔴 Group Context อ่อน"
+        )
+
+
+    else:
+
+        checks.append(
+            "⚪ Group Context กลาง"
+        )
+
+
+    # Catalyst
+
+    if catalyst == "positive":
+
+        catalyst_bonus = min(
+            5,
+            max(
+                1,
+                round(
+                    (
+                        catalyst_score
+                        - 50
+                    )
+                    / 8
+                )
+            )
+        )
+
+        score += catalyst_bonus
+
+        checks.append(
+            f"🟢 Catalyst บวก "
+            f"({round(catalyst_score)}/100)"
+        )
+
+
+    elif catalyst == "negative":
+
+        score -= 7
+
+        checks.append(
+            "🔴 Catalyst เป็นลบ"
+        )
+
+
+    else:
+
+        checks.append(
+            "⚪ Catalyst ยังไม่ชัด"
+        )
+
+
+    # Size Guard
+
+    if guard_configured:
+
+        if guard_block:
+
+            score -= 12
+
+            checks.append(
+                "🔴 Position Size Guard "
+                "ถึงงบสูงสุดแล้ว"
+            )
+
+        else:
+
+            checks.append(
+                "🟢 Position Size Guard "
+                "ยังมี Headroom"
+            )
+
+
+    else:
+
+        checks.append(
+            "⚪ ยังไม่ได้ตั้งงบสูงสุด "
+            "ของ Position"
+        )
+
+
+    score = round(
+        _position_clamp(
+            score
+        )
+    )
+
+
+    # --------------------------------------------------------
+    # BASE RESPONSE
+    # --------------------------------------------------------
+
+    base = {
+
+        "ticker": ticker,
+
+        "score": score,
+
+        "checks": checks,
+
+
+        "position": {
+
+            "shares":
+                shares,
+
+            "avg_cost":
+                round(
+                    avg_cost,
+                    4
+                ),
+
+            "price":
+                round(
+                    price,
+                    4
+                ),
+
+            "market_value":
+                round(
+                    position_value,
+                    2
+                ),
+
+            "cost_value":
+                round(
+                    cost_value,
+                    2
+                ),
+
+            "pnl_usd":
+                round(
+                    pnl_usd,
+                    2
+                ),
+
+            "pnl_pct":
+                round(
+                    pnl_pct,
+                    2
+                ),
+
+            "risk_to_stop_usd":
+                round(
+                    risk_to_stop_usd,
+                    2
+                ),
+
+            "upside_to_tp1_pct":
+                round(
+                    upside_to_tp1_pct,
+                    2
+                )
+        },
+
+
+        "levels": {
+
+            "buy_low":
+                buy_low,
+
+            "buy_high":
+                buy_high,
+
+            "add_trigger":
+                round(
+                    add_trigger,
+                    4
+                ),
+
+            "stop":
+                stop,
+
+            "tp1":
+                tp1,
+
+            "tp2":
+                tp2
+        },
+
+
+        "guard": {
+
+            "configured":
+                guard_configured,
+
+            "max_position_value":
+                (
+                    round(
+                        max_position_value,
+                        2
+                    )
+                    if guard_configured
+                    else None
+                ),
+
+            "remaining_budget":
+                (
+                    round(
+                        remaining_budget,
+                        2
+                    )
+                    if remaining_budget
+                    is not None
+                    else None
+                ),
+
+            "blocked":
+                guard_block
+        },
+
+
+        "opening": {
+
+            "state":
+                opening_state,
+
+            "score":
+                round(
+                    opening_score
+                    or 0
+                ),
+
+            "open":
+                open_price,
+
+            "mid":
+                opening_mid,
+
+            "low":
+                opening_low
+        }
+    }
+
+
+    # ========================================================
+    # HARD INVALIDATION
+    # ========================================================
+
+    if price <= stop:
+
+        return {
+            **base,
+
+            "status":
+                "INVALIDATED",
+
+            "state":
+                "INVALIDATED",
+
+            "action":
+                "EXIT",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🔴 INVALIDATED / EXIT PLAN",
+
+            "reason":
+                "ราคาถึงหรือต่ำกว่า Stop "
+                "ของแผนเดิม",
+
+            "next_step":
+                "ห้าม ADD และใช้ Stop/Exit "
+                "ตามแผนเดิม "
+                "ไม่ขยับ Stop ลง"
+        }
+
+
+    # ========================================================
+    # DATA NOT FRESH
+    # ========================================================
+
+    if confidence == "CACHED":
+
+        return {
+            **base,
+
+            "status":
+                "REFRESH",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟡 HOLD / REFRESH DATA",
+
+            "reason":
+                "มี Position อยู่ "
+                "แต่ Scanner เป็น Cache",
+
+            "next_step":
+                "ยังไม่ ADD "
+                "จนกว่าจะ Refresh "
+                "เป็น Fresh/Recovered"
+        }
+
+
+    # ========================================================
+    # NEGATIVE HIGH IMPACT NEWS
+    # ========================================================
+
+    if negative_high_impact:
+
+        return {
+            **base,
+
+            "status":
+                "RISK_REVIEW",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟠 HOLD / RISK REVIEW",
+
+            "reason":
+                "มีข่าวลบ Impact สูง "
+                "จึงไม่เพิ่ม Position",
+
+            "next_step":
+                "ติดตามข่าวและราคาใกล้ Stop "
+                "ก่อนตัดสินใจรอบถัดไป"
+        }
+
+
+    # ========================================================
+    # TAKE PROFIT
+    # ========================================================
+
+    if (
+        tp2 is not None
+        and tp2 > 0
+        and price >= tp2
+    ):
+
+        return {
+            **base,
+
+            "status":
+                "TAKE_PROFIT",
+
+            "state":
+                "TAKE_PROFIT",
+
+            "action":
+                "TAKE_PROFIT",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟢 TAKE PROFIT • TP2",
+
+            "reason":
+                "ราคาถึงหรือสูงกว่า TP2 แล้ว",
+
+            "next_step":
+                "ไม่ ADD เพิ่มในจุดนี้ "
+                "ให้บริหารกำไรตามแผน"
+        }
+
+
+    if price >= tp1:
+
+        return {
+            **base,
+
+            "status":
+                "TAKE_PROFIT",
+
+            "state":
+                "TAKE_PROFIT",
+
+            "action":
+                "TAKE_PROFIT",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟢 TAKE PROFIT • TP1",
+
+            "reason":
+                "ราคาถึงหรือสูงกว่า TP1 แล้ว",
+
+            "next_step":
+                "ไม่ไล่ ADD ที่ TP1 "
+                "ให้บริหารกำไรและดู TP2"
+        }
+
+
+    # ========================================================
+    # POSITION SIZE LIMIT
+    # ========================================================
+
+    if guard_block:
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟡 HOLD • SIZE LIMIT",
+
+            "reason":
+                "Position ถึงงบสูงสุด "
+                "ที่ตั้งไว้แล้ว",
+
+            "next_step":
+                "ถือ Position เดิม "
+                "และไม่เพิ่มจนกว่าจะปรับแผนงบ"
+        }
+
+
+    # ========================================================
+    # ABOVE BUY ZONE
+    # ========================================================
+
+    if price > buy_high:
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟠 HOLD • DO NOT CHASE",
+
+            "reason":
+                "Position เดิมถือได้ตามแผน "
+                "แต่ราคาสูงกว่า Buy Zone",
+
+            "next_step":
+                f"ไม่ ADD • รอ Pullback ≤ "
+                f"${buy_high:.2f} "
+                "หรือ Setup ใหม่"
+        }
+
+
+    # ========================================================
+    # BELOW BUY ZONE
+    # ========================================================
+
+    if price < buy_low:
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟡 HOLD • DO NOT ADD",
+
+            "reason":
+                "ราคาต่ำกว่า Buy Zone "
+                "จึงไม่ถัวลงอัตโนมัติ",
+
+            "next_step":
+                f"รอ Reclaim อย่างน้อย "
+                f"${buy_low:.2f} "
+                "และ Opening Confirmation ดีขึ้น"
+        }
+
+
+    # ========================================================
+    # ADD TRIGGER OUTSIDE BUY ZONE
+    # ========================================================
+
+    if not trigger_inside_zone:
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟡 HOLD • WAIT NEW SETUP",
+
+            "reason":
+                "ADD Trigger สูงกว่า Buy Zone "
+                "จึงไม่เพิ่มไม้ตาม Setup เดิม",
+
+            "next_step":
+                "ถือเดิมและรอ Scanner "
+                "สร้าง Buy Zone ใหม่"
+        }
+
+
+    # ========================================================
+    # OPENING INVALIDATED BUT MAIN STOP STILL HOLDS
+    # ========================================================
+
+    if opening_state == "INVALIDATED":
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟠 HOLD • OPENING INVALIDATED",
+
+            "reason":
+                "Opening Setup ถูก Invalidated "
+                "แต่ราคายังไม่ถึง Stop หลัก",
+
+            "next_step":
+                "ไม่ ADD • ถือ/เฝ้าตาม Stop เดิม "
+                "และรอ Setup ใหม่"
+        }
+
+
+    # ========================================================
+    # OPENING NOT READY
+    # ========================================================
+
+    if opening_state not in (
+        "ENTRY1",
+        "ARMED"
+    ):
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟡 HOLD • WAIT CONFIRMATION",
+
+            "reason":
+                "มี Position แล้ว "
+                "แต่ Opening Confirmation "
+                "ยังไม่ผ่านสำหรับการเพิ่มไม้",
+
+            "next_step":
+                f"ADD Trigger อ้างอิง "
+                f"${add_trigger:.2f} "
+                "แต่ต้องให้ Opening "
+                "เป็น ARMED/ENTRY1 ก่อน"
+        }
+
+
+    # ========================================================
+    # NO AUTOMATIC AVERAGE DOWN
+    # ========================================================
+
+    if price < avg_cost:
+
+        return {
+            **base,
+
+            "status":
+                "HOLD",
+
+            "state":
+                "HOLD",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟡 HOLD • NO AVERAGE DOWN",
+
+            "reason":
+                "ราคายังต่ำกว่า Average Cost "
+                "จึงยังไม่เปิด ADD ใน V4.7",
+
+            "next_step":
+                f"รอ Reclaim ≥ "
+                f"${add_trigger:.2f} "
+                "พร้อม Opening Confirmation"
+        }
+
+
+    # ========================================================
+    # WAIT FOR ADD TRIGGER
+    # ========================================================
+
+    if price < add_trigger:
+
+        return {
+            **base,
+
+            "status":
+                "ARMED",
+
+            "state":
+                "ARMED",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟦 HOLD • ADD ARMED",
+
+            "reason":
+                "Opening ดีขึ้น "
+                "แต่ราคายังไม่ถึง ADD Trigger",
+
+            "next_step":
+                f"เฝ้า Reclaim ≥ "
+                f"${add_trigger:.2f} "
+                "โดยต้องยังอยู่ใน Buy Zone"
+        }
+
+
+    # ========================================================
+    # OPENING ARMED BUT NOT ENTRY1
+    # ========================================================
+
+    if opening_state == "ARMED":
+
+        return {
+            **base,
+
+            "status":
+                "ARMED",
+
+            "state":
+                "ARMED",
+
+            "action":
+                "HOLD",
+
+            "add_allowed":
+                False,
+
+            "label":
+                "🟦 HOLD • ADD ARMED",
+
+            "reason":
+                "ราคา Reclaim แล้ว "
+                "แต่ Opening ยังเป็น ARMED",
+
+            "next_step":
+                "รอ Opening Confirmation "
+                "เปลี่ยนเป็น ENTRY1 "
+                "ก่อนเปิด ADD"
+        }
+
+
+    # ========================================================
+    # ADD READY
+    # ========================================================
+
+    return {
+        **base,
+
+        "status":
+            "ADD_READY",
+
+        "state":
+            "ADD",
+
+        "action":
+            "ADD",
+
+        "add_allowed":
+            True,
+
+        "label":
+            "🟢 ADD READY",
+
+        "reason":
+            "Position อยู่ใน Buy Zone, "
+            "ราคาไม่ต่ำกว่า Average Cost "
+            "และ Opening Confirmation = ENTRY1",
+
+        "next_step":
+            "สามารถพิจารณาเพิ่มไม้ตามงบที่กำหนด "
+            "โดยคง Stop เดิม "
+            "และไม่ไล่เกิน Buy Zone"
+    }
+
+
+# ------------------------------------------------------------
+# API
+# ------------------------------------------------------------
+
+@app.route(
+    "/api/position-manage",
+    methods=["POST"]
+)
+def position_manage():
+
+    try:
+
+        payload = (
+            request.get_json(
+                silent=True
+            )
+            or {}
+        )
+
+        return jsonify({
+            "ok": True,
+            "version": "4.7",
+            "data": _position_manage(
+                payload
+            )
+        }), 200
+
+
+    except Exception as e:
+
+        return jsonify({
+            "ok": False,
+            "version": "4.7",
+            "error": str(e)
+        }), 200
