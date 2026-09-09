@@ -5197,5 +5197,756 @@ v47CreatePositionUI();
 
 v47UpdateHeader();
 
+</script><!-- ===================================================== -->
+<!-- AI MARKET RADAR V4.7.1 -->
+<!-- MULTI-LEVEL RECLAIM ENGINE -->
+<!-- Paste AFTER V4.7 block and BEFORE </body> -->
+<!-- ===================================================== -->
+
+<style>
+
+.v471Roadmap{
+  margin-top:14px;
+  padding:14px;
+  border-radius:16px;
+  background:#0d2135;
+  border:1px solid #315878;
+}
+
+.v471Title{
+  font-size:14px;
+  font-weight:900;
+  margin-bottom:10px;
+}
+
+.v471Levels{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+
+.v471Level{
+  padding:11px;
+  border-radius:13px;
+  background:#112b43;
+  border:1px solid #24425f;
+}
+
+.v471Level.done{
+  background:#103421;
+  border-color:#28724b;
+}
+
+.v471Level.next{
+  background:#3a310c;
+  border-color:#8a7120;
+}
+
+.v471Level.locked{
+  opacity:.62;
+}
+
+.v471Level span{
+  display:block;
+  font-size:11px;
+  color:#9eb1c6;
+}
+
+.v471Level b{
+  display:block;
+  margin-top:4px;
+  font-size:16px;
+}
+
+.v471State{
+  margin-top:10px;
+  padding:11px;
+  border-radius:13px;
+  background:#10263c;
+  font-size:13px;
+  line-height:1.55;
+}
+
+@media(max-width:700px){
+
+  .v471Levels{
+    grid-template-columns:1fr 1fr;
+  }
+
+}
+
+</style>
+
+
+<script>
+
+/* ========================================================
+   V4.7.1 MULTI-LEVEL RECLAIM ENGINE
+======================================================== */
+
+
+/*
+  เก็บ renderPosition เดิมของ V4.7
+*/
+
+const v471OriginalRenderPosition =
+  v47RenderPosition;
+
+
+/*
+  helper สำหรับแสดงราคา
+*/
+
+function v471Price(v){
+
+  const n =
+    Number(v);
+
+  if(
+    !Number.isFinite(n) ||
+    n <= 0
+  ){
+    return "—";
+  }
+
+  return "$" + n.toFixed(2);
+}
+
+
+/*
+  สร้าง Reclaim Roadmap
+*/
+
+function v471BuildRoadmap(x){
+
+  const p =
+    x.position || {};
+
+  const lv =
+    x.levels || {};
+
+  const opening =
+    x.opening || {};
+
+
+  const current =
+    Number(p.price);
+
+  const avg =
+    Number(p.avg_cost);
+
+  const buyLow =
+    Number(lv.buy_low);
+
+  const buyHigh =
+    Number(lv.buy_high);
+
+  const openPrice =
+    Number(opening.open);
+
+  const openingMid =
+    Number(opening.mid);
+
+
+  /*
+    Level 1:
+    กลับเข้า Buy Zone
+  */
+
+  const level1 =
+    Number.isFinite(buyLow)
+    ? buyLow
+    : null;
+
+
+  /*
+    Level 2:
+    Reclaim ราคา Open
+
+    ถ้าไม่มี Opening data
+    จะยังไม่ถือว่าผ่าน
+  */
+
+  const level2 =
+    Number.isFinite(openPrice) &&
+    openPrice > 0
+    ? openPrice
+    : null;
+
+
+  /*
+    Level 3:
+    Reclaim Opening Mid
+  */
+
+  const level3 =
+    Number.isFinite(openingMid) &&
+    openingMid > 0
+    ? openingMid
+    : null;
+
+
+  /*
+    Level 4:
+    ADD Confirmation
+
+    ต้องไม่ต่ำกว่า Average Cost
+    และต้องผ่านทุก Opening level ที่มี
+  */
+
+  const candidates = [];
+
+
+  if(
+    Number.isFinite(avg) &&
+    avg > 0
+  ){
+    candidates.push(avg);
+  }
+
+
+  if(
+    level1 != null
+  ){
+    candidates.push(level1);
+  }
+
+
+  if(
+    level2 != null
+  ){
+    candidates.push(level2);
+  }
+
+
+  if(
+    level3 != null
+  ){
+    candidates.push(level3);
+  }
+
+
+  const level4 =
+    candidates.length
+    ? Math.max(...candidates)
+    : null;
+
+
+  /*
+    Determine passed state
+  */
+
+  const pass1 =
+    level1 != null &&
+    current >= level1;
+
+
+  const pass2 =
+    level2 != null &&
+    current >= level2;
+
+
+  const pass3 =
+    level3 != null &&
+    current >= level3;
+
+
+  const openingState =
+    String(
+      opening.state ||
+      "UNKNOWN"
+    ).toUpperCase();
+
+
+  const pass4 =
+    level4 != null &&
+    current >= level4 &&
+    current <= buyHigh &&
+    openingState === "ENTRY1" &&
+    x.add_allowed === true;
+
+
+  /*
+    หาด่านถัดไป
+  */
+
+  let nextText =
+    "รอข้อมูล Opening Confirmation";
+
+
+  if(!pass1){
+
+    nextText =
+      `ด่านแรก: รอ Reclaim ${v471Price(level1)} `+
+      `เพื่อกลับเข้า Buy Zone`;
+
+  }
+
+  else if(
+    level2 == null
+  ){
+
+    nextText =
+      "ผ่าน Buy Low แล้ว • "+
+      "กรอก/ตรวจ Opening Confirmation "+
+      "เพื่อหา Open และ Opening Mid";
+
+  }
+
+  else if(!pass2){
+
+    nextText =
+      `ผ่าน Buy Low แล้ว • `+
+      `ด่านถัดไป Reclaim Open ${v471Price(level2)}`;
+
+  }
+
+  else if(
+    level3 == null
+  ){
+
+    nextText =
+      "ผ่าน Open แล้ว • "+
+      "รอข้อมูล Opening Mid";
+
+  }
+
+  else if(!pass3){
+
+    nextText =
+      `ผ่าน Open แล้ว • `+
+      `ด่านถัดไป Reclaim Opening Mid ${v471Price(level3)}`;
+
+  }
+
+  else if(
+    current < avg
+  ){
+
+    nextText =
+      `Opening Structure ผ่านแล้ว • `+
+      `แต่ยังต่ำกว่า Average Cost ${v471Price(avg)} • `+
+      `ยังไม่ ADD`;
+
+  }
+
+  else if(
+    current > buyHigh
+  ){
+
+    nextText =
+      `ผ่าน Reclaim แล้ว แต่ราคาเหนือ Buy Zone `+
+      `${v471Price(buyHigh)} • ไม่ไล่ ADD`;
+
+  }
+
+  else if(
+    openingState !== "ENTRY1"
+  ){
+
+    nextText =
+      `ผ่านระดับราคาแล้ว • `+
+      `รอ Opening Confirmation = ENTRY1 `+
+      `ก่อนอนุญาต ADD`;
+
+  }
+
+  else if(
+    x.add_allowed !== true
+  ){
+
+    nextText =
+      "ระดับราคาผ่านแล้ว แต่ Position Guard "+
+      "ยังไม่อนุญาต ADD";
+
+  }
+
+  else{
+
+    nextText =
+      "ผ่าน Reclaim + Opening Confirmation แล้ว • "+
+      "ADD READY ตาม Position Size Guard";
+
+  }
+
+
+  return {
+
+    current,
+
+    avg,
+
+    buyLow,
+
+    buyHigh,
+
+    level1,
+
+    level2,
+
+    level3,
+
+    level4,
+
+    pass1,
+
+    pass2,
+
+    pass3,
+
+    pass4,
+
+    openingState,
+
+    nextText
+  };
+
+}
+
+
+/*
+  class ของแต่ละด่าน
+*/
+
+function v471LevelClass(
+  passed,
+  isNext
+){
+
+  if(passed){
+    return "v471Level done";
+  }
+
+  if(isNext){
+    return "v471Level next";
+  }
+
+  return "v471Level locked";
+}
+
+
+/*
+  Render Roadmap
+*/
+
+function v471RenderRoadmap(x){
+
+  const dash =
+    document.getElementById(
+      "positionDash"
+    );
+
+
+  if(!dash){
+    return;
+  }
+
+
+  let box =
+    document.getElementById(
+      "v471Roadmap"
+    );
+
+
+  if(!box){
+
+    box =
+      document.createElement(
+        "div"
+      );
+
+    box.id =
+      "v471Roadmap";
+
+    box.className =
+      "v471Roadmap";
+
+
+    const checks =
+      document.getElementById(
+        "positionChecks"
+      );
+
+
+    if(checks){
+
+      dash.insertBefore(
+        box,
+        checks
+      );
+
+    }
+
+    else{
+
+      dash.appendChild(
+        box
+      );
+
+    }
+
+  }
+
+
+  const r =
+    v471BuildRoadmap(x);
+
+
+  /*
+    หา next active step
+  */
+
+  let nextStep = 0;
+
+
+  if(!r.pass1){
+
+    nextStep = 1;
+
+  }
+
+  else if(!r.pass2){
+
+    nextStep = 2;
+
+  }
+
+  else if(!r.pass3){
+
+    nextStep = 3;
+
+  }
+
+  else if(!r.pass4){
+
+    nextStep = 4;
+
+  }
+
+
+  const openText =
+    r.level2 == null
+    ? "รอ Opening"
+    : v471Price(r.level2);
+
+
+  const midText =
+    r.level3 == null
+    ? "รอ Opening"
+    : v471Price(r.level3);
+
+
+  box.innerHTML = `
+
+    <div class="v471Title">
+      🪜 Reclaim Roadmap
+    </div>
+
+
+    <div class="v471Levels">
+
+
+      <div
+        class="${v471LevelClass(
+          r.pass1,
+          nextStep===1
+        )}"
+      >
+
+        <span>
+          ① FIRST RECLAIM
+        </span>
+
+        <b>
+          ${v471Price(r.level1)}
+        </b>
+
+        <span>
+          Buy Low
+        </span>
+
+      </div>
+
+
+      <div
+        class="${v471LevelClass(
+          r.pass2,
+          nextStep===2
+        )}"
+      >
+
+        <span>
+          ② OPEN RECLAIM
+        </span>
+
+        <b>
+          ${openText}
+        </b>
+
+        <span>
+          Session Open
+        </span>
+
+      </div>
+
+
+      <div
+        class="${v471LevelClass(
+          r.pass3,
+          nextStep===3
+        )}"
+      >
+
+        <span>
+          ③ STRONG CONFIRM
+        </span>
+
+        <b>
+          ${midText}
+        </b>
+
+        <span>
+          Opening Mid
+        </span>
+
+      </div>
+
+
+      <div
+        class="${v471LevelClass(
+          r.pass4,
+          nextStep===4
+        )}"
+      >
+
+        <span>
+          ④ ADD CONFIRM
+        </span>
+
+        <b>
+          ${
+            r.pass4
+            ? "READY"
+            : v471Price(r.level4)
+          }
+        </b>
+
+        <span>
+          Avg + Reclaim + ENTRY1
+        </span>
+
+      </div>
+
+
+    </div>
+
+
+    <div class="v471State">
+
+      <b>
+        Current ${v471Price(r.current)}
+      </b>
+
+      <br>
+
+      ${r.nextText}
+
+    </div>
+
+  `;
+
+
+  /*
+    เปลี่ยน ADD Trigger เดิมให้สื่อความหมายชัดขึ้น
+
+    ตัวเลขนี้คือ Strongest Required Price
+    ไม่ใช่คำสั่งซื้อทันที
+  */
+
+  const trigger =
+    document.getElementById(
+      "pmAddTrigger"
+    );
+
+
+  if(trigger){
+
+    trigger.textContent =
+      v471Price(
+        r.level4
+      );
+
+  }
+
+}
+
+
+/*
+  Hook หลัง Position Engine V4.7 render เสร็จ
+*/
+
+v47RenderPosition =
+  function(x){
+
+    v471OriginalRenderPosition(
+      x
+    );
+
+    v471RenderRoadmap(
+      x
+    );
+
+  };
+
+
+/*
+  Header version
+*/
+
+document.title =
+  "AI Market Radar V4.7.1";
+
+
+const v471Header =
+  document.querySelector(
+    ".head .mut"
+  );
+
+
+if(v471Header){
+
+  v471Header.textContent =
+    "V4.7.1 • Multi-Level Reclaim Engine";
+
+}
+
+
+/*
+  เปลี่ยน Version Pill ใน Position Card
+*/
+
+const v471PositionCard =
+  document.getElementById(
+    "positionCard"
+  );
+
+
+if(v471PositionCard){
+
+  const pill =
+    v471PositionCard.querySelector(
+      ".versionPill"
+    );
+
+
+  if(pill){
+
+    pill.textContent =
+      "V4.7.1";
+
+  }
+
+}
+
 </script></body>
 </html>
