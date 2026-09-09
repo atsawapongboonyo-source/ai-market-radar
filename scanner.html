@@ -3495,5 +3495,1707 @@ async function openingConfirm(){
 
 </script>
 
-</body>
+<!-- ===================================================== -->
+<!-- AI MARKET RADAR V4.7 POSITION ENGINE -->
+<!-- Paste this block immediately BEFORE </body> -->
+<!-- ===================================================== -->
+
+<style>
+
+/* ========================================================
+   V4.7 POSITION ENGINE
+======================================================== */
+
+.positionCard{
+  border:1px solid #375f82;
+  background:#0b1d2e
+}
+
+.positionGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:12px
+}
+
+.positionDash{
+  display:none;
+  margin-top:14px;
+  padding:16px;
+  border-radius:18px;
+  border:1px solid #375f82;
+  background:#0b2135
+}
+
+.positionAction{
+  font-size:28px;
+  font-weight:900;
+  line-height:1.2
+}
+
+.positionMetrics{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-top:12px
+}
+
+.positionMetric{
+  background:#112b43;
+  padding:11px;
+  border-radius:13px
+}
+
+.positionMetric span{
+  display:block;
+  font-size:11px;
+  color:#9eb1c6
+}
+
+.positionMetric b{
+  display:block;
+  margin-top:3px;
+  font-size:17px
+}
+
+.positionFlow{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:7px;
+  margin:12px 0
+}
+
+.positionStep{
+  text-align:center;
+  background:#10263c;
+  border:1px solid #24425f;
+  border-radius:12px;
+  padding:9px 4px;
+  font-size:11px;
+  color:#9eb1c6
+}
+
+.positionStep.current{
+  color:white;
+  border-color:#3e82b8;
+  background:#153a5b;
+  font-weight:800
+}
+
+.positionAddYes{
+  background:#0c3321;
+  border:1px solid #217449
+}
+
+.positionAddNo{
+  background:#352b0b;
+  border:1px solid #79601a
+}
+
+@media(max-width:700px){
+
+  .positionGrid,
+  .positionMetrics{
+    grid-template-columns:1fr 1fr
+  }
+
+  .positionFlow{
+    grid-template-columns:1fr
+  }
+
+  .positionStep{
+    text-align:left;
+    padding:9px 12px
+  }
+}
+
+</style>
+
+
+<script>
+
+/* ========================================================
+   V4.7 GLOBAL STATE
+======================================================== */
+
+const v47PositionInputs={};
+
+const v47OpeningResults={};
+
+
+/* ========================================================
+   SAVE V4.6 OPENING RESULT
+======================================================== */
+
+const v47OriginalRenderOpening=
+  renderOpening;
+
+
+renderOpening=function(x){
+
+  if(
+    selected &&
+    selected.ticker
+  ){
+
+    v47OpeningResults[
+      selected.ticker
+    ]=x;
+
+  }
+
+
+  v47OriginalRenderOpening(
+    x
+  );
+
+
+  /*
+    เมื่อมี Current Price จาก Opening
+    ถ้าช่อง Position Price ยังว่าง
+    ให้เติมให้อัตโนมัติ
+  */
+
+  const openingPrice=
+    signedNum(
+      document.getElementById(
+        "openingPrice"
+      )?.value
+    );
+
+
+  const posPrice=
+    document.getElementById(
+      "positionPrice"
+    );
+
+
+  if(
+    posPrice &&
+    String(
+      posPrice.value
+    ).trim()==="" &&
+    openingPrice!=null
+  ){
+
+    posPrice.value=
+      openingPrice;
+
+  }
+
+};
+
+
+/* ========================================================
+   CREATE POSITION ENGINE UI
+======================================================== */
+
+function v47CreatePositionUI(){
+
+  if(
+    document.getElementById(
+      "positionCard"
+    )
+  ){
+    return;
+  }
+
+
+  const card=
+    document.createElement(
+      "div"
+    );
+
+
+  card.id=
+    "positionCard";
+
+
+  card.className=
+    "card confirm positionCard";
+
+
+  card.innerHTML=`
+
+    <div class="sectionTitle">
+
+      <div>
+
+        <h2 style="margin-bottom:5px">
+          🧩 Position Engine
+        </h2>
+
+        <div class="small">
+          ใช้เมื่อซื้อหุ้นแล้ว เพื่อให้ Radar
+          เปลี่ยนจาก ENTRY เป็น HOLD / ADD /
+          TAKE PROFIT / INVALIDATED
+        </div>
+
+      </div>
+
+
+      <div class="versionPill">
+        V4.7
+      </div>
+
+    </div>
+
+
+    <div class="positionFlow">
+
+      <div
+        id="posFlowWatch"
+        class="positionStep"
+      >
+        1 • WATCH
+      </div>
+
+      <div
+        id="posFlowHold"
+        class="positionStep current"
+      >
+        2 • HOLD
+      </div>
+
+      <div
+        id="posFlowArmed"
+        class="positionStep"
+      >
+        3 • ADD ARMED
+      </div>
+
+      <div
+        id="posFlowAdd"
+        class="positionStep"
+      >
+        4 • ADD
+      </div>
+
+      <div
+        id="posFlowTp"
+        class="positionStep"
+      >
+        5 • TAKE PROFIT
+      </div>
+
+      <div
+        id="posFlowInvalid"
+        class="positionStep"
+      >
+        6 • INVALIDATED
+      </div>
+
+    </div>
+
+
+    <div class="status info">
+
+      <b>กฎ V4.7</b>
+
+      <br>
+
+      ราคาลง ≠ ซื้อเพิ่ม
+
+      <br>
+
+      ADD ต้องผ่าน Reclaim +
+      Opening Confirmation
+
+      <br>
+
+      ถ้าราคายังต่ำกว่า Average Cost
+      ระบบจะไม่เปิด ADD อัตโนมัติ
+
+    </div>
+
+
+    <div class="positionGrid">
+
+      <input
+        id="positionShares"
+        type="number"
+        inputmode="decimal"
+        step=".0001"
+        min="0"
+        placeholder="จำนวนหุ้น เช่น 2"
+      >
+
+
+      <input
+        id="positionAvg"
+        type="number"
+        inputmode="decimal"
+        step=".01"
+        min="0"
+        placeholder="Average Cost เช่น 173.24"
+      >
+
+
+      <input
+        id="positionPrice"
+        type="number"
+        inputmode="decimal"
+        step=".01"
+        min="0"
+        placeholder="ราคาปัจจุบัน"
+      >
+
+
+      <input
+        id="positionMax"
+        type="number"
+        inputmode="decimal"
+        step=".01"
+        min="0"
+        placeholder="งบสูงสุด Position USD (ถ้ามี)"
+      >
+
+    </div>
+
+
+    <div
+      class="buttons"
+      style="margin-top:12px"
+    >
+
+      <button
+        class="alt"
+        onclick="v47SyncPositionPrice()"
+      >
+        ใช้ราคาล่าสุดจากด้านบน
+      </button>
+
+
+      <button
+        onclick="v47ManagePosition()"
+      >
+        🧩 วิเคราะห์ Position
+      </button>
+
+    </div>
+
+
+    <div
+      id="positionStatus"
+      class="status info"
+    >
+      ⚪ เลือกหุ้นและกรอก Position ที่ถืออยู่
+    </div>
+
+
+    <div
+      id="positionDash"
+      class="positionDash"
+    >
+
+      <div class="small">
+        POSITION STATE
+      </div>
+
+
+      <div
+        id="positionAction"
+        class="positionAction"
+      >
+        —
+      </div>
+
+
+      <div
+        id="positionSub"
+        class="openingSub"
+      >
+        —
+      </div>
+
+
+      <div class="positionMetrics">
+
+        <div class="positionMetric">
+
+          <span>
+            Position
+          </span>
+
+          <b id="pmPosition">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Current
+          </span>
+
+          <b id="pmCurrent">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Unrealized P/L
+          </span>
+
+          <b id="pmPnl">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Market Value
+          </span>
+
+          <b id="pmValue">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            ADD
+          </span>
+
+          <b id="pmAdd">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            ADD Trigger
+          </span>
+
+          <b id="pmAddTrigger">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Stop
+          </span>
+
+          <b id="pmStop">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            TP1
+          </span>
+
+          <b id="pmTp1">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            TP2
+          </span>
+
+          <b id="pmTp2">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Risk to Stop
+          </span>
+
+          <b id="pmRisk">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Upside to TP1
+          </span>
+
+          <b id="pmUpside">
+            —
+          </b>
+
+        </div>
+
+
+        <div class="positionMetric">
+
+          <span>
+            Budget Headroom
+          </span>
+
+          <b id="pmHeadroom">
+            —
+          </b>
+
+        </div>
+
+      </div>
+
+
+      <ul
+        id="positionChecks"
+        class="checks"
+      ></ul>
+
+
+      <div
+        id="positionNext"
+        class="nextStep"
+      >
+        —
+      </div>
+
+    </div>
+
+  `;
+
+
+  /*
+    วาง Position Engine
+    ต่อจาก Final Confirmation Card
+    และก่อน Candidate Ranking
+  */
+
+  const cards=
+    document.querySelectorAll(
+      ".card"
+    );
+
+
+  let candidateCard=null;
+
+
+  cards.forEach(c=>{
+
+    const h2=
+      c.querySelector(
+        "h2"
+      );
+
+
+    if(
+      h2 &&
+      h2.textContent.includes(
+        "Candidate Ranking"
+      )
+    ){
+
+      candidateCard=c;
+
+    }
+
+  });
+
+
+  if(candidateCard){
+
+    candidateCard
+      .parentNode
+      .insertBefore(
+        card,
+        candidateCard
+      );
+
+  }
+
+  else{
+
+    document.querySelector(
+      ".w"
+    ).appendChild(
+      card
+    );
+
+  }
+
+}
+
+
+/* ========================================================
+   POSITION FLOW
+======================================================== */
+
+function v47SetPositionFlow(
+  stateName
+){
+
+  const ids=[
+    "posFlowWatch",
+    "posFlowHold",
+    "posFlowArmed",
+    "posFlowAdd",
+    "posFlowTp",
+    "posFlowInvalid"
+  ];
+
+
+  ids.forEach(id=>{
+
+    const el=
+      document.getElementById(
+        id
+      );
+
+
+    if(el){
+
+      el.classList.remove(
+        "current"
+      );
+
+    }
+
+  });
+
+
+  let current=
+    "posFlowHold";
+
+
+  if(
+    stateName==="WATCH"
+  ){
+
+    current=
+      "posFlowWatch";
+
+  }
+
+
+  else if(
+    stateName==="ARMED"
+  ){
+
+    current=
+      "posFlowArmed";
+
+  }
+
+
+  else if(
+    stateName==="ADD"
+  ){
+
+    current=
+      "posFlowAdd";
+
+  }
+
+
+  else if(
+    stateName==="TAKE_PROFIT"
+  ){
+
+    current=
+      "posFlowTp";
+
+  }
+
+
+  else if(
+    stateName==="INVALIDATED"
+  ){
+
+    current=
+      "posFlowInvalid";
+
+  }
+
+
+  document
+    .getElementById(
+      current
+    )
+    ?.classList
+    .add(
+      "current"
+    );
+
+}
+
+
+/* ========================================================
+   SYNC CURRENT PRICE
+======================================================== */
+
+function v47SyncPositionPrice(){
+
+  const st=
+    document.getElementById(
+      "positionStatus"
+    );
+
+
+  const positionPrice=
+    document.getElementById(
+      "positionPrice"
+    );
+
+
+  const openingCurrent=
+    signedNum(
+      document.getElementById(
+        "openingPrice"
+      )?.value
+    );
+
+
+  const premarketCurrent=
+    signedNum(
+      document.getElementById(
+        "price"
+      )?.value
+    );
+
+
+  const usePrice=
+    openingCurrent!=null
+    ?openingCurrent
+    :premarketCurrent;
+
+
+  if(usePrice==null){
+
+    st.className=
+      "status warn";
+
+
+    st.textContent=
+      "ยังไม่มี Current Price ในช่องด้านบน";
+
+    return;
+
+  }
+
+
+  positionPrice.value=
+    usePrice;
+
+
+  st.className=
+    "status info";
+
+
+  st.textContent=
+    `ใช้ราคาล่าสุด ${fmt(usePrice)} แล้ว`;
+
+}
+
+
+/* ========================================================
+   RENDER POSITION
+======================================================== */
+
+function v47RenderPosition(x){
+
+  const dash=
+    document.getElementById(
+      "positionDash"
+    );
+
+
+  dash.style.display=
+    "block";
+
+
+  document.getElementById(
+    "positionAction"
+  ).textContent=
+    x.label||
+    x.state||
+    "—";
+
+
+  document.getElementById(
+    "positionSub"
+  ).textContent=
+    `Position Score ${x.score??"—"}/100`+
+    ` • ${x.reason||""}`;
+
+
+  const p=
+    x.position||
+    {};
+
+
+  const lv=
+    x.levels||
+    {};
+
+
+  const guard=
+    x.guard||
+    {};
+
+
+  document.getElementById(
+    "pmPosition"
+  ).textContent=
+    p.shares==null
+    ?"—"
+    :(
+      Number(
+        p.shares
+      )
+      .toFixed(4)
+      .replace(
+        /\.?0+$/,
+        ""
+      )
+      +
+      " @ "
+      +
+      fmt(
+        p.avg_cost
+      )
+    );
+
+
+  document.getElementById(
+    "pmCurrent"
+  ).textContent=
+    fmt(
+      p.price
+    );
+
+
+  if(
+    p.pnl_usd==null
+  ){
+
+    document.getElementById(
+      "pmPnl"
+    ).textContent=
+      "—";
+
+  }
+
+  else{
+
+    const usd=
+      Number(
+        p.pnl_usd
+      );
+
+
+    const pct=
+      Number(
+        p.pnl_pct
+      );
+
+
+    document.getElementById(
+      "pmPnl"
+    ).textContent=
+      `${usd>=0?"+":""}$${usd.toFixed(2)}`+
+      ` (${pct>=0?"+":""}${pct.toFixed(2)}%)`;
+
+  }
+
+
+  document.getElementById(
+    "pmValue"
+  ).textContent=
+    p.market_value==null
+    ?"—"
+    :"$"+
+      Number(
+        p.market_value
+      ).toFixed(2);
+
+
+  document.getElementById(
+    "pmAdd"
+  ).textContent=
+    x.add_allowed
+    ?"✅ ALLOWED"
+    :"❌ NOT YET";
+
+
+  document.getElementById(
+    "pmAddTrigger"
+  ).textContent=
+    fmt(
+      lv.add_trigger
+    );
+
+
+  document.getElementById(
+    "pmStop"
+  ).textContent=
+    fmt(
+      lv.stop
+    );
+
+
+  document.getElementById(
+    "pmTp1"
+  ).textContent=
+    fmt(
+      lv.tp1
+    );
+
+
+  document.getElementById(
+    "pmTp2"
+  ).textContent=
+    fmt(
+      lv.tp2
+    );
+
+
+  document.getElementById(
+    "pmRisk"
+  ).textContent=
+    p.risk_to_stop_usd==null
+    ?"—"
+    :"$"+
+      Number(
+        p.risk_to_stop_usd
+      ).toFixed(2);
+
+
+  document.getElementById(
+    "pmUpside"
+  ).textContent=
+    p.upside_to_tp1_pct==null
+    ?"—"
+    :(
+      Number(
+        p.upside_to_tp1_pct
+      )>=0
+      ?"+"
+      :""
+    )
+    +
+    Number(
+      p.upside_to_tp1_pct
+    ).toFixed(2)
+    +"%";
+
+
+  document.getElementById(
+    "pmHeadroom"
+  ).textContent=
+    !guard.configured
+    ?"ยังไม่ตั้ง"
+    :(
+      guard.remaining_budget==null
+      ?"—"
+      :"$"+
+        Number(
+          guard.remaining_budget
+        ).toFixed(2)
+    );
+
+
+  document.getElementById(
+    "positionChecks"
+  ).innerHTML=
+    (
+      x.checks||
+      []
+    )
+    .map(
+      v=>`<li>${v}</li>`
+    )
+    .join("");
+
+
+  document.getElementById(
+    "positionNext"
+  ).innerHTML=
+    `<b>🎯 สิ่งที่ต้องทำต่อ</b>`+
+    `<br>`+
+    `${x.next_step||"ติดตาม Position ตามแผน"}`;
+
+
+  v47SetPositionFlow(
+    x.state||
+    "HOLD"
+  );
+
+}
+
+
+/* ========================================================
+   POSITION REQUEST
+======================================================== */
+
+async function v47ManagePosition(){
+
+  const st=
+    document.getElementById(
+      "positionStatus"
+    );
+
+
+  if(!selected){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาเลือกหุ้นก่อน";
+
+    return;
+
+  }
+
+
+  const shares=
+    signedNum(
+      document.getElementById(
+        "positionShares"
+      ).value
+    );
+
+
+  const avg=
+    signedNum(
+      document.getElementById(
+        "positionAvg"
+      ).value
+    );
+
+
+  const current=
+    signedNum(
+      document.getElementById(
+        "positionPrice"
+      ).value
+    );
+
+
+  const maxRaw=
+    document.getElementById(
+      "positionMax"
+    ).value;
+
+
+  const maxPosition=
+    String(
+      maxRaw
+    ).trim()===""
+    ?null
+    :signedNum(
+      maxRaw
+    );
+
+
+  if(
+    shares==null ||
+    shares<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาใส่จำนวนหุ้นที่ถือ";
+
+    return;
+
+  }
+
+
+  if(
+    avg==null ||
+    avg<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาใส่ Average Cost";
+
+    return;
+
+  }
+
+
+  if(
+    current==null ||
+    current<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "กรุณาใส่ Current Price";
+
+    return;
+
+  }
+
+
+  if(
+    maxPosition!=null &&
+    maxPosition<=0
+  ){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "งบสูงสุดต้องมากกว่า 0 "
+      "หรือปล่อยว่าง";
+
+    return;
+
+  }
+
+
+  /*
+    Save inputs per ticker
+  */
+
+  v47PositionInputs[
+    selected.ticker
+  ]={
+
+    shares:
+      document.getElementById(
+        "positionShares"
+      ).value,
+
+    avg:
+      document.getElementById(
+        "positionAvg"
+      ).value,
+
+    price:
+      document.getElementById(
+        "positionPrice"
+      ).value,
+
+    max:
+      document.getElementById(
+        "positionMax"
+      ).value
+
+  };
+
+
+  /*
+    Ensure market/group context
+  */
+
+  const ctx=
+    await ensureContext();
+
+
+  if(!ctx){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "ยังโหลด Auto Context ไม่สำเร็จ";
+
+    return;
+
+  }
+
+
+  const groupContext=
+    (
+      ctx.groups &&
+      ctx.groups[
+        selected.group
+      ]
+    )
+    ||
+    {
+      state:
+        "unknown"
+    };
+
+
+  /*
+    Latest V4.6 Opening result
+  */
+
+  const openingResult=
+    v47OpeningResults[
+      selected.ticker
+    ]
+    ||
+    {};
+
+
+  const opening=
+    openingResult.opening
+    ||
+    {};
+
+
+  const body={
+
+    ticker:
+      selected.ticker,
+
+    shares:
+      shares,
+
+    avg_cost:
+      avg,
+
+    price:
+      current,
+
+    buy_low:
+      selected.buy_low,
+
+    buy_high:
+      selected.buy_high,
+
+    stop:
+      selected.stop,
+
+    tp1:
+      selected.tp1,
+
+    tp2:
+      selected.tp2,
+
+    max_position_value:
+      maxPosition,
+
+    opening_state:
+      openingResult.state
+      ||
+      "UNKNOWN",
+
+    opening_score:
+      openingResult.score
+      ??
+      0,
+
+    open_price:
+      opening.open
+      ??
+      null,
+
+    opening_mid:
+      opening.mid
+      ??
+      null,
+
+    opening_low:
+      opening.low
+      ??
+      null,
+
+    market:
+      ctx.market,
+
+    sector:
+      groupContext.state,
+
+    catalyst:
+      catalyst?.sentiment
+      ||
+      "unknown",
+
+    catalyst_score:
+      catalyst?.score
+      ??
+      50,
+
+    negative_high_impact:
+      catalyst?.negative_high_impact
+      ||
+      false,
+
+    data_confidence:
+      selected.confidence_code
+      ||
+      "FRESH"
+
+  };
+
+
+  st.className=
+    "status info";
+
+
+  st.innerHTML=
+    `<b>⏳ กำลังวิเคราะห์ ${selected.ticker}</b>`+
+    `<br>`+
+    `${shares} หุ้น @ ${fmt(avg)}`+
+    ` • Current ${fmt(current)}`;
+
+
+  try{
+
+    const r=
+      await fetch(
+        "/api/position-manage",
+        {
+
+          method:
+            "POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          cache:
+            "no-store",
+
+          body:
+            JSON.stringify(
+              body
+            )
+        }
+      );
+
+
+    const j=
+      await r.json();
+
+
+    if(
+      !r.ok ||
+      !j.ok
+    ){
+
+      throw Error(
+        j.error
+        ||
+        (
+          "HTTP "
+          +r.status
+        )
+      );
+
+    }
+
+
+    const x=
+      j.data
+      ||
+      {};
+
+
+    let cls=
+      "warn";
+
+
+    if(
+      x.state==="ADD" ||
+      x.state==="TAKE_PROFIT"
+    ){
+
+      cls=
+        "good";
+
+    }
+
+
+    else if(
+      x.state==="INVALIDATED"
+    ){
+
+      cls=
+        "bad";
+
+    }
+
+
+    else if(
+      x.state==="ARMED"
+    ){
+
+      cls=
+        "info";
+
+    }
+
+
+    st.className=
+      "status "
+      +cls;
+
+
+    st.innerHTML=
+      `<b>${x.label||x.state||"Position Engine"}</b>`+
+      ` • ${x.score??"—"}/100`+
+      `<br>`+
+      `${x.reason||""}`;
+
+
+    v47RenderPosition(
+      x
+    );
+
+
+  }
+
+  catch(e){
+
+    st.className=
+      "status bad";
+
+
+    st.textContent=
+      "Position Engine ไม่สำเร็จ: "
+      +e.message
+      +" • ถ้าเพิ่ง Deploy "
+      +"ให้ Refresh หน้าแล้วลองใหม่";
+
+  }
+
+}
+
+
+/* ========================================================
+   HOOK INTO EXISTING PICK()
+======================================================== */
+
+const v47OriginalPick=
+  pick;
+
+
+pick=function(x){
+
+  /*
+    Save previous ticker's Position fields
+  */
+
+  if(
+    selected &&
+    selected.ticker &&
+    document.getElementById(
+      "positionShares"
+    )
+  ){
+
+    v47PositionInputs[
+      selected.ticker
+    ]={
+
+      shares:
+        document.getElementById(
+          "positionShares"
+        ).value,
+
+      avg:
+        document.getElementById(
+          "positionAvg"
+        ).value,
+
+      price:
+        document.getElementById(
+          "positionPrice"
+        ).value,
+
+      max:
+        document.getElementById(
+          "positionMax"
+        ).value
+
+    };
+
+  }
+
+
+  /*
+    Run original V4.6 pick()
+  */
+
+  v47OriginalPick(
+    x
+  );
+
+
+  /*
+    Show Position Engine
+  */
+
+  const card=
+    document.getElementById(
+      "positionCard"
+    );
+
+
+  card.classList.add(
+    "show"
+  );
+
+
+  /*
+    Restore Position fields for selected ticker
+  */
+
+  const saved=
+    v47PositionInputs[
+      x.ticker
+    ]
+    ||
+    {};
+
+
+  document.getElementById(
+    "positionShares"
+  ).value=
+    saved.shares
+    ??
+    "";
+
+
+  document.getElementById(
+    "positionAvg"
+  ).value=
+    saved.avg
+    ??
+    "";
+
+
+  document.getElementById(
+    "positionPrice"
+  ).value=
+    saved.price
+    ??
+    "";
+
+
+  document.getElementById(
+    "positionMax"
+  ).value=
+    saved.max
+    ??
+    "";
+
+
+  document.getElementById(
+    "positionDash"
+  ).style.display=
+    "none";
+
+
+  document.getElementById(
+    "positionStatus"
+  ).className=
+    "status info";
+
+
+  document.getElementById(
+    "positionStatus"
+  ).textContent=
+    "⚪ กรอก Position ที่ถืออยู่แล้วกดวิเคราะห์";
+
+
+  v47SetPositionFlow(
+    "HOLD"
+  );
+
+};
+
+
+/* ========================================================
+   UPDATE HEADER
+======================================================== */
+
+function v47UpdateHeader(){
+
+  document.title=
+    "AI Market Radar V4.7";
+
+
+  const mut=
+    document.querySelector(
+      ".head .mut"
+    );
+
+
+  if(mut){
+
+    mut.textContent=
+      "V4.7 • Position Engine";
+
+  }
+
+
+  const intro=
+    document.querySelector(
+      ".card .status.info"
+    );
+
+
+  if(
+    intro &&
+    intro.textContent.includes(
+      "V4.6"
+    )
+  ){
+
+    intro.innerHTML=
+      "<b>V4.7</b> เพิ่ม Position Engine "+
+      "สำหรับ HOLD / ADD / TAKE PROFIT / INVALIDATED"+
+      "<br>"+
+      "Scanner + Catalyst + Premarket Gate + "+
+      "Opening Confirmation เดิมยังอยู่ครบ";
+
+  }
+
+}
+
+
+/* ========================================================
+   INIT
+======================================================== */
+
+v47CreatePositionUI();
+
+v47UpdateHeader();
+
+</script></body>
 </html>
