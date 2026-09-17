@@ -4,4 +4,4 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn scanner_v482:app
+    startCommand: gunicorn scanner_v49:app
