@@ -121,6 +121,23 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
   padding:5px 9px;border-radius:20px;background:#102b43;
   border:1px solid #2f658e;color:#bcd3e8;font-size:11px;font-weight:800
 }
+.v500Command{background:#0b2135;border-color:#315a7e}
+.v500CommandHead{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.v500CommandHead h2{margin:0}
+.v500Live{font-size:10px;font-weight:900;padding:5px 8px;border-radius:20px;background:#103421;border:1px solid #28724b;color:#bfe9cf}
+.v500SummaryGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.v500SummaryBox{background:#112b43;border:1px solid #24425f;border-radius:14px;padding:12px}
+.v500SummaryBox span{display:block;font-size:11px;color:#9eb1c6}
+.v500SummaryBox b{display:block;margin-top:4px;font-size:17px}
+.v500Picks{display:grid;gap:8px;margin-top:12px}
+.v500Pick{display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;background:#10263c;border:1px solid #24425f;border-radius:13px;padding:10px}
+.v500PickRank{font-size:18px;font-weight:900;color:#9eb1c6}
+.v500PickTicker{font-size:18px;font-weight:900}
+.v500PickScore{text-align:right;font-size:18px;font-weight:900}
+.v500Next{margin-top:12px;padding:13px;border-radius:14px;background:#10263c;border:1px solid #315a7e;line-height:1.5}
+.v500Next span{display:block;font-size:11px;color:#9eb1c6;margin-bottom:4px}
+.v500Command button{margin-top:12px}
+@media(max-width:420px){.v500SummaryGrid{grid-template-columns:1fr 1fr}.v500Pick{grid-template-columns:28px 1fr auto}}
 @media(min-width:850px){.v500BottomNav{left:50%;transform:translateX(-50%);max-width:720px;border:1px solid #24425f;border-bottom:0;border-radius:18px 18px 0 0}}
 </style>
 <script id="v500Finalizer">
@@ -153,6 +170,26 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
     }
 
     targetId(document.querySelector('.w > .card'),'v500Home');
+
+    if(!document.getElementById('v500Command')){
+      const home=document.getElementById('v500Home');
+      if(home){
+        const c=document.createElement('section');
+        c.id='v500Command';c.className='card v500Command';
+        c.innerHTML=
+          '<div class="v500CommandHead"><h2>⚡ Command Center</h2><span class="v500Live">V5.0</span></div>'+
+          '<div class="small" style="margin-top:6px">สรุปหลัง Scan: Market → Theme → Top Picks → NEXT ACTION</div>'+
+          '<div class="v500SummaryGrid">'+
+            '<div class="v500SummaryBox"><span>MARKET</span><b id="v500Market">รอ Scan</b></div>'+
+            '<div class="v500SummaryBox"><span>LEADING THEME</span><b id="v500Leader">รอ Scan</b></div>'+
+          '</div>'+
+          '<div id="v500Picks" class="v500Picks"><div class="small">Top Picks จะขึ้นหลังระบบคัดเสร็จ</div></div>'+
+          '<div class="v500Next"><span>NEXT ACTION</span><b id="v500Next">กด Scan Watchlist เพื่อเริ่ม</b></div>'+
+          '<button class="alt" onclick="scan(false)">↻ อัปเดต Command Center</button>';
+        home.insertAdjacentElement('afterend',c);
+      }
+    }
+
     targetId(cardForHeading('Candidate Ranking'),'v500Scanner');
     targetId(cardForHeading('Top Pick Engine'),'v500TopPick');
     targetId(document.getElementById('positionCard'),'v500Position');
@@ -173,8 +210,54 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
       nav.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go,btn)));
     }
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
-  setTimeout(apply,250);setTimeout(apply,1000);
+  function v5txt(id,fallback){
+    const e=document.getElementById(id);const t=(e&&e.textContent||'').trim();
+    return t&&t!=='—'?t:fallback;
+  }
+  function renderCommand(){
+    const m=document.getElementById('v500Market');
+    const l=document.getElementById('v500Leader');
+    const n=document.getElementById('v500Next');
+    const p=document.getElementById('v500Picks');
+    if(m)m.textContent=v5txt('market','รอ Scan');
+    const lead=document.querySelector('#v410ThemeGrid .v410ThemeItem.lead .v410ThemeName');
+    if(l)l.textContent=lead?(lead.textContent||'').replace(/^\s*[🟢🔴🟡⚪]\s*/u,'').trim():'ยังไม่มีกลุ่มนำ';
+    if(n){
+      const next=document.getElementById('v410Next');
+      const raw=(next&&next.textContent||'').replace(/^\s*NEXT ACTION\s*/i,'').trim();
+      n.textContent=raw||'รอ Theme Rotation + Top Pick';
+    }
+    if(p){
+      const cards=Array.from(document.querySelectorAll('#topPicks .pickCard')).slice(0,3);
+      p.innerHTML=cards.length?cards.map((c,i)=>{
+        const ticker=(c.querySelector('.ticker')?.textContent||'').replace(/\s+/g,' ').trim();
+        const score=(c.querySelector('.pickScore')?.textContent||'—').trim();
+        return '<div class="v500Pick"><div class="v500PickRank">'+(i+1)+'</div><div><div class="v500PickTicker">'+ticker+'</div><div class="small">Watch Score • ใช้เพื่อจัดลำดับเฝ้าดู</div></div><div class="v500PickScore">'+score+'</div></div>';
+      }).join(''):'<div class="small">Top Picks จะขึ้นหลังระบบคัดเสร็จ</div>';
+    }
+  }
+  function hookCommand(){
+    if(window.__v500CommandHooked)return;
+    window.__v500CommandHooked=true;
+    const originalScan=window.scan;
+    if(typeof originalScan==='function'){
+      window.scan=async function(force){
+        const out=await originalScan(force);
+        try{if(typeof window.v410LoadThemeRotation==='function')await window.v410LoadThemeRotation()}catch(e){}
+        renderCommand();setTimeout(renderCommand,500);setTimeout(renderCommand,1800);
+        return out;
+      };
+    }
+    const tp=document.getElementById('topPicks');
+    const th=document.getElementById('v410ThemeGrid');
+    const mk=document.getElementById('market');
+    const obs=new MutationObserver(()=>renderCommand());
+    [tp,th,mk].filter(Boolean).forEach(x=>obs.observe(x,{childList:true,subtree:true,characterData:true}));
+    renderCommand();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{apply();hookCommand()},{once:true});else{apply();hookCommand()}
+  setTimeout(()=>{apply();hookCommand();renderCommand()},250);
+  setTimeout(()=>{apply();hookCommand();renderCommand()},1000);
 })();
 </script>
 """
