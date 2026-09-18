@@ -98,29 +98,83 @@ base._opening_confirmation = _opening_confirmation_v494
 
 
 _FINAL_UI = r"""
-<script id="v494Finalizer">
+<style id="v500ShellStyle">
+:root{--v5nav-h:72px}
+body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
+.v500BottomNav{
+  position:fixed;left:0;right:0;bottom:0;z-index:9999;
+  height:calc(var(--v5nav-h) + env(safe-area-inset-bottom));
+  padding:7px 8px calc(7px + env(safe-area-inset-bottom));
+  background:rgba(6,20,35,.97);border-top:1px solid #24425f;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
+  backdrop-filter:blur(12px)
+}
+.v500NavBtn{
+  border:0;background:transparent!important;padding:6px 2px!important;
+  min-width:0;border-radius:12px;color:#91a9c1;font-size:10px!important;
+  font-weight:800!important;line-height:1.15
+}
+.v500NavBtn span{display:block;font-size:19px;margin-bottom:3px}
+.v500NavBtn.active{color:#fff;background:#153a5b!important}
+.v500TopBadge{
+  display:inline-flex;align-items:center;gap:6px;margin-top:7px;
+  padding:5px 9px;border-radius:20px;background:#102b43;
+  border:1px solid #2f658e;color:#bcd3e8;font-size:11px;font-weight:800
+}
+@media(min-width:850px){.v500BottomNav{left:50%;transform:translateX(-50%);max-width:720px;border:1px solid #24425f;border-bottom:0;border-radius:18px 18px 0 0}}
+</style>
+<script id="v500Finalizer">
 (function(){
+  function byTextHeading(text){
+    return Array.from(document.querySelectorAll('h2')).find(x=>(x.textContent||'').includes(text));
+  }
+  function cardForHeading(text){
+    const h=byTextHeading(text);
+    return h ? h.closest('.card,.openingCard') : null;
+  }
+  function targetId(el,id){if(el&&!el.id)el.id=id;return el}
+  function go(id,btn){
+    const el=document.getElementById(id);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+    document.querySelectorAll('.v500NavBtn').forEach(x=>x.classList.remove('active'));
+    if(btn)btn.classList.add('active');
+  }
   function apply(){
-    document.title='AI Market Radar V4.9.4';
+    document.title='AI Market Radar V5.0';
     const h=document.querySelector('.head .mut');
-    if(h) h.textContent='V4.9.4 • Opening State + Catalyst Safety Fix';
+    if(h) h.textContent='V5.0 • Mobile Command Center • V4.10 Engine';
 
-    const openingCard=document.querySelector('.openingCard');
-    if(openingCard){
-      const pill=openingCard.querySelector('.versionPill');
-      if(pill) pill.textContent='V4.9.4';
+    const head=document.querySelector('.head > div:first-child');
+    if(head&&!document.getElementById('v500Badge')){
+      const b=document.createElement('div');
+      b.id='v500Badge';b.className='v500TopBadge';
+      b.textContent='V4.10 Logic Locked ✓';
+      head.appendChild(b);
     }
 
-    const positionCard=document.getElementById('positionCard');
-    if(positionCard){
-      const pill=positionCard.querySelector('.versionPill');
-      if(pill) pill.textContent='V4.9.4';
+    targetId(document.querySelector('.w > .card'),'v500Home');
+    targetId(cardForHeading('Candidate Ranking'),'v500Scanner');
+    targetId(cardForHeading('Top Pick Engine'),'v500TopPick');
+    targetId(document.getElementById('positionCard'),'v500Position');
+    targetId(cardForHeading('Theme Rotation'),'v500Theme');
+
+    document.querySelectorAll('.versionPill').forEach(p=>p.textContent='V5.0 UI');
+
+    if(!document.getElementById('v500BottomNav')){
+      const nav=document.createElement('nav');
+      nav.id='v500BottomNav';nav.className='v500BottomNav';
+      nav.innerHTML=
+        '<button class="v500NavBtn active" data-go="v500Home"><span>⌂</span>Home</button>'+
+        '<button class="v500NavBtn" data-go="v500Scanner"><span>⌕</span>Scanner</button>'+
+        '<button class="v500NavBtn" data-go="v500TopPick"><span>★</span>Top Pick</button>'+
+        '<button class="v500NavBtn" data-go="v500Position"><span>▣</span>Position</button>'+
+        '<button class="v500NavBtn" data-go="v500Theme"><span>◈</span>Theme</button>';
+      document.body.appendChild(nav);
+      nav.querySelectorAll('[data-go]').forEach(btn=>btn.addEventListener('click',()=>go(btn.dataset.go,btn)));
     }
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
-  else apply();
-  setTimeout(apply,250);
-  setTimeout(apply,1000);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+  setTimeout(apply,250);setTimeout(apply,1000);
 })();
 </script>
 """
