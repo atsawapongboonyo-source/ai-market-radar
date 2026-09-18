@@ -185,7 +185,13 @@ def _v494_visible_version(response):
     try:
         if "text/html" in (response.content_type or "").lower():
             body = response.get_data(as_text=True)
-            if "v494Finalizer" not in body:
+            # Flask after_request hooks run in reverse registration order.
+            # Prepend V5 so it executes AFTER every legacy V4.x inline/finalizer
+            # script, preventing old version labels from overwriting V5.
+            if "v500Finalizer" not in body:
+                body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
+            else:
+                body = body.replace(_FINAL_UI + "\n", "")
                 body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
             response.set_data(body)
             response.headers["Content-Length"] = str(len(response.get_data()))
