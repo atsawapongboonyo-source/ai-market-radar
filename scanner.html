@@ -330,6 +330,42 @@ button:disabled{
   margin-top:8px
 }
 
+/* V5 Final Confirmation quick summary */
+.v5DecisionStrip{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:12px 0 16px
+}
+.v5DecisionStep,.v5DecisionNext{
+  background:#102b43;
+  border:1px solid #28577b;
+  border-radius:14px;
+  padding:11px
+}
+.v5DecisionStep span,.v5DecisionNext span{
+  display:block;
+  color:#8fa9c1;
+  font-size:10px;
+  font-weight:800;
+  margin-bottom:5px
+}
+.v5DecisionStep b,.v5DecisionNext b{
+  display:block;
+  font-size:13px;
+  line-height:1.35
+}
+.v5DecisionNext{
+  grid-column:1/-1;
+  border-color:#3976a5;
+  background:#123553
+}
+.v5DecisionNext b{font-size:15px}
+@media(max-width:560px){
+  .v5DecisionStrip{grid-template-columns:1fr 1fr}
+  .v5DecisionStep:last-of-type{grid-column:1/-1}
+}
+
 /* Final Decision */
 
 .finalDash{
@@ -706,6 +742,26 @@ Auto Context ใช้ breadth ของหุ้นใน Watchlist เป็�
 ⚡ Final Confirmation •
 <span id="ct">—</span>
 </h2>
+
+<!-- V5 quick decision strip: UI only, does not change scanner logic -->
+<div id="v5DecisionStrip" class="v5DecisionStrip">
+  <div class="v5DecisionStep">
+    <span>1 • ข่าว</span>
+    <b id="v5NewsStep">รอ Catalyst</b>
+  </div>
+  <div class="v5DecisionStep">
+    <span>2 • PREMARKET</span>
+    <b id="v5PmStep">รอตรวจ</b>
+  </div>
+  <div class="v5DecisionStep">
+    <span>3 • OPENING</span>
+    <b id="v5OpenStep">รอตลาดเปิด</b>
+  </div>
+  <div class="v5DecisionNext">
+    <span>NEXT ACTION</span>
+    <b id="v5DecisionNext">เลือกหุ้นและตรวจตามลำดับ</b>
+  </div>
+</div>
 
 
 <div
@@ -2027,6 +2083,74 @@ function pick(x){
   );
 }
 
+
+
+/* ========================================================
+   V5 QUICK FINAL CONFIRMATION SUMMARY
+   Presentation layer only: reads existing module states.
+======================================================== */
+function v5ShortState(text,kind){
+  const t=String(text||"");
+  if(kind==="news"){
+    if(/Risk Catalyst|Negative Catalyst|ข่าวลบ/.test(t)) return "🔴 มีความเสี่ยง";
+    if(/Positive Catalyst/.test(t)) return "🟢 บวก";
+    if(/Catalyst กลาง|Catalyst ยังไม่ยืนยัน|กลาง/.test(t)) return "⚪ กลาง/ยังไม่ชัด";
+    return "⚪ รอ Catalyst";
+  }
+  if(kind==="pm"){
+    if(/Block|BLOCK|🔴/.test(t)) return "🔴 Block";
+    if(/ร้อน|HOT|🟠/.test(t)) return "🟠 ร้อน";
+    if(/PASS|ผ่าน|🟢/.test(t)) return "🟢 ผ่าน";
+    return "⚪ รอตรวจ";
+  }
+  if(kind==="open"){
+    if(/INVALIDATED/.test(t)) return "🔴 Invalidated";
+    if(/ENTRY ?1|ENTRY1/.test(t)) return "🟢 Entry 1";
+    if(/ARMED/.test(t)) return "🔵 Armed";
+    if(/RISK REVIEW/.test(t)) return "🟠 Risk Review";
+    if(/DONT_CHASE|ไม่ไล่/.test(t)) return "🟠 ไม่ไล่ราคา";
+    return "⚪ รอตลาดเปิด";
+  }
+  return "—";
+}
+
+function updateV5FinalSummary(){
+  const news=document.getElementById("catStatus");
+  const pm=document.getElementById("gateResult");
+  const op=document.getElementById("openingStatus");
+  const next=document.getElementById("v5DecisionNext");
+  if(!next) return;
+
+  const newsText=news?.textContent||"";
+  const pmText=pm?.textContent||"";
+  const opText=op?.textContent||"";
+
+  document.getElementById("v5NewsStep").textContent=v5ShortState(newsText,"news");
+  document.getElementById("v5PmStep").textContent=v5ShortState(pmText,"pm");
+  document.getElementById("v5OpenStep").textContent=v5ShortState(opText,"open");
+
+  const openingNext=(document.getElementById("openingNext")?.textContent||"").replace(/^🎯\s*สิ่งที่ต้องทำต่อ\s*/,"").trim();
+  const finalAction=(document.getElementById("finalAction")?.textContent||"").trim();
+  const finalScenario=(document.getElementById("finalScenario")?.textContent||"").trim();
+
+  if(openingNext && openingNext!=="—"){
+    next.textContent=openingNext;
+  }else if(finalScenario && finalScenario!=="—"){
+    next.textContent=finalScenario;
+  }else if(finalAction && finalAction!=="—"){
+    next.textContent=finalAction+" • หลังตลาดเปิดยืนยันด้วย Opening Confirmation";
+  }else{
+    next.textContent="ตรวจ Catalyst → Premarket → Opening ตามลำดับ";
+  }
+}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  ["catStatus","gateResult","openingStatus","openingNext","finalAction","finalScenario"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) new MutationObserver(updateV5FinalSummary).observe(el,{childList:true,subtree:true,characterData:true});
+  });
+  updateV5FinalSummary();
+});
 
 
 /* ========================================================
