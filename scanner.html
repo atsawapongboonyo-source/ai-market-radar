@@ -240,6 +240,30 @@ button:disabled{
   margin-top:4px
 }
 
+.newsBadge{
+  display:inline-block;
+  margin:0 7px 6px 0;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.2px
+}
+.newsBadge.direct{
+  background:#123b2a;
+  border:1px solid #2f8b5a;
+  color:#bff4d5
+}
+.newsBadge.context{
+  background:#172d43;
+  border:1px solid #45637e;
+  color:#bdd0e2
+}
+.newsitem.contextNews{
+  opacity:.78;
+  border-style:dashed
+}
+
 /* Top Pick */
 
 .topPicks{
@@ -2066,11 +2090,17 @@ async function loadCatalyst(ticker){
       `<br>${catalyst.reason||""}`;
 
 
+    const catalystItems=[
+      ...(catalyst.items||[])
+    ].sort((a,b)=>{
+      const rank=x=>x.relevance==="DIRECT"?0:1;
+      return rank(a)-rank(b);
+    });
+
+
     document.getElementById(
       "newsList"
-    ).innerHTML=(
-      catalyst.items||[]
-    ).map(n=>{
+    ).innerHTML=catalystItems.map(n=>{
 
 
       let age=
@@ -2095,10 +2125,17 @@ async function loadCatalyst(ticker){
         :n.title;
 
 
+      const isDirect=n.relevance==="DIRECT";
+      const relevanceBadge=isDirect
+        ?'<span class="newsBadge direct">🎯 DIRECT • ใช้คำนวณ Catalyst</span>'
+        :'<span class="newsBadge context">🔗 CONTEXT • ไม่นับคะแนน</span>';
+
+
       return `
 
-        <div class="newsitem">
+        <div class="newsitem ${isDirect?"":"contextNews"}">
 
+          ${relevanceBadge}<br>
           ${icon}
           ${title}
 
@@ -2109,9 +2146,14 @@ async function loadCatalyst(ticker){
             ${age}
 
             ${
-              n.high_impact
+              n.high_impact && isDirect
               ?" • Impact สูง"
               :""
+            }
+            •
+            ${isDirect
+              ?"ข่าวตรงของหุ้น"
+              :(n.relevance_label||"ข่าวบริบท")
             }
 
           </div>
