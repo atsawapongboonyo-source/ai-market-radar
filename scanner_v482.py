@@ -79,42 +79,6 @@ base._derive_context = _derive_context_v482
 base.build_top_picks = _build_top_picks_v482
 
 
-@app.after_request
-def _v482_ui_labels(response):
-    try:
-        if "text/html" not in (response.content_type or "").lower():
-            return response
-
-        body = response.get_data(as_text=True)
-
-        replacements = {
-            "AI Market Radar V4.7.1": "AI Market Radar V4.8.2",
-            "AI Market Radar V4.7": "AI Market Radar V4.8.2",
-            "V4.7.1 • Multi-Level Reclaim Engine": "V4.8.2 • Leading Signal + Multi-Level Reclaim",
-            "V4.7 • Position Engine": "V4.8.2 • Leading Signal + Position Engine",
-            "<b>V4.7</b> เพิ่ม Position Engine ": "<b>V4.8.2</b> Leading Signal + Position Engine ",
-            "<b>V4.6</b> เพิ่ม Opening Confirmation หลังตลาดเปิด": "<b>V4.8.2</b> Leading Signal + Opening Confirmation",
-        }
-
-        for old, new in replacements.items():
-            body = body.replace(old, new)
-
-        # V5.0 is the active presentation layer. This V4.8 compatibility hook
-        # runs late in Flask's reverse after_request order, so make it preserve
-        # the V5 shell instead of restoring legacy labels.
-        if "v500Finalizer" in body or "v500StaticShell" in body:
-            body = body.replace(
-                "V4.8.2 • Leading Signal + Multi-Level Reclaim",
-                "V5.0 • Mobile Command Center • V4.10 Engine"
-            )
-            body = body.replace(
-                "<title>AI Market Radar V4.8.2</title>",
-                "<title>AI Market Radar V5.0</title>"
-            )
-
-        response.set_data(body)
-        response.headers["Content-Length"] = str(len(response.get_data()))
-    except Exception:
-        pass
-
-    return response
+# V5.0 owns all presentation labels and navigation.
+# The old V4.8.2 after_request UI rewriter was removed to prevent legacy
+# response mutation from stripping or overriding the V5 shell.
