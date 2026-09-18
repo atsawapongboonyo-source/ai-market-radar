@@ -1120,6 +1120,93 @@ OPENING STATE
 </div>
 
 
+
+<!-- ===================================================== -->
+<!-- V4.10 THEME ROTATION UI -->
+<!-- ===================================================== -->
+<style>
+.v410ThemeGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.v410ThemeItem{background:#112a42;border:1px solid #24425f;border-radius:15px;padding:13px}
+.v410ThemeItem.lead{border-color:#28724b;background:#103421}
+.v410ThemeItem.lag{border-color:#7a3030;background:#371515}
+.v410ThemeItem.low{opacity:.68}
+.v410ThemeHead{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.v410ThemeName{font-weight:900}
+.v410ThemeScore{font-weight:900;white-space:nowrap}
+.v410ThemeMeta{font-size:11px;color:#9eb1c6;margin-top:5px}
+.v410Next{margin-top:12px;background:#10263c;border:1px solid #315a7e;border-radius:14px;padding:13px;line-height:1.55}
+@media(max-width:700px){.v410ThemeGrid{grid-template-columns:1fr}}
+</style>
+
+<div id="v410ThemeCard" class="card">
+  <div class="sectionTitle">
+    <div>
+      <h2 style="margin-bottom:5px">🧭 Theme Rotation</h2>
+      <div class="small">ดูความแข็งแรงสัมพัทธ์ของกลุ่ม AI ใน Watchlist เพื่อเลือก “กลุ่มที่ควรเฝ้าก่อน”</div>
+    </div>
+    <div class="versionPill">V4.10</div>
+  </div>
+  <button onclick="v410LoadThemeRotation()">🧭 วิเคราะห์ Theme Rotation</button>
+  <div id="v410ThemeStatus" class="status info">กดวิเคราะห์หลัง Scan Watchlist เพื่อดู Leading / Neutral / Lagging</div>
+  <div class="ctx" style="margin-top:12px">
+    <div class="box"><div class="small">Market Regime</div><div id="v410Regime" class="big">—</div></div>
+    <div class="box"><div class="small">Watchlist Breadth</div><div id="v410Breadth" class="big">—</div></div>
+  </div>
+  <div id="v410ThemeGrid" class="v410ThemeGrid"></div>
+  <div id="v410Next" class="v410Next"><b>NEXT ACTION</b><br>—</div>
+  <div class="small" style="margin-top:10px">Theme Score เป็น relative breadth ภายใน AI Watchlist ไม่ใช่ Fund Flow, โอกาสชนะ หรือคำสั่งซื้อ</div>
+</div>
+
+<script>
+function v410ThemeClass(x){
+  if(x.state==="LEADING") return "v410ThemeItem lead";
+  if(x.state==="LAGGING") return "v410ThemeItem lag";
+  if(x.state==="LOW_SAMPLE") return "v410ThemeItem low";
+  return "v410ThemeItem";
+}
+function v410ThemeIcon(x){
+  if(x.state==="LEADING") return "🟢";
+  if(x.state==="LAGGING") return "🔴";
+  if(x.state==="LOW_SAMPLE") return "⚪";
+  return "🟡";
+}
+async function v410LoadThemeRotation(){
+  const st=document.getElementById("v410ThemeStatus");
+  st.className="status info";
+  st.textContent="กำลังวิเคราะห์ Theme Rotation...";
+  try{
+    const r=await fetch("/api/theme-rotation",{cache:"no-store"});
+    const j=await r.json();
+    if(!r.ok||!j.ok) throw Error(j.error||("HTTP "+r.status));
+    const x=j.data||{};
+    document.getElementById("v410Regime").textContent=x.market_regime_label||x.market_regime||"—";
+    document.getElementById("v410Breadth").textContent=Number.isFinite(Number(x.market_breadth_pct))?Number(x.market_breadth_pct).toFixed(1)+"%":"—";
+    document.getElementById("v410ThemeGrid").innerHTML=(x.themes||[]).map(t=>`
+      <div class="${v410ThemeClass(t)}">
+        <div class="v410ThemeHead">
+          <div class="v410ThemeName">${v410ThemeIcon(t)} ${t.label||t.key}</div>
+          <div class="v410ThemeScore">${Number(t.theme_score)>=0?"+":""}${Number(t.theme_score||0).toFixed(1)}</div>
+        </div>
+        <div class="v410ThemeMeta">${t.state_label||t.state} • Confidence ${t.confidence||"—"} • ${t.member_count||0} stocks</div>
+      </div>`).join("");
+    document.getElementById("v410Next").innerHTML="<b>NEXT ACTION</b><br>"+(x.next_action||"ใช้ Top Pick + Opening Confirmation");
+    st.className="status good";
+    st.innerHTML="<b>V4.10 Theme Rotation พร้อมใช้งาน</b>"+(x.leader?" • กลุ่มนำตอนนี้: "+x.leader.label:" • ยังไม่มีกลุ่มนำชัดเจน");
+  }catch(e){
+    st.className="status bad";
+    st.textContent="Theme Rotation ไม่สำเร็จ: "+e.message;
+  }
+}
+document.title="AI Market Radar V4.10";
+const v410Header=document.querySelector(".head .mut");
+if(v410Header) v410Header.textContent="V4.10 • Theme Rotation + Leading Signal + Multi-Level Reclaim";
+const v410Intro=document.querySelector(".card .status.info");
+if(v410Intro && /V4\./.test(v410Intro.textContent)){
+  v410Intro.innerHTML="<b>V4.10</b> เพิ่ม Theme Rotation โดยคง Scanner + Catalyst + Premarket Gate + Opening Confirmation + Position Engine เดิมไว้ครบ";
+}
+</script>
+
+
 <!-- ===================================================== -->
 <!-- CANDIDATE RANKING -->
 <!-- ===================================================== -->
