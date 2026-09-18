@@ -217,38 +217,5 @@ v49._explosive_item = _explosive_item_v493
 v49.build_explosive_movers = build_explosive_movers_v493
 
 
-_FINAL_UI = r'''
-<script id="v493Finalizer">
-(function(){
-  function apply(){
-    document.title='AI Market Radar V4.9.3';
-    const h=document.querySelector('.head .mut');
-    if(h) h.textContent='V4.9.3 • Leading Signal + Explosive Movers';
-
-    const card=document.getElementById('explosiveRadarCard');
-    if(card){
-      const small=card.querySelector('.small');
-      if(small) small.innerHTML='แยกจาก Top Pick ปกติ • V4.9.3 กรอง warrant/preferred + Data anomaly และให้ Clean Ignition มาก่อน<br><b>Explosion Score ไม่ใช่เปอร์เซ็นต์ชนะและไม่ใช่คำสั่งซื้อ</b>';
-    }
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply,{once:true});
-  else apply();
-  setTimeout(apply,250);
-  setTimeout(apply,1000);
-})();
-</script>
-'''
-
-
-@app.after_request
-def _v493_visible_version(response):
-    try:
-        if "text/html" in (response.content_type or "").lower():
-            body = response.get_data(as_text=True)
-            if "v493Finalizer" not in body:
-                body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
-            response.set_data(body)
-            response.headers["Content-Length"] = str(len(response.get_data()))
-    except Exception:
-        pass
-    return response
+# V5.0 owns presentation/version labels.
+# V4.9.3 backend filtering remains active; its legacy finalizer is disabled.
