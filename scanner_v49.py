@@ -474,33 +474,6 @@ async function loadExplosiveMovers(force){
 '''
 
 
-@app.after_request
-def _v49_ui(response):
-    try:
-        if "text/html" not in (response.content_type or "").lower():
-            return response
-
-        body = response.get_data(as_text=True)
-
-        # Insert the module before Auto Context so Top Pick and Explosive Radar
-        # remain visually separate but adjacent.
-        marker = "<!-- ===================================================== -->\n<!-- AUTO CONTEXT -->"
-        if "id=\"explosiveRadarCard\"" not in body and marker in body:
-            body = body.replace(marker, _EXPLOSIVE_UI + "\n" + marker, 1)
-
-        replacements = {
-            "AI Market Radar V4.8.2": "AI Market Radar V4.9",
-            "V4.8.2 • Leading Signal + Multi-Level Reclaim": "V4.9 • Leading Signal + Explosive Movers",
-            "V4.8.2 • Leading Signal + Position Engine": "V4.9 • Leading Signal + Position Engine",
-            "<b>V4.8.2</b> Leading Signal + Position Engine ": "<b>V4.9</b> Leading Signal + Position Engine ",
-            "<b>V4.8.2</b> Leading Signal + Opening Confirmation": "<b>V4.9</b> Leading Signal + Opening Confirmation",
-        }
-        for old, new in replacements.items():
-            body = body.replace(old, new)
-
-        response.set_data(body)
-        response.headers["Content-Length"] = str(len(response.get_data()))
-    except Exception:
-        pass
-
-    return response
+# V5.0 presentation cleanup:
+# Explosive Movers remains registered by this module, but the legacy V4.9
+# after_request HTML/version rewriter is disabled. V5 owns page composition.
