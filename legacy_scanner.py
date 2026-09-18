@@ -516,23 +516,104 @@ def _classify_title(title):
     return "neutral", 0, high
 
 
+def _news_relevance(ticker, title):
+    """
+    V5 Catalyst relevance guard.
+
+    yfinance's ticker news feed can contain broad market/peer articles.  Keep
+    those visible for context, but only direct/company-specific headlines may
+    drive the main Catalyst score or the negative-high-impact entry guard.
+    """
+    ticker = str(ticker or "").upper().strip()
+    t = str(title or "").lower()
+    upper = str(title or "").upper()
+
+    aliases = {
+        "NBIS": ("nebius",),
+        "PLTR": ("palantir",),
+        "MSFT": ("microsoft",),
+        "GOOGL": ("alphabet", "google"),
+        "AMZN": ("amazon",),
+        "META": ("meta platforms", "facebook"),
+        "NVDA": ("nvidia",),
+        "AMD": ("advanced micro devices",),
+        "AVGO": ("broadcom",),
+        "TSM": ("taiwan semiconductor", "tsmc"),
+        "MU": ("micron",),
+        "SNDK": ("sandisk",),
+        "WDC": ("western digital",),
+        "STX": ("seagate",),
+        "ANET": ("arista",),
+        "MRVL": ("marvell",),
+        "CRDO": ("credo technology", "credo"),
+        "LITE": ("lumentum",),
+        "COHR": ("coherent",),
+        "VRT": ("vertiv",),
+        "DELL": ("dell",),
+        "SMCI": ("super micro", "supermicro"),
+        "IREN": ("iren limited",),
+        "ETN": ("eaton",),
+        "GEV": ("ge vernova",),
+        "CEG": ("constellation energy",),
+        "VST": ("vistra",),
+        "ORCL": ("oracle",),
+        "ASML": ("asml",),
+        "AMAT": ("applied materials",),
+        "LRCX": ("lam research",),
+        "KLAC": ("kla corporation", "kla corp"),
+    }
+
+    # Explicit ticker notation is strong evidence of a direct headline.
+    ticker_tokens = (
+        "(" + ticker + ")",
+        "$" + ticker,
+        "NASDAQ: " + ticker,
+        "NYSE: " + ticker,
+        "NASDAQ:" + ticker,
+        "NYSE:" + ticker,
+    )
+    if ticker and any(tok in upper for tok in ticker_tokens):
+        return "DIRECT", 1.0
+
+    if any(alias in t for alias in aliases.get(ticker, ())):
+        return "DIRECT", 1.0
+
+    # Headlines naming another watchlist ticker/company are context, not a
+    # direct catalyst for the requested stock.
+    other_symbols = set().union(*GROUPS.values()) - {ticker}
+    if any(
+        ("(" + sym + ")") in upper
+        or ("$" + sym) in upper
+        or ("NASDAQ: " + sym) in upper
+        or ("NYSE: " + sym) in upper
+        for sym in other_symbols
+    ):
+        return "RELATED", 0.0
+
+    other_aliases = []
+    for sym, names in aliases.items():
+        if sym != ticker:
+            other_aliases.extend(names)
+    if any(name in t for name in other_aliases):
+        return "RELATED", 0.0
+
+    # Unresolved broad-feed headlines stay visible, but cannot silently alter
+    # the stock-specific score.
+    return "UNVERIFIED", 0.0
+
+
 def _get_catalyst(ticker, force=False):
     now = time.time()
+    ticker = str(ticker or "").upper().strip()
 
     hit = _CATALYST_CACHE.get(ticker)
-
-    if (
-        hit
-        and not force
-        and now - hit["ts"] < _CATALYST_TTL
-    ):
+    if hit and not force and now - hit["ts"] < _CATALYST_TTL:
         d = dict(hit["data"])
         d["from_cache"] = True
         return d
 
     try:
         raw = yf.Ticker(ticker).news or []
-
     except Exception as e:
         return {
             "ticker": ticker,
@@ -542,144 +623,100 @@ def _get_catalyst(ticker, force=False):
             "reason": "แหล่งข่าวฟรีไม่ตอบกลับ",
             "items": [],
             "negative_high_impact": False,
+            "direct_news_count": 0,
+            "context_news_count": 0,
             "error": str(e)
         }
 
     items = []
-    weighted = 0
-    total = 0
+    weighted = 0.0
+    total = 0.0
     neg_high = False
+    direct_count = 0
+    context_count = 0
 
-    for raw_item in raw[:12]:
+    for raw_item in raw[:18]:
         x = _news_fields(raw_item)
-
         if not x or not x["title"]:
             continue
 
-        sent, base, high = _classify_title(
-            x["title"]
-        )
-
-        age = _age_hours(
-            x["published"]
-        )
-
-        rw = (
+        relevance, relevance_weight = _news_relevance(ticker, x["title"])
+        sent, base_score, high = _classify_title(x["title"])
+        age = _age_hours(x["published"])
+        recency_weight = (
             1.0 if age is not None and age <= 24
             else .7 if age is not None and age <= 72
             else .4 if age is not None and age <= 168
             else .2
         )
 
-        w = rw * (
-            1.35 if high
-            else 1
-        )
-
-        weighted += base * w
-        total += w
-
-        if (
-            sent == "negative"
-            and high
-            and (
-                age is None
-                or age <= 72
-            )
-        ):
-            neg_high = True
+        if relevance == "DIRECT":
+            direct_count += 1
+            w = recency_weight * (1.35 if high else 1.0) * relevance_weight
+            weighted += base_score * w
+            total += w
+            if sent == "negative" and high and (age is None or age <= 72):
+                neg_high = True
+        else:
+            context_count += 1
 
         x.update({
             "sentiment": sent,
             "high_impact": high,
-            "age_hours": (
-                round(age, 1)
-                if age is not None
-                else None
-            )
+            "age_hours": round(age, 1) if age is not None else None,
+            "relevance": relevance,
+            "relevance_label": (
+                "ข่าวตรงของหุ้น" if relevance == "DIRECT"
+                else "ข่าวกลุ่ม/บริบท" if relevance == "RELATED"
+                else "ข่าวกว้าง/ยังไม่ยืนยันว่าเกี่ยวตรง"
+            ),
+            "used_in_catalyst_score": relevance == "DIRECT",
         })
-
         items.append(x)
-
-        if len(items) >= 6:
+        if len(items) >= 8:
             break
 
-    if not items:
-        data = {
-            "ticker": ticker,
-            "score": 50,
-            "sentiment": "neutral",
-            "label": "⚪ ยังไม่พบ Catalyst ชัด",
-            "reason": "ไม่พบหัวข้อข่าวจากแหล่งฟรี",
-            "items": [],
-            "negative_high_impact": False
-        }
-
+    if direct_count == 0:
+        score = 50
+        sent = "neutral"
+        label = "⚪ Catalyst ยังไม่ยืนยัน"
+        reason = "ยังไม่พบข่าวที่ยืนยันว่าเกี่ยวกับ " + ticker + " โดยตรง • ข่าวกว้างแสดงเพื่อบริบทเท่านั้น"
+        neg_high = False
     else:
-        ratio = (
-            weighted / total
-            if total
-            else 0
-        )
-
-        score = round(
-            max(
-                0,
-                min(
-                    100,
-                    50 + ratio * 28
-                )
-            )
-        )
-
+        ratio = weighted / total if total else 0
+        score = round(max(0, min(100, 50 + ratio * 28)))
         if neg_high:
             sent = "negative"
             label = "🔴 มี Risk Catalyst"
-            reason = (
-                "พบข่าวลบ Impact สูง"
-                "ในช่วงล่าสุด"
-            )
-
+            reason = "พบข่าวลบ Impact สูงที่เกี่ยวกับ " + ticker + " โดยตรง"
         elif score >= 63:
             sent = "positive"
             label = "🟢 Positive Catalyst"
-            reason = (
-                "หัวข้อข่าวล่าสุด"
-                "มีน้ำหนักเชิงบวก"
-            )
-
+            reason = "ข่าวตรงของ " + ticker + " ล่าสุดมีน้ำหนักเชิงบวก"
         elif score <= 37:
             sent = "negative"
             label = "🔴 Negative Catalyst"
-            reason = (
-                "หัวข้อข่าวล่าสุด"
-                "มีน้ำหนักเชิงลบ"
-            )
-
+            reason = "ข่าวตรงของ " + ticker + " ล่าสุดมีน้ำหนักเชิงลบ"
         else:
             sent = "neutral"
             label = "⚪ Catalyst กลาง"
-            reason = (
-                "ข่าวล่าสุดยังไม่ให้ทิศทางชัด"
-            )
+            reason = "ข่าวตรงของ " + ticker + " ล่าสุดยังไม่ให้ทิศทางชัด"
 
-        data = {
-            "ticker": ticker,
-            "score": score,
-            "sentiment": sent,
-            "label": label,
-            "reason": reason,
-            "items": items,
-            "negative_high_impact": neg_high
-        }
-
-    _CATALYST_CACHE[ticker] = {
-        "ts": now,
-        "data": data
+    data = {
+        "ticker": ticker,
+        "score": score,
+        "sentiment": sent,
+        "label": label,
+        "reason": reason,
+        "items": items,
+        "negative_high_impact": neg_high,
+        "direct_news_count": direct_count,
+        "context_news_count": context_count,
+        "relevance_filter": "V5.0",
     }
 
+    _CATALYST_CACHE[ticker] = {"ts": now, "data": data}
     return data
-
 
 def _freshness_bonus(code):
     return {
