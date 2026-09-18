@@ -99,6 +99,19 @@ def _v482_ui_labels(response):
         for old, new in replacements.items():
             body = body.replace(old, new)
 
+        # V5.0 is the active presentation layer. This V4.8 compatibility hook
+        # runs late in Flask's reverse after_request order, so make it preserve
+        # the V5 shell instead of restoring legacy labels.
+        if "v500Finalizer" in body or "v500StaticShell" in body:
+            body = body.replace(
+                "V4.8.2 • Leading Signal + Multi-Level Reclaim",
+                "V5.0 • Mobile Command Center • V4.10 Engine"
+            )
+            body = body.replace(
+                "<title>AI Market Radar V4.8.2</title>",
+                "<title>AI Market Radar V5.0</title>"
+            )
+
         response.set_data(body)
         response.headers["Content-Length"] = str(len(response.get_data()))
     except Exception:
