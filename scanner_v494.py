@@ -155,6 +155,21 @@ def _v410_theme_rotation():
     }
     themes = []
     market = float(ctx.get("market_score") or 0)
+    # legacy Auto Context does not expose breadth_pct/regime yet.
+    # Convert its normalized market_score (-1..+1) to a display breadth
+    # where 50% = neutral, while keeping the original market signal intact.
+    breadth_pct = round(max(0.0, min(100.0, 50.0 + market * 50.0)), 1)
+    market_state = str(ctx.get("market") or "unknown").lower()
+    regime = (
+        "risk_on" if market_state == "bull"
+        else "risk_off" if market_state == "bear"
+        else "mixed"
+    )
+    regime_label = (
+        "Risk-On" if regime == "risk_on"
+        else "Risk-Off" if regime == "risk_off"
+        else "Mixed"
+    )
     for key, label in labels.items():
         g = dict(groups.get(key) or {})
         count = int(g.get("count") or 0)
@@ -181,7 +196,6 @@ def _v410_theme_rotation():
     themes.sort(key=lambda x: (1 if x["confidence"] == "LOW" else 0, -x["theme_score"]))
     valid = [x for x in themes if x["confidence"] != "LOW"]
     leader = valid[0] if valid else None
-    regime = str(ctx.get("regime") or "mixed")
     if leader and leader["theme_score"] >= 12:
         next_action = "Watch " + leader["label"] + " first; individual stocks still require Premarket + Opening confirmation."
     elif regime == "risk_off":
@@ -191,8 +205,8 @@ def _v410_theme_rotation():
     return {
         "version": "4.10",
         "market_regime": regime,
-        "market_regime_label": ctx.get("regime_label", "Mixed"),
-        "market_breadth_pct": ctx.get("breadth_pct", 0),
+        "market_regime_label": regime_label,
+        "market_breadth_pct": breadth_pct,
         "themes": themes, "leader": leader, "next_action": next_action,
         "note": "Theme Score is relative AI-watchlist breadth, not fund flow, win probability, or a buy signal.",
     }
