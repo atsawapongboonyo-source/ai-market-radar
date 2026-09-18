@@ -200,6 +200,36 @@ def _v494_visible_version(response):
     return response
 
 
+
+# V5.0 hard route wrapper: inject shell at the view response level, after all
+# legacy module loading. This avoids Flask after_request ordering entirely.
+def _v500_inject_response(rv):
+    try:
+        response = app.make_response(rv)
+        if "text/html" in (response.content_type or "").lower():
+            body = response.get_data(as_text=True)
+            if "v500Finalizer" not in body:
+                body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
+            response.set_data(body)
+            response.headers["Content-Length"] = str(len(response.get_data()))
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        return response
+    except Exception:
+        return rv
+
+
+_v500_home = app.view_functions.get("home")
+if _v500_home:
+    def _v500_home_view(*args, **kwargs):
+        return _v500_inject_response(_v500_home(*args, **kwargs))
+    app.view_functions["home"] = _v500_home_view
+
+_v500_scanner = app.view_functions.get("scanner_page")
+if _v500_scanner:
+    def _v500_scanner_view(*args, **kwargs):
+        return _v500_inject_response(_v500_scanner(*args, **kwargs))
+    app.view_functions["scanner_page"] = _v500_scanner_view
+
 # V4.10 Theme Rotation / Market Context
 def _v410_theme_rotation():
     # Scanner data and Auto Context are owned by legacy_scanner.
