@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
-<title>AI Market Radar V4.6</title>
+<title>AI Market Radar V5.0</title>
 
 <style>
 *{
@@ -3584,7 +3584,41 @@ async function openingConfirm(){
 
 <!-- ===================================================== -->
 <!-- AI MARKET RADAR V4.7 POSITION ENGINE -->
-<!-- Paste this block immediately BEFORE </body> -->
+<!-- Paste this block immediately BEFORE 
+<style id="v500StaticShell">
+body{padding-bottom:84px!important}
+#v500StaticNav{position:fixed;left:0;right:0;bottom:0;z-index:100000;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(6,20,35,.98);border-top:1px solid #24425f}
+#v500StaticNav button{border:0!important;background:transparent!important;color:#91a9c1!important;padding:6px 2px!important;font-size:10px!important;font-weight:800!important}
+#v500StaticNav button b{display:block;font-size:19px;color:inherit}
+#v500StaticNav button.active{background:#153a5b!important;color:#fff!important;border-radius:12px!important}
+.v500StaticBadge{display:inline-block;margin-top:7px;padding:5px 9px;border:1px solid #2f658e;border-radius:20px;background:#102b43;color:#bcd3e8;font-size:11px;font-weight:800}
+</style>
+<nav id="v500StaticNav">
+<button class="active" data-v5="home"><b>⌂</b>Home</button>
+<button data-v5="scanner"><b>⌕</b>Scanner</button>
+<button data-v5="top"><b>★</b>Top Pick</button>
+<button data-v5="position"><b>▣</b>Position</button>
+<button data-v5="theme"><b>◈</b>Theme</button>
+</nav>
+<script id="v500StaticShellScript">
+(function(){
+ function cardByText(t){var hs=[].slice.call(document.querySelectorAll('h2'));var h=hs.find(function(x){return (x.textContent||'').indexOf(t)>=0});return h?h.closest('.card,.openingCard'):null}
+ function apply(){
+   document.title='AI Market Radar V5.0';
+   var h=document.querySelector('.head .mut');if(h)h.textContent='V5.0 • Mobile Command Center • V4.10 Engine';
+   var hd=document.querySelector('.head > div:first-child');
+   if(hd&&!document.getElementById('v500StaticBadge')){var b=document.createElement('div');b.id='v500StaticBadge';b.className='v500StaticBadge';b.textContent='V4.10 Logic Locked ✓';hd.appendChild(b)}
+   var first=[].slice.call(document.querySelectorAll('.card')).find(function(x){return (x.textContent||'').indexOf('วันนี้ดูตัวไหนก่อน')>=0});if(first)first.id='v5-home';
+   var m={scanner:cardByText('Candidate Ranking'),top:cardByText('Top Pick Engine'),position:document.getElementById('positionCard'),theme:cardByText('Theme Rotation')};
+   Object.keys(m).forEach(function(k){if(m[k])m[k].id='v5-'+k});
+ }
+ function go(k,btn){var el=document.getElementById('v5-'+k);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('#v500StaticNav button').forEach(function(x){x.classList.remove('active')});btn.classList.add('active')}
+ document.querySelectorAll('#v500StaticNav button').forEach(function(btn){btn.addEventListener('click',function(){go(btn.dataset.v5,btn)})});
+ apply();setTimeout(apply,1200);setTimeout(apply,3000);
+})();
+</script>
+
+</body> -->
 <!-- ===================================================== -->
 
 <style>
