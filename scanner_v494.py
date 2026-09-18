@@ -14,6 +14,7 @@ The existing V4.9.3 Leading Signal / Explosive Movers stack remains intact.
 
 import scanner_v493 as v493
 import legacy_scanner as base
+from flask import jsonify
 
 app = v493.app
 
