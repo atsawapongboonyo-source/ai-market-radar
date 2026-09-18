@@ -230,6 +230,25 @@ if _v500_scanner:
         return _v500_inject_response(_v500_scanner(*args, **kwargs))
     app.view_functions["scanner_page"] = _v500_scanner_view
 
+# V5 route ownership fix: legacy /scanner calls scanner_home() directly,
+# so wrapping only app.view_functions["scanner_page"] does not cover the
+# rendered page. Patch legacy scanner_home itself while leaving all scanner
+# and decision-engine logic untouched.
+_v500_legacy_scanner_home = base.scanner_home
+
+def _v500_legacy_scanner_home_view(*args, **kwargs):
+    return _v500_inject_response(_v500_legacy_scanner_home(*args, **kwargs))
+
+base.scanner_home = _v500_legacy_scanner_home_view
+app.view_functions["home"] = _v500_legacy_scanner_home_view
+
+# Rebind /scanner explicitly because Flask registered the original function
+# object before this V5 layer was loaded.
+def _v500_scanner_page_view(*args, **kwargs):
+    return _v500_legacy_scanner_home_view()
+
+app.view_functions["scanner_page"] = _v500_scanner_page_view
+
 # V4.10 Theme Rotation / Market Context
 def _v410_theme_rotation():
     # Scanner data and Auto Context are owned by legacy_scanner.
