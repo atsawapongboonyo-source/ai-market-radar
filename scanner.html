@@ -3585,6 +3585,44 @@ async function openingConfirm(){
 <!-- ===================================================== -->
 <!-- AI MARKET RADAR V4.7 POSITION ENGINE -->
 <!-- Paste this block immediately BEFORE 
+
+<style id="v501Phase2">
+.v5QuickGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.v5Quick{background:#102b43;border:1px solid #28577b;border-radius:16px;padding:13px;min-height:74px}
+.v5Quick small{display:block;color:#8fa9c1;font-size:11px;margin-bottom:5px}.v5Quick b{font-size:15px;line-height:1.25}
+#v5CommandCard{display:none;margin:0 0 16px}
+#v5CommandCard.show{display:block}
+.v5ActionBox{border:1px solid #2b6792;background:#123553;border-radius:16px;padding:14px;margin-top:10px}
+.v5ActionBox small{display:block;color:#8fa9c1;font-weight:800;margin-bottom:5px}.v5ActionBox b{font-size:16px}
+@media(max-width:560px){.v5QuickGrid{grid-template-columns:1fr 1fr}}
+</style>
+<script id="v501Phase2Script">
+(function(){
+ function txt(el){return el?(el.textContent||'').trim():''}
+ function findCard(s){var h=[].slice.call(document.querySelectorAll('h2')).find(function(x){return txt(x).indexOf(s)>=0});return h?h.closest('.card,.openingCard'):null}
+ function ensure(){
+   var home=[].slice.call(document.querySelectorAll('.card')).find(function(x){return txt(x).indexOf('วันนี้ดูตัวไหนก่อน')>=0});
+   if(!home||document.getElementById('v5CommandCard'))return;
+   var card=document.createElement('section');card.id='v5CommandCard';card.className='card show';
+   card.innerHTML='<h2>⚡ Command Center</h2><div class="small">สรุปสิ่งที่ต้องดูก่อนตัดสินใจ • ข้อมูลจะอัปเดตจากโมดูลเดิม</div>'+
+   '<div class="v5QuickGrid"><div class="v5Quick"><small>MARKET</small><b id="v5Market">รอ Scan</b></div><div class="v5Quick"><small>LEADING THEME</small><b id="v5Theme">รอ Theme Rotation</b></div><div class="v5Quick"><small>TOP PICK</small><b id="v5Pick">รอคัด Top Pick</b></div><div class="v5Quick"><small>POSITION</small><b id="v5Pos">รอข้อมูล Position</b></div></div>'+
+   '<div class="v5ActionBox"><small>NEXT ACTION</small><b id="v5Next">กดสแกน Watchlist เพื่อเริ่ม</b></div>';
+   home.insertAdjacentElement('afterend',card);
+ }
+ function sync(){
+   ensure();
+   var auto=findCard('Auto Context'), theme=findCard('Theme Rotation'), top=findCard('Top Pick Engine'), pos=document.getElementById('positionCard')||findCard('Position Engine');
+   var market=document.getElementById('v5Market'), th=document.getElementById('v5Theme'), pick=document.getElementById('v5Pick'), pp=document.getElementById('v5Pos'), nx=document.getElementById('v5Next');
+   if(market&&auto){var s=txt(auto);var m=s.match(/Market[^\n]*?(Risk-On|Risk-Off|Bull|Bear|Neutral|Mixed)/i);if(m)market.textContent=m[1]}
+   if(th&&theme){var s2=txt(theme);var m2=s2.match(/กลุ่มนำตอนนี้[:：]?\s*([^\n]+)/);if(m2)th.textContent=m2[1].trim()}
+   if(pick&&top){var s3=txt(top);var m3=s3.match(/\b([A-Z]{2,5})\b/);if(m3&&!/TOP|DATA|AUTO/.test(m3[1]))pick.textContent=m3[1]}
+   if(pp&&pos){var s4=txt(pos);var m4=s4.match(/\b([A-Z]{2,5})\b/);if(m4)pp.textContent=m4[1]}
+   if(nx&&theme){var s5=txt(theme);var m5=s5.match(/NEXT ACTION\s*([^\n]+)/i);if(m5&&m5[1].trim())nx.textContent=m5[1].trim()}
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){ensure();sync()});else{ensure();sync()}
+ setInterval(sync,2000);
+})();
+</script>
 <style id="v500StaticShell">
 body{padding-bottom:84px!important}
 #v500StaticNav{position:fixed;left:0;right:0;bottom:0;z-index:100000;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(6,20,35,.98);border-top:1px solid #24425f}
