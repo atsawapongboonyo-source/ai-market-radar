@@ -188,11 +188,13 @@ def _v494_visible_version(response):
             # Flask after_request hooks run in reverse registration order.
             # Prepend V5 so it executes AFTER every legacy V4.x inline/finalizer
             # script, preventing old version labels from overwriting V5.
+            # scanner.html contains an old literal "</body>" inside a legacy
+            # HTML comment. Always inject before the LAST closing body tag so
+            # the V5 shell executes outside that comment.
             if "v500Finalizer" not in body:
-                body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
-            else:
-                body = body.replace(_FINAL_UI + "\n", "")
-                body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
+                pos = body.lower().rfind("</body>")
+                if pos >= 0:
+                    body = body[:pos] + _FINAL_UI + "\n" + body[pos:]
             response.set_data(body)
             response.headers["Content-Length"] = str(len(response.get_data()))
     except Exception:
@@ -209,7 +211,9 @@ def _v500_inject_response(rv):
         if "text/html" in (response.content_type or "").lower():
             body = response.get_data(as_text=True)
             if "v500Finalizer" not in body:
-                body = body.replace("</body>", _FINAL_UI + "\n</body>", 1)
+                pos = body.lower().rfind("</body>")
+                if pos >= 0:
+                    body = body[:pos] + _FINAL_UI + "\n" + body[pos:]
             response.set_data(body)
             response.headers["Content-Length"] = str(len(response.get_data()))
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
