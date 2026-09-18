@@ -152,17 +152,5 @@ _V491_UI = r'''
 '''
 
 
-@app.after_request
-def _v491_ui_hardening(response):
-    try:
-        if 'text/html' not in (response.content_type or '').lower():
-            return response
-
-        body=response.get_data(as_text=True)
-        if 'v491Styles' not in body:
-            body=body.replace('</body>', _V491_UI+'\n</body>', 1)
-        response.set_data(body)
-        response.headers['Content-Length']=str(len(response.get_data()))
-    except Exception:
-        pass
-    return response
+# V5.0 owns presentation. Keep V4.9.1 backend/helpers loaded, but do not
+# rewrite HTML responses or inject legacy version scripts.
