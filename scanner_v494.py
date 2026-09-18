@@ -137,3 +137,70 @@ def _v494_visible_version(response):
     except Exception:
         pass
     return response
+
+
+# V4.10 Theme Rotation / Market Context
+def _v410_theme_rotation():
+    scan = base.scan_watchlist(force=False)
+    ctx = dict(scan.get("auto_context") or {})
+    groups = dict(ctx.get("groups") or {})
+    labels = {
+        "network": "Optical / Networking",
+        "memory": "Memory / Storage",
+        "chip": "Chips / Equipment",
+        "datacenter": "Datacenter / Compute",
+        "power": "Power / Energy",
+        "cloud": "Cloud / Hyperscalers",
+        "software": "AI Software",
+    }
+    themes = []
+    market = float(ctx.get("market_score") or 0)
+    for key, label in labels.items():
+        g = dict(groups.get(key) or {})
+        count = int(g.get("count") or 0)
+        strength = float(g.get("strength") or 0)
+        confidence = "HIGH" if count >= 4 else "MEDIUM" if count >= 2 else "LOW"
+        effective = g.get("effective_relative_strength")
+        if effective is None:
+            weight = 1.0 if count >= 4 else .65 if count >= 2 else 0.0
+            effective = (strength - market) * weight
+        score = round(max(-100, min(100, float(effective) * 100)), 1)
+        if confidence == "LOW":
+            state, state_label = "LOW_SAMPLE", "Sample low"
+        elif score >= 12:
+            state, state_label = "LEADING", "Leading"
+        elif score <= -12:
+            state, state_label = "LAGGING", "Lagging"
+        else:
+            state, state_label = "NEUTRAL", "Neutral"
+        themes.append({
+            "key": key, "label": label, "state": state,
+            "state_label": state_label, "theme_score": score,
+            "member_count": count, "confidence": confidence,
+        })
+    themes.sort(key=lambda x: (1 if x["confidence"] == "LOW" else 0, -x["theme_score"]))
+    valid = [x for x in themes if x["confidence"] != "LOW"]
+    leader = valid[0] if valid else None
+    regime = str(ctx.get("regime") or "mixed")
+    if leader and leader["theme_score"] >= 12:
+        next_action = "Watch " + leader["label"] + " first; individual stocks still require Premarket + Opening confirmation."
+    elif regime == "risk_off":
+        next_action = "Risk-Off: avoid chasing and wait for stronger confirmation."
+    else:
+        next_action = "No clear leading theme; use Top Pick + Opening Confirmation."
+    return {
+        "version": "4.10",
+        "market_regime": regime,
+        "market_regime_label": ctx.get("regime_label", "Mixed"),
+        "market_breadth_pct": ctx.get("breadth_pct", 0),
+        "themes": themes, "leader": leader, "next_action": next_action,
+        "note": "Theme Score is relative AI-watchlist breadth, not fund flow, win probability, or a buy signal.",
+    }
+
+
+@app.route("/api/theme-rotation")
+def _v410_theme_rotation_api():
+    try:
+        return jsonify({"ok": True, "data": _v410_theme_rotation()})
+    except Exception as e:
+        return jsonify({"ok": False, "version": "4.10", "error": str(e)}), 200
