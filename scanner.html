@@ -3623,6 +3623,46 @@ async function openingConfirm(){
  setInterval(sync,2000);
 })();
 </script>
+
+<style id="v502Tabs">
+body.v5TabMode .card,body.v5TabMode .openingCard{display:none!important}
+body.v5TabMode .head{display:flex!important}
+body.v5TabMode .v5Show{display:block!important}
+body.v5TabMode #v500StaticNav{display:grid!important}
+body.v5TabMode #v5CommandCard{display:block!important}
+.v5SectionTitle{margin:10px 0 12px;color:#8fa9c1;font-size:12px;font-weight:900;letter-spacing:.08em}
+</style>
+<script id="v502TabsScript">
+(function(){
+ function T(x){return (x&&x.textContent||'').trim()}
+ function card(s){var h=[].slice.call(document.querySelectorAll('h2')).find(function(x){return T(x).indexOf(s)>=0});return h?h.closest('.card,.openingCard'):null}
+ function allCards(){return [].slice.call(document.querySelectorAll('.card,.openingCard'))}
+ function show(el){if(el)el.classList.add('v5Show')}
+ function setTab(k,btn){
+   document.body.classList.add('v5TabMode');
+   allCards().forEach(function(x){x.classList.remove('v5Show')});
+   var home=allCards().find(function(x){return T(x).indexOf('วันนี้ดูตัวไหนก่อน')>=0});
+   var cmd=document.getElementById('v5CommandCard');
+   if(k==='home'){show(home);show(cmd);show(card('Auto Context'));show(card('Theme Rotation'));show(card('Top Pick Engine'))}
+   if(k==='scanner'){show(home);show(card('Candidate Ranking'));show(card('Explosive Movers Radar'))}
+   if(k==='top'){show(home);show(card('Top Pick Engine'));show(card('Final Confirmation'));show(card('Opening Confirmation'))}
+   if(k==='position'){show(home);show(document.getElementById('positionCard')||card('Position Engine'))}
+   if(k==='theme'){show(home);show(card('Auto Context'));show(card('Theme Rotation'))}
+   document.querySelectorAll('#v500StaticNav button').forEach(function(x){x.classList.remove('active')});
+   if(btn)btn.classList.add('active');
+   window.scrollTo({top:0,behavior:'smooth'});
+ }
+ function init(){
+   var nav=document.getElementById('v500StaticNav');if(!nav)return;
+   nav.querySelectorAll('button[data-v5]').forEach(function(btn){
+     btn.onclick=function(e){e.preventDefault();setTab(btn.dataset.v5,btn)}
+   });
+   var active=nav.querySelector('button[data-v5="home"]');setTab('home',active);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(init,50)});else setTimeout(init,50);
+ setTimeout(init,1500);
+})();
+</script>
 <style id="v500StaticShell">
 body{padding-bottom:84px!important}
 #v500StaticNav{position:fixed;left:0;right:0;bottom:0;z-index:100000;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(6,20,35,.98);border-top:1px solid #24425f}
