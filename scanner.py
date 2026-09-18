@@ -6,7 +6,7 @@ The original V4.7.1 implementation lives unchanged in legacy_scanner.py.
 During extension loading we temporarily alias the module name `scanner` to the
 legacy module so all V4.8/V4.9 monkey patches modify the SAME globals used by
 Flask's already-registered routes. Then we restore this lightweight wrapper and
-expose the final V4.9.3 app.
+expose the final V4.9.4 app.
 """
 
 import sys as _sys
@@ -23,9 +23,9 @@ _wrapper = _sys.modules[__name__]
 # legacy module while the chain loads so its routes and engine share one state.
 _sys.modules["scanner"] = _legacy
 try:
-    import scanner_v493 as _latest
+    import scanner_v494 as _latest
 finally:
     _sys.modules["scanner"] = _wrapper
 
 app = _latest.app
-RUNTIME_VERSION = "4.9.3"
+RUNTIME_VERSION = "4.9.4"
