@@ -52,26 +52,5 @@ def _build_top_picks_v481(force=False):
 base.build_top_picks = _build_top_picks_v481
 
 
-@app.after_request
-def _v481_ui_version(response):
-    """Keep the visible page version aligned with the active runtime engine."""
-    try:
-        ctype = (response.content_type or "").lower()
-        if "text/html" not in ctype:
-            return response
-
-        body = response.get_data(as_text=True)
-        body = body.replace(
-            "V4.7.1 • Multi-Level Reclaim Engine",
-            "V4.8 • Leading Signal + Multi-Level Reclaim",
-        )
-        body = body.replace(
-            "AI MARKET RADAR V4.7.1",
-            "AI MARKET RADAR V4.8",
-        )
-        response.set_data(body)
-        response.headers["Content-Length"] = str(len(response.get_data()))
-    except Exception:
-        pass
-
-    return response
+# V5.0 owns presentation/version labels.
+# Legacy V4.8.1 HTML response rewriting is intentionally disabled.
