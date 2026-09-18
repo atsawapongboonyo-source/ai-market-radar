@@ -141,7 +141,9 @@ def _v494_visible_version(response):
 
 # V4.10 Theme Rotation / Market Context
 def _v410_theme_rotation():
-    scan = base.scan_watchlist(force=False)
+    # Use the V4.9.x scanner wrapper, not legacy_scanner directly.
+    # scanner_v493 adds context fields used by the newer signal stack.
+    scan = v493.scan_watchlist(force=False)
     ctx = dict(scan.get("auto_context") or {})
     groups = dict(ctx.get("groups") or {})
     labels = {
