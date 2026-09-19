@@ -330,6 +330,22 @@ button:disabled{
   margin-top:8px
 }
 
+/* V5 compact Catalyst news */
+#newsList .v5NewsExtra{display:none}
+#newsList.v5NewsExpanded .v5NewsExtra{display:block}
+.v5NewsToggle{
+  width:100%;
+  margin:4px 0 14px;
+  padding:13px 16px;
+  border:1px solid #2d6d9c;
+  border-radius:14px;
+  background:#123b5d;
+  color:#eaf5ff;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer
+}
+
 /* V5 Final Confirmation quick summary */
 .v5DecisionStrip{
   display:grid;
@@ -2222,9 +2238,14 @@ async function loadCatalyst(ticker){
     });
 
 
-    document.getElementById(
-      "newsList"
-    ).innerHTML=catalystItems.map(n=>{
+    const newsListEl=document.getElementById("newsList");
+    const directItems=catalystItems.filter(n=>n.relevance==="DIRECT");
+    const contextItems=catalystItems.filter(n=>n.relevance!=="DIRECT");
+    const previewDirect=directItems.slice(0,3);
+    const hiddenDirect=directItems.slice(3);
+    const previewItems=[...previewDirect,...hiddenDirect,...contextItems];
+
+    newsListEl.innerHTML=previewItems.map((n,newsIndex)=>{
 
 
       let age=
@@ -2257,7 +2278,7 @@ async function loadCatalyst(ticker){
 
       return `
 
-        <div class="newsitem ${isDirect?"":"contextNews"}">
+        <div class="newsitem ${isDirect?"":"contextNews"} ${(isDirect&&newsIndex>=3)||!isDirect?"v5NewsExtra":""}">
 
           ${relevanceBadge}<br>
           ${icon}
@@ -2287,6 +2308,22 @@ async function loadCatalyst(ticker){
       `;
 
     }).join("");
+
+    const extraCount=hiddenDirect.length+contextItems.length;
+    if(extraCount>0){
+      newsListEl.insertAdjacentHTML("beforeend",`
+        <button type="button" class="v5NewsToggle" id="v5NewsToggle">
+          ดูข่าวทั้งหมด (${catalystItems.length})
+        </button>
+      `);
+      const toggle=document.getElementById("v5NewsToggle");
+      toggle.addEventListener("click",()=>{
+        const expanded=newsListEl.classList.toggle("v5NewsExpanded");
+        toggle.textContent=expanded
+          ?"ซ่อนข่าวเพิ่มเติม"
+          :`ดูข่าวทั้งหมด (${catalystItems.length})`;
+      });
+    }
 
 
   }catch(e){
