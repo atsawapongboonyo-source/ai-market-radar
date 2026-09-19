@@ -151,8 +151,13 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
   }
   function targetId(el,id){if(el&&!el.id)el.id=id;return el}
   function go(id,btn){
-    const el=document.getElementById(id);
-    if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+    let el=document.getElementById(id);
+    if(!el && id==='v500Theme') el=document.getElementById('v410ThemeCard') || cardForHeading('Theme Rotation');
+    if(!el && id==='v500Position') el=document.getElementById('positionCard') || cardForHeading('Position Engine');
+    if(el){
+      const y=Math.max(0,el.getBoundingClientRect().top + window.pageYOffset - 18);
+      window.scrollTo({top:y,behavior:'smooth'});
+    }
     document.querySelectorAll('.v500NavBtn').forEach(x=>x.classList.remove('active'));
     if(btn)btn.classList.add('active');
   }
@@ -192,8 +197,13 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
 
     targetId(cardForHeading('Candidate Ranking'),'v500Scanner');
     targetId(cardForHeading('Top Pick Engine'),'v500TopPick');
-    targetId(document.getElementById('positionCard'),'v500Position');
-    targetId(cardForHeading('Theme Rotation'),'v500Theme');
+    /* Position is injected by legacy extension and does not consistently keep
+       positionCard. Resolve by heading as a fallback. */
+    targetId(document.getElementById('positionCard') || cardForHeading('Position Engine'),'v500Position');
+    /* Theme already owns v410ThemeCard, so targetId() intentionally refuses
+       to rename it. Give the nav a stable alias by resolving the real card. */
+    const themeCard=document.getElementById('v410ThemeCard') || cardForHeading('Theme Rotation');
+    if(themeCard) themeCard.setAttribute('data-v500-target','theme');
 
     document.querySelectorAll('.versionPill').forEach(p=>p.textContent='V5.0 UI');
 
