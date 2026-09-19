@@ -214,7 +214,18 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
     const e=document.getElementById(id);const t=(e&&e.textContent||'').trim();
     return t&&t!=='—'?t:fallback;
   }
-  function v500OpenPick(index){\n    const cards=Array.from(document.querySelectorAll('#topPicks .pickCard'));\n    const card=cards[index];\n    if(!card)return;\n    card.click();\n    const topBtn=document.querySelector('.v500NavBtn[data-go="v500TopPick"]');\n    document.querySelectorAll('.v500NavBtn').forEach(x=>x.classList.remove('active'));\n    if(topBtn)topBtn.classList.add('active');\n    setTimeout(()=>{const confirm=document.getElementById('confirm');if(confirm)confirm.scrollIntoView({behavior:'smooth',block:'start'})},120);\n  }\n  window.v500OpenPick=v500OpenPick;\n  function renderCommand(){
+  function v500OpenPick(index){
+    const cards=Array.from(document.querySelectorAll('#topPicks .pickCard'));
+    const card=cards[index];
+    if(!card)return;
+    card.click();
+    const topBtn=document.querySelector('.v500NavBtn[data-go="v500TopPick"]');
+    document.querySelectorAll('.v500NavBtn').forEach(x=>x.classList.remove('active'));
+    if(topBtn)topBtn.classList.add('active');
+    setTimeout(()=>{const confirm=document.getElementById('confirm');if(confirm)confirm.scrollIntoView({behavior:'smooth',block:'start'})},120);
+  }
+  window.v500OpenPick=v500OpenPick;
+  function renderCommand(){
     const m=document.getElementById('v500Market');
     const l=document.getElementById('v500Leader');
     const n=document.getElementById('v500Next');
