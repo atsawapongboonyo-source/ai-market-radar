@@ -6638,6 +6638,15 @@ body.v509PositionOpen{overflow:hidden!important}
    b.onclick=function(e){e.preventDefault();e.stopImmediatePropagation();nav.querySelectorAll('[data-v5]').forEach(function(x){x.classList.remove('active')});b.classList.add('active');window.v509OpenPosition();return false};
    old.replaceWith(b);
  }
+ function forcePosition(e){
+   var t=e.target&&e.target.closest?e.target.closest('[data-v5="position"]'):null;
+   if(!t)return;
+   e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+   var nav=document.getElementById('v500StaticNav');if(nav)nav.querySelectorAll('[data-v5]').forEach(function(x){x.classList.remove('active')});
+   t.classList.add('active');window.v509OpenPosition();return false;
+ }
+ document.addEventListener('click',forcePosition,true);
+ document.addEventListener('touchend',forcePosition,true);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});else wire();
  setTimeout(wire,800);setTimeout(wire,2200);
 })();
