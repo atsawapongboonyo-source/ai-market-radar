@@ -814,7 +814,7 @@ Auto Context ใช้ breadth ของหุ้นใน Watchlist เป็�
     <b id="v5OpenStep">รอตลาดเปิด</b>
   </div>
   <div class="v5DecisionNext">
-    <span>NEXT ACTION</span>
+    <span>ขั้นตอนถัดไป</span>
     <b id="v5DecisionNext">เลือกหุ้นและตรวจตามลำดับ</b>
   </div>
 </div>
@@ -1111,7 +1111,7 @@ V4.6
   </div>
   <div class="gateNote">Opening High / Low ใช้ช่วงเปิดตลาดที่กำลังประเมิน เช่นประมาณ 5–15 นาที • RV เว้นว่างได้</div>
   <div class="v5OpeningStateBar">
-    <span>NEXT ACTION</span>
+    <span>ขั้นตอนถัดไป</span>
     <b id="v5OpeningNext">กรอก Current + Open + High + Low แล้วกดตรวจ Opening Confirmation</b>
   </div>
 </div>
@@ -1255,7 +1255,7 @@ OPENING STATE
     <div class="box"><div class="small">Watchlist Breadth</div><div id="v410Breadth" class="big">—</div></div>
   </div>
   <div id="v410ThemeGrid" class="v410ThemeGrid"></div>
-  <div id="v410Next" class="v410Next"><b>NEXT ACTION</b><br>—</div>
+  <div id="v410Next" class="v410Next"><b>ขั้นตอนถัดไป</b><br>—</div>
   <div class="small" style="margin-top:10px">Theme Score เป็น relative breadth ภายใน AI Watchlist ไม่ใช่ Fund Flow, โอกาสชนะ หรือคำสั่งซื้อ</div>
 </div>
 
@@ -1291,7 +1291,7 @@ async function v410LoadThemeRotation(){
         </div>
         <div class="v410ThemeMeta">${t.state_label||t.state} • Confidence ${t.confidence||"—"} • ${t.member_count||0} stocks</div>
       </div>`).join("");
-    document.getElementById("v410Next").innerHTML="<b>NEXT ACTION</b><br>"+(x.next_action||"ใช้ Top Pick + Opening Confirmation");
+    document.getElementById("v410Next").innerHTML="<b>ขั้นตอนถัดไป</b><br>"+(x.next_action||"ใช้ Top Pick + Opening Confirmation");
     st.className="status good";
     st.innerHTML="<b>V4.10 Theme Rotation พร้อมใช้งาน</b>"+(x.leader?" • กลุ่มนำตอนนี้: "+x.leader.label:" • ยังไม่มีกลุ่มนำชัดเจน");
   }catch(e){
@@ -3815,8 +3815,8 @@ async function openingConfirm(){
    if(!home||document.getElementById('v5CommandCard'))return;
    var card=document.createElement('section');card.id='v5CommandCard';card.className='card show';
    card.innerHTML='<h2>⚡ Command Center</h2><div class="small">สรุปสิ่งที่ต้องดูก่อนตัดสินใจ • ข้อมูลจะอัปเดตจากโมดูลเดิม</div>'+
-   '<div class="v5QuickGrid"><div class="v5Quick"><small>MARKET</small><b id="v5Market">รอ Scan</b></div><div class="v5Quick"><small>LEADING THEME</small><b id="v5Theme">รอ Theme Rotation</b></div><div class="v5Quick"><small>TOP PICK</small><b id="v5Pick">รอคัด Top Pick</b></div><div class="v5Quick"><small>LAST UPDATED</small><b id="v5Updated">รอ Scan</b></div></div>'+
-   '<div class="v5ActionBox"><small>NEXT ACTION</small><b id="v5Next">กดสแกน Watchlist เพื่อเริ่ม</b></div>';
+   '<div class="v5QuickGrid"><div class="v5Quick"><small>MARKET</small><b id="v5Market">รอ Scan</b></div><div class="v5Quick"><small>กลุ่มนำ</small><b id="v5Theme">รอ Theme Rotation</b></div><div class="v5Quick"><small>TOP PICK</small><b id="v5Pick">รอคัด Top Pick</b></div><div class="v5Quick"><small>LAST UPDATED</small><b id="v5Updated">รอ Scan</b></div></div>'+
+   '<div class="v5ActionBox"><small>ขั้นตอนถัดไป</small><b id="v5Next">กดสแกน Watchlist เพื่อเริ่ม</b></div>';
    home.insertAdjacentElement('afterend',card);
  }
  function sync(){
@@ -4840,7 +4840,7 @@ function v5SyncPositionHero(x){
       '<div><span>ADD STATUS</span><strong>'+add+'</strong></div>'+
       '<div><span>ADD TRIGGER</span><strong>'+fmt(lv.add_trigger)+'</strong></div>'+
     '</div>'+
-    '<div class="v5PosNext"><span>NEXT ACTION</span><strong>'+(x.next_step||"ติดตาม Position ตามแผน")+'</strong></div>';
+    '<div class="v5PosNext"><span>ขั้นตอนถัดไป</span><strong>'+(x.next_step||"ติดตาม Position ตามแผน")+'</strong></div>';
 }
 function v47RenderPosition(x){
 
