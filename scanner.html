@@ -1754,6 +1754,7 @@ async function scan(force){
     let d=j.data||{};
 
     context=d.auto_context||null;
+    window.v5LastScanUpdated=d.updated_at||new Date().toISOString();
 
 
     document.getElementById(
@@ -3814,19 +3815,23 @@ async function openingConfirm(){
    if(!home||document.getElementById('v5CommandCard'))return;
    var card=document.createElement('section');card.id='v5CommandCard';card.className='card show';
    card.innerHTML='<h2>⚡ Command Center</h2><div class="small">สรุปสิ่งที่ต้องดูก่อนตัดสินใจ • ข้อมูลจะอัปเดตจากโมดูลเดิม</div>'+
-   '<div class="v5QuickGrid"><div class="v5Quick"><small>MARKET</small><b id="v5Market">รอ Scan</b></div><div class="v5Quick"><small>LEADING THEME</small><b id="v5Theme">รอ Theme Rotation</b></div><div class="v5Quick"><small>TOP PICK</small><b id="v5Pick">รอคัด Top Pick</b></div><div class="v5Quick"><small>POSITION</small><b id="v5Pos">รอข้อมูล Position</b></div></div>'+
+   '<div class="v5QuickGrid"><div class="v5Quick"><small>MARKET</small><b id="v5Market">รอ Scan</b></div><div class="v5Quick"><small>LEADING THEME</small><b id="v5Theme">รอ Theme Rotation</b></div><div class="v5Quick"><small>TOP PICK</small><b id="v5Pick">รอคัด Top Pick</b></div><div class="v5Quick"><small>LAST UPDATED</small><b id="v5Updated">รอ Scan</b></div></div>'+
    '<div class="v5ActionBox"><small>NEXT ACTION</small><b id="v5Next">กดสแกน Watchlist เพื่อเริ่ม</b></div>';
    home.insertAdjacentElement('afterend',card);
  }
  function sync(){
    ensure();
    var auto=findCard('Auto Context'), theme=findCard('Theme Rotation'), top=findCard('Top Pick Engine'), pos=document.getElementById('positionCard')||findCard('Position Engine');
-   var market=document.getElementById('v5Market'), th=document.getElementById('v5Theme'), pick=document.getElementById('v5Pick'), pp=document.getElementById('v5Pos'), nx=document.getElementById('v5Next');
+   var market=document.getElementById('v5Market'), th=document.getElementById('v5Theme'), pick=document.getElementById('v5Pick'), upd=document.getElementById('v5Updated'), nx=document.getElementById('v5Next');
    if(market&&auto){var s=txt(auto);var m=s.match(/Market[^\n]*?(Risk-On|Risk-Off|Bull|Bear|Neutral|Mixed)/i);if(m)market.textContent=m[1]}
    if(th&&theme){var s2=txt(theme);var m2=s2.match(/กลุ่มนำตอนนี้[:：]?\s*([^\n]+)/);if(m2)th.textContent=m2[1].trim()}
-   if(pick&&top){var s3=txt(top);var m3=s3.match(/\b([A-Z]{2,5})\b/);if(m3&&!/TOP|DATA|AUTO/.test(m3[1]))pick.textContent=m3[1]}
-   if(pp&&pos){var s4=txt(pos);var m4=s4.match(/\b([A-Z]{2,5})\b/);if(m4)pp.textContent=m4[1]}
-   if(nx&&theme){var s5=txt(theme);var m5=s5.match(/NEXT ACTION\s*([^\n]+)/i);if(m5&&m5[1].trim())nx.textContent=m5[1].trim()}
+   if(pick&&top){var s3=txt(top),m3=s3.match(/(?:Top Pick|Backup Pick)\s*[•·-]\s*([A-Z]{1,6})/i);if(m3)pick.textContent=m3[1].toUpperCase()}
+   if(upd&&window.v5LastScanUpdated){var dt=new Date(window.v5LastScanUpdated);upd.textContent=isNaN(dt)?String(window.v5LastScanUpdated):dt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
+   if(nx){
+     var ptxt=pick?txt(pick):'',mtxt=market?txt(market):'';
+     if(ptxt&&ptxt.indexOf('รอ')!==0) nx.textContent=(/Risk-Off|Bear|อ่อน/i.test(mtxt)?'ตลาดอ่อน • ':'')+'รอ Premarket Gate ของ '+ptxt+' ก่อนตัดสินใจ';
+     else nx.textContent='กดสแกน Watchlist เพื่อเริ่ม';
+   }
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){ensure();sync()});else{ensure();sync()}
  setInterval(sync,2000);
