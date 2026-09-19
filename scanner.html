@@ -3850,10 +3850,21 @@ body.v5TabMode #v5CommandCard{display:block!important}
    if(k==='scanner') return document.getElementById('v500Scanner')||document.getElementById('v5-scanner')||card('Candidate Ranking');
    if(k==='top') return document.getElementById('v500TopPick')||document.getElementById('v5-top')||card('Top Pick Engine');
    if(k==='position'){
-     /* Position Engine is dynamically created by V4.7. Resolve it from its
-        unique input first so navigation survives any wrapper/id changes. */
-     var input=document.getElementById('positionShares');
-     return (input&&input.closest('.card,.openingCard'))||document.getElementById('positionCard')||document.getElementById('v500Position')||document.getElementById('v5-position')||card('Position Engine');
+     /* Position must be reachable even before Scan / Top Pick selection. */
+     var pos=document.getElementById('positionCard');
+     if(!pos && typeof window.v47CreatePositionUI==='function'){
+       try{window.v47CreatePositionUI()}catch(e){}
+       pos=document.getElementById('positionCard');
+     }
+     if(!pos){
+       var input=document.getElementById('positionShares');
+       pos=(input&&input.closest('.card,.openingCard'))||document.querySelector('[data-v500-target="position"],[data-v5-target="position"]')||document.getElementById('v500Position')||document.getElementById('v5-position')||card('Position Engine');
+     }
+     if(pos){
+       pos.classList.add('show','v5Show');
+       pos.style.setProperty('display','block','important');
+     }
+     return pos;
    }
    if(k==='theme') return document.getElementById('v410ThemeCard')||document.getElementById('v500Theme')||document.getElementById('v5-theme')||card('Theme Rotation');
    return null;
@@ -3865,8 +3876,15 @@ body.v5TabMode #v5CommandCard{display:block!important}
    if(btn)btn.classList.add('active');
    var el=target(k);
    if(el){
-     el.style.display='block';
-     requestAnimationFrame(function(){el.scrollIntoView({behavior:'smooth',block:'start'})});
+     el.classList.add('v5Show');
+     el.style.setProperty('display','block','important');
+     /* Android Chrome is more reliable with a direct numeric scroll here. */
+     var y=Math.max(0,el.getBoundingClientRect().top+window.pageYOffset-18);
+     window.scrollTo(0,y);
+     setTimeout(function(){
+       var y2=Math.max(0,el.getBoundingClientRect().top+window.pageYOffset-18);
+       window.scrollTo({top:y2,behavior:'smooth'});
+     },60);
    }
  }
  function init(){
