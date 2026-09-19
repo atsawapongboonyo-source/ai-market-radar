@@ -637,9 +637,11 @@ button:disabled{
 .v5OpeningStateBar b{font-size:15px;line-height:1.4}
 
 
-/* V5.0.1 Compact Opening UX — presentation only */
-#openingCard .openingSteps{display:none!important}
-#openingCard .openingIntro,#openingCard .openingExplain{display:none!important}
+/* V5.0.1 Compact Opening UX — presentation only.
+   Hide only the legacy 5-step rail + its old explanatory box.
+   Keep openingStatus/result boxes visible. */
+.openingCard > .flow{display:none!important}
+.openingCard > .flow + .status.info{display:none!important}
 .v5OpeningCompactState{margin:10px 0 12px;padding:12px 14px;border:1px solid #2d628a;border-radius:14px;background:#102b43;display:flex;align-items:center;justify-content:space-between;gap:10px}
 .v5OpeningCompactState small{display:block;color:#91a8bd;font-size:10px;font-weight:800;margin-bottom:3px}
 .v5OpeningCompactState b{font-size:15px}
