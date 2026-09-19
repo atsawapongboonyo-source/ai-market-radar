@@ -6525,34 +6525,34 @@ if(v471PositionCard){
 })();
 </script>
 
-<script id="v505PositionNavFinalFix">
-/* Position nav: installed at the TRUE end of document, after V4.7 UI exists. */
+
+
+<script id="v506PositionNavDirect">
 (function(){
-  function jump(){
+  function go(){
     var p=document.getElementById('positionCard');
-    if(!p && typeof v47CreatePositionUI==='function'){v47CreatePositionUI();p=document.getElementById('positionCard');}
-    if(!p)return;
+    if(!p){ alert('Position Engine ยังไม่ถูกสร้าง'); return; }
     p.style.setProperty('display','block','important');
-    p.classList.add('show','v5Show');
-    var y=p.offsetTop-20;
-    window.scrollTo({top:y,behavior:'auto'});
+    p.style.setProperty('visibility','visible','important');
+    p.style.setProperty('opacity','1','important');
+    p.setAttribute('tabindex','-1');
+    p.scrollIntoView({behavior:'auto',block:'start'});
+    setTimeout(function(){p.scrollIntoView({behavior:'auto',block:'start'});p.focus({preventScroll:true});},120);
   }
-  function bind(){
-    var nav=document.getElementById('v500StaticNav');
-    if(!nav)return;
-    var b=nav.querySelector('button[data-v5="position"]');
-    if(!b||b.dataset.v505==='1')return;
-    b.dataset.v505='1';
-    b.addEventListener('click',function(e){
-      e.preventDefault();e.stopImmediatePropagation();
+  function install(){
+    var nav=document.getElementById('v500StaticNav'); if(!nav)return;
+    var old=nav.querySelector('button[data-v5="position"]'); if(!old)return;
+    var b=old.cloneNode(true);
+    old.parentNode.replaceChild(b,old);
+    b.onclick=function(e){
+      e.preventDefault();
       nav.querySelectorAll('button[data-v5]').forEach(function(x){x.classList.remove('active')});
       b.classList.add('active');
-      jump();
-      setTimeout(jump,50);
-    },true);
+      go();
+      return false;
+    };
   }
-  bind();
-  setTimeout(bind,500);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
 </body>
