@@ -130,7 +130,7 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
 .v500SummaryBox span{display:block;font-size:11px;color:#9eb1c6}
 .v500SummaryBox b{display:block;margin-top:4px;font-size:17px}
 .v500Picks{display:grid;gap:8px;margin-top:12px}
-.v500Pick{display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;background:#10263c;border:1px solid #24425f;border-radius:13px;padding:10px}
+.v500Pick{display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;background:#10263c;border:1px solid #24425f;border-radius:13px;padding:10px;cursor:pointer;transition:.15s ease}.v500Pick:active{transform:scale(.985);background:#153a5b}.v500PickHint{font-size:10px;color:#7fa3c2;margin-top:2px}
 .v500PickRank{font-size:18px;font-weight:900;color:#9eb1c6}
 .v500PickTicker{font-size:18px;font-weight:900}
 .v500PickScore{text-align:right;font-size:18px;font-weight:900}
@@ -214,7 +214,7 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
     const e=document.getElementById(id);const t=(e&&e.textContent||'').trim();
     return t&&t!=='—'?t:fallback;
   }
-  function renderCommand(){
+  function v500OpenPick(index){\n    const cards=Array.from(document.querySelectorAll('#topPicks .pickCard'));\n    const card=cards[index];\n    if(!card)return;\n    card.click();\n    const topBtn=document.querySelector('.v500NavBtn[data-go="v500TopPick"]');\n    document.querySelectorAll('.v500NavBtn').forEach(x=>x.classList.remove('active'));\n    if(topBtn)topBtn.classList.add('active');\n    setTimeout(()=>{const confirm=document.getElementById('confirm');if(confirm)confirm.scrollIntoView({behavior:'smooth',block:'start'})},120);\n  }\n  window.v500OpenPick=v500OpenPick;\n  function renderCommand(){
     const m=document.getElementById('v500Market');
     const l=document.getElementById('v500Leader');
     const n=document.getElementById('v500Next');
@@ -232,7 +232,7 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
       p.innerHTML=cards.length?cards.map((c,i)=>{
         const ticker=(c.querySelector('.ticker')?.textContent||'').replace(/\s+/g,' ').trim();
         const score=(c.querySelector('.pickScore')?.textContent||'—').trim();
-        return '<div class="v500Pick"><div class="v500PickRank">'+(i+1)+'</div><div><div class="v500PickTicker">'+ticker+'</div><div class="small">Watch Score • ใช้เพื่อจัดลำดับเฝ้าดู</div></div><div class="v500PickScore">'+score+'</div></div>';
+        return '<div class="v500Pick" role="button" tabindex="0" onclick="v500OpenPick('+i+')" onkeydown="if(event.key===\\'Enter\\'||event.key===\\' \\'){event.preventDefault();v500OpenPick('+i+')}" aria-label="เปิด Final Confirmation อันดับ '+(i+1)+'"><div class="v500PickRank">'+(i+1)+'</div><div><div class="v500PickTicker">'+ticker+'</div><div class="small">Watch Score • ใช้เพื่อจัดลำดับเฝ้าดู</div><div class="v500PickHint">แตะเพื่อเปิด Final Confirmation →</div></div><div class="v500PickScore">'+score+'</div></div>';
       }).join(''):'<div class="small">Top Picks จะขึ้นหลังระบบคัดเสร็จ</div>';
     }
   }
