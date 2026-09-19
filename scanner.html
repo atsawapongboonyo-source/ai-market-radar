@@ -3900,16 +3900,16 @@ body.v5TabMode #v5CommandCard{display:block!important}
 <style id="v500StaticShell">
 body{padding-bottom:84px!important}
 #v500StaticNav{position:fixed;left:0;right:0;bottom:0;z-index:100000;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:7px 8px calc(7px + env(safe-area-inset-bottom));background:rgba(6,20,35,.98);border-top:1px solid #24425f}
-#v500StaticNav button{border:0!important;background:transparent!important;color:#91a9c1!important;padding:6px 2px!important;font-size:10px!important;font-weight:800!important}
-#v500StaticNav button b{display:block;font-size:19px;color:inherit}
-#v500StaticNav button.active{background:#153a5b!important;color:#fff!important;border-radius:12px!important}
+#v500StaticNav button,#v500StaticNav a{border:0!important;background:transparent!important;color:#91a9c1!important;padding:6px 2px!important;font-size:10px!important;font-weight:800!important}
+#v500StaticNav button b,#v500StaticNav a b{display:block;font-size:19px;color:inherit}
+#v500StaticNav button.active,#v500StaticNav a.active{background:#153a5b!important;color:#fff!important;border-radius:12px!important}
 .v500StaticBadge{display:inline-block;margin-top:7px;padding:5px 9px;border:1px solid #2f658e;border-radius:20px;background:#102b43;color:#bcd3e8;font-size:11px;font-weight:800}
 </style>
 <nav id="v500StaticNav">
 <button class="active" data-v5="home"><b>⌂</b>Home</button>
 <button data-v5="scanner"><b>⌕</b>Scanner</button>
 <button data-v5="top"><b>★</b>Top Pick</button>
-<button data-v5="position"><b>▣</b>Position</button>
+<a data-v5="position" href="#positionCard"><b>▣</b>Position</a>
 <button data-v5="theme"><b>◈</b>Theme</button>
 </nav>
 <script id="v500StaticShellScript">
@@ -6553,6 +6553,25 @@ if(v471PositionCard){
     };
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
+<style id="v507NativePositionLink">
+#v500StaticNav a{text-decoration:none!important;text-align:center!important;background:transparent!important;color:#91a9c1!important;padding:6px 2px!important;font-size:10px!important;font-weight:800!important}
+#positionCard{scroll-margin-top:18px}
+</style>
+<script id="v507NativePositionLink">
+(function(){
+ function install(){
+  var nav=document.getElementById('v500StaticNav'); if(!nav)return;
+  var a=nav.querySelector('a[data-v5="position"]'); if(!a)return;
+  a.addEventListener('click',function(){
+   nav.querySelectorAll('[data-v5]').forEach(function(x){x.classList.remove('active')});
+   a.classList.add('active');
+   var p=document.getElementById('positionCard');
+   if(p){p.classList.add('show','v5Show');p.style.setProperty('display','block','important');}
+  },true);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
 </script>
 </body>
