@@ -3855,11 +3855,14 @@ body.v5TabMode #v5CommandCard{display:block!important}
    if(k==='home'){show(home);show(cmd);show(card('Auto Context'));show(card('Theme Rotation'));show(card('Top Pick Engine'))}
    if(k==='scanner'){show(home);show(card('Candidate Ranking'));show(card('Explosive Movers Radar'))}
    if(k==='top'){show(home);show(card('Top Pick Engine'));show(card('Final Confirmation'));show(card('Opening Confirmation'))}
-   if(k==='position'){show(home);show(document.getElementById('positionCard')||card('Position Engine'))}
-   if(k==='theme'){show(home);show(card('Auto Context'));show(card('Theme Rotation'))}
+   var target=null;
+   if(k==='position'){target=document.getElementById('positionCard')||card('Position Engine');show(target)}
+   if(k==='theme'){target=document.getElementById('v410ThemeCard')||card('Theme Rotation');show(card('Auto Context'));show(target)}
    document.querySelectorAll('#v500StaticNav button').forEach(function(x){x.classList.remove('active')});
    if(btn)btn.classList.add('active');
-   window.scrollTo({top:0,behavior:'smooth'});
+   var scrollTarget=target||(k==='home'?home:(k==='scanner'?card('Candidate Ranking'):(k==='top'?card('Top Pick Engine'):null)));
+   if(scrollTarget)setTimeout(function(){scrollTarget.scrollIntoView({behavior:'smooth',block:'start'})},30);
+   else window.scrollTo({top:0,behavior:'smooth'});
  }
  function init(){
    var nav=document.getElementById('v500StaticNav');if(!nav)return;
@@ -3900,7 +3903,7 @@ body{padding-bottom:84px!important}
    Object.keys(m).forEach(function(k){if(m[k])m[k].id='v5-'+k});
  }
  function go(k,btn){var el=document.getElementById('v5-'+k);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('#v500StaticNav button').forEach(function(x){x.classList.remove('active')});btn.classList.add('active')}
- document.querySelectorAll('#v500StaticNav button').forEach(function(btn){btn.addEventListener('click',function(){go(btn.dataset.v5,btn)})});
+ /* Navigation is owned by v502TabsScript. Do not attach a second click handler here. */
  apply();setTimeout(apply,1200);setTimeout(apply,3000);
 })();
 </script>
