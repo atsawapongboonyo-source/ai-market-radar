@@ -3985,31 +3985,7 @@ body{padding-bottom:84px!important}
 
 </body> -->
 
-<script id="v504PositionNavLateFix">
-/* Loaded AFTER the V4.7 Position Engine exists. */
-(function(){
-  function install(){
-    var nav=document.getElementById('v500StaticNav');
-    if(!nav)return;
-    nav.addEventListener('click',function(e){
-      var b=e.target.closest('button[data-v5="position"]');
-      if(!b)return;
-      e.preventDefault(); e.stopImmediatePropagation();
-      var p=document.getElementById('positionCard');
-      if(!p && typeof v47CreatePositionUI==='function'){v47CreatePositionUI();p=document.getElementById('positionCard');}
-      if(!p)return;
-      nav.querySelectorAll('button[data-v5]').forEach(function(x){x.classList.remove('active')});
-      b.classList.add('active');
-      p.style.setProperty('display','block','important');
-      p.classList.add('show','v5Show');
-      var y=p.getBoundingClientRect().top+window.scrollY-16;
-      window.scrollTo(0,y);
-      setTimeout(function(){window.scrollTo(0,p.getBoundingClientRect().top+window.scrollY-16)},100);
-    },true);
-  }
-  install();
-})();
-</script>
+
 <!-- ===================================================== -->
 
 <style>
@@ -6545,6 +6521,37 @@ if(v471PositionCard){
     setPmWorkflow();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+  setTimeout(bind,500);
+})();
+</script>
+
+<script id="v505PositionNavFinalFix">
+/* Position nav: installed at the TRUE end of document, after V4.7 UI exists. */
+(function(){
+  function jump(){
+    var p=document.getElementById('positionCard');
+    if(!p && typeof v47CreatePositionUI==='function'){v47CreatePositionUI();p=document.getElementById('positionCard');}
+    if(!p)return;
+    p.style.setProperty('display','block','important');
+    p.classList.add('show','v5Show');
+    var y=p.offsetTop-20;
+    window.scrollTo({top:y,behavior:'auto'});
+  }
+  function bind(){
+    var nav=document.getElementById('v500StaticNav');
+    if(!nav)return;
+    var b=nav.querySelector('button[data-v5="position"]');
+    if(!b||b.dataset.v505==='1')return;
+    b.dataset.v505='1';
+    b.addEventListener('click',function(e){
+      e.preventDefault();e.stopImmediatePropagation();
+      nav.querySelectorAll('button[data-v5]').forEach(function(x){x.classList.remove('active')});
+      b.classList.add('active');
+      jump();
+      setTimeout(jump,50);
+    },true);
+  }
+  bind();
   setTimeout(bind,500);
 })();
 </script>
