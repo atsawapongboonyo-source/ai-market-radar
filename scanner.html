@@ -3982,49 +3982,34 @@ body{padding-bottom:84px!important}
 </script>
 
 
-<script id="v503PositionNavHardFix">
-/* V5.0.3 mobile nav hard-fix: native anchor-style Position navigation.
-   Runs in capture phase so older V5/V4 click handlers cannot override it. */
+
+</body> -->
+
+<script id="v504PositionNavLateFix">
+/* Loaded AFTER the V4.7 Position Engine exists. */
 (function(){
-  function ensurePosition(){
-    var p=document.getElementById('positionCard');
-    if(!p && typeof v47CreatePositionUI==='function'){
-      try{v47CreatePositionUI();}catch(e){}
-      p=document.getElementById('positionCard');
-    }
-    return p;
-  }
-  function jumpPosition(){
-    var p=ensurePosition();
-    if(!p)return false;
-    p.classList.add('show','v5Show');
-    p.style.setProperty('display','block','important');
-    p.setAttribute('data-v5-target','position');
-    /* Native hash jump is intentionally used as Android Chrome fallback. */
-    if(history.replaceState) history.replaceState(null,'','#positionCard');
-    p.scrollIntoView({block:'start'});
-    return true;
-  }
   function install(){
     var nav=document.getElementById('v500StaticNav');
-    if(!nav||nav.dataset.positionHardFix==='1')return;
-    nav.dataset.positionHardFix='1';
+    if(!nav)return;
     nav.addEventListener('click',function(e){
       var b=e.target.closest('button[data-v5="position"]');
       if(!b)return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
+      e.preventDefault(); e.stopImmediatePropagation();
+      var p=document.getElementById('positionCard');
+      if(!p && typeof v47CreatePositionUI==='function'){v47CreatePositionUI();p=document.getElementById('positionCard');}
+      if(!p)return;
       nav.querySelectorAll('button[data-v5]').forEach(function(x){x.classList.remove('active')});
       b.classList.add('active');
-      jumpPosition();
+      p.style.setProperty('display','block','important');
+      p.classList.add('show','v5Show');
+      var y=p.getBoundingClientRect().top+window.scrollY-16;
+      window.scrollTo(0,y);
+      setTimeout(function(){window.scrollTo(0,p.getBoundingClientRect().top+window.scrollY-16)},100);
     },true);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
-  setTimeout(install,600);
-  setTimeout(install,2000);
+  install();
 })();
 </script>
-</body> -->
 <!-- ===================================================== -->
 
 <style>
