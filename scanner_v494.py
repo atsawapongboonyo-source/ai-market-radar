@@ -154,6 +154,12 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
     let el=document.getElementById(id);
     if(!el && id==='v500Theme') el=document.getElementById('v410ThemeCard') || cardForHeading('Theme Rotation');
     if(!el && id==='v500Position') el=document.getElementById('positionCard') || cardForHeading('Position Engine');
+    /* Position Engine is created later by legacy inline JS. If it is not in
+       the DOM yet, create it now, then resolve the target again. */
+    if(!el && id==='v500Position' && typeof window.v47CreatePositionUI==='function'){
+      try{window.v47CreatePositionUI()}catch(e){}
+      el=document.getElementById('positionCard') || cardForHeading('Position Engine');
+    }
     if(el){
       const y=Math.max(0,el.getBoundingClientRect().top + window.pageYOffset - 18);
       window.scrollTo({top:y,behavior:'smooth'});
@@ -199,7 +205,12 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
     targetId(cardForHeading('Top Pick Engine'),'v500TopPick');
     /* Position is injected by legacy extension and does not consistently keep
        positionCard. Resolve by heading as a fallback. */
-    targetId(document.getElementById('positionCard') || cardForHeading('Position Engine'),'v500Position');
+    const positionCard=document.getElementById('positionCard') || cardForHeading('Position Engine');
+    if(positionCard){
+      /* Keep legacy positionCard id because V4.7 logic depends on it.
+         Navigation resolves this live instead of renaming the element. */
+      positionCard.setAttribute('data-v500-target','position');
+    }
     /* Theme already owns v410ThemeCard, so targetId() intentionally refuses
        to rename it. Give the nav a stable alias by resolving the real card. */
     const themeCard=document.getElementById('v410ThemeCard') || cardForHeading('Theme Rotation');
