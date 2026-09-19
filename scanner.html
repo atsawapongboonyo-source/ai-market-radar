@@ -3909,7 +3909,7 @@ body{padding-bottom:84px!important}
 <button class="active" data-v5="home"><b>⌂</b>Home</button>
 <button data-v5="scanner"><b>⌕</b>Scanner</button>
 <button data-v5="top"><b>★</b>Top Pick</button>
-<a data-v5="position" href="#positionCard"><b>▣</b>Position</a>
+<a data-v5="position" href="#positionNavAnchor"><b>▣</b>Position</a>
 <button data-v5="theme"><b>◈</b>Theme</button>
 </nav>
 <script id="v500StaticShellScript">
@@ -6559,6 +6559,7 @@ if(v471PositionCard){
 #v500StaticNav a{text-decoration:none!important;text-align:center!important;background:transparent!important;color:#91a9c1!important;padding:6px 2px!important;font-size:10px!important;font-weight:800!important}
 #positionCard{scroll-margin-top:18px}
 </style>
+<div id="positionNavAnchor" style="scroll-margin-top:18px;height:1px"></div>
 <script id="v507NativePositionLink">
 (function(){
  function install(){
@@ -6572,6 +6573,28 @@ if(v471PositionCard){
   },true);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})();
+</script>
+<script id="v508PositionPortal">
+(function(){
+ function movePosition(){
+   var a=document.getElementById('positionNavAnchor'), p=document.getElementById('positionCard');
+   if(!a||!p)return false;
+   if(p.previousElementSibling!==a)a.insertAdjacentElement('afterend',p);
+   return true;
+ }
+ function install(){
+   movePosition();
+   var nav=document.getElementById('v500StaticNav'); if(!nav)return;
+   var a=nav.querySelector('[data-v5="position"]'); if(!a)return;
+   a.setAttribute('href','#positionNavAnchor');
+   a.addEventListener('click',function(){
+     movePosition();
+     setTimeout(function(){location.hash='positionNavAnchor';},0);
+   },true);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+ setTimeout(movePosition,500);setTimeout(movePosition,1800);
 })();
 </script>
 </body>
