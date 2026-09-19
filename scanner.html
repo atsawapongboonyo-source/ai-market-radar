@@ -636,6 +636,18 @@ button:disabled{
 .v5OpeningStateBar span{display:block;color:#8fa9c1;font-size:10px;font-weight:800;margin-bottom:5px}
 .v5OpeningStateBar b{font-size:15px;line-height:1.4}
 
+
+/* V5.0.1 Compact Opening UX — presentation only */
+#openingCard .openingSteps{display:none!important}
+#openingCard .openingIntro,#openingCard .openingExplain{display:none!important}
+.v5OpeningCompactState{margin:10px 0 12px;padding:12px 14px;border:1px solid #2d628a;border-radius:14px;background:#102b43;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.v5OpeningCompactState small{display:block;color:#91a8bd;font-size:10px;font-weight:800;margin-bottom:3px}
+.v5OpeningCompactState b{font-size:15px}
+.v5OpeningCompactState .v5MiniFlow{font-size:10px;color:#91a8bd;text-align:right;line-height:1.35}
+.v5OpeningDetails{margin:10px 0 0}
+.v5OpeningDetails summary{cursor:pointer;color:#9fb4c8;font-size:11px;font-weight:800}
+.v5OpeningDetails div{margin-top:8px;color:#9fb4c8;font-size:11px;line-height:1.55}
+
 </style>
 </head>
 
@@ -1062,6 +1074,14 @@ V4.6
 </div>
 
 
+<div class="v5OpeningCompactState">
+  <div><small>OPENING STATUS</small><b id="v5OpeningCompactText">⚪ WATCH • รอตลาดเปิด</b></div>
+  <div class="v5MiniFlow">WATCH → CHECK<br>→ ARMED → ENTRY 1</div>
+</div>
+<details class="v5OpeningDetails">
+  <summary>ดูความหมายสถานะ Opening</summary>
+  <div>WATCH = รอตลาดเปิด • OPENING CHECK = กรอกข้อมูลช่วงเปิด • ARMED = Setup พร้อมรอ Trigger • ENTRY 1 = ผ่านเงื่อนไขระดับไม้แรก • INVALIDATED = โครงสร้างราคาไม่ผ่าน</div>
+</details>
 <div class="v5OpeningBox">
   <div class="v5OpeningTitle">🌅 Opening Check</div>
   <div class="v5OpeningHelp">หลังตลาดเปิด คัดลอกจาก Webull ตามลำดับ • Current → Open → Opening High → Opening Low • RV ใส่เมื่อมีข้อมูล</div>
@@ -3893,9 +3913,11 @@ body{padding-bottom:84px!important}
     const next=document.getElementById('v5OpeningNext');
     const step=document.getElementById('v5OpenStep');
     const globalNext=document.getElementById('v5DecisionNext');
+    const compact=document.getElementById('v5OpeningCompactText');
     if(!s||!next)return;
     const t=((state&&state.textContent)||'')+' '+(s.textContent||'');
     if(/INVALIDATED|🔴/.test(t)){
+      if(compact)compact.textContent='🔴 INVALIDATED • โครงสร้างไม่ผ่าน';
       next.textContent='โครงสร้าง Opening ไม่ผ่าน • งดเข้าใหม่และรอ Setup ใหม่';
       if(step)step.textContent='🔴 INVALIDATED';
       if(globalNext)globalNext.textContent='Opening ไม่ผ่าน • งดเข้าใหม่และรอ Setup ใหม่';
@@ -3904,10 +3926,12 @@ body{padding-bottom:84px!important}
       if(step)step.textContent='🟢 ENTRY 1';
       if(globalNext)globalNext.textContent='Opening ยืนยัน ENTRY 1 • ทำตามระดับราคาและ Position Guard';
     }else if(/ARMED/.test(t)){
+      if(compact)compact.textContent='🔵 ARMED • รอ Trigger';
       next.textContent='Setup ARMED • รอ Trigger/Confirmation ถัดไป ห้ามไล่ราคา';
       if(step)step.textContent='🔵 ARMED';
       if(globalNext)globalNext.textContent='Opening = ARMED • รอ Trigger ถัดไป';
     }else if(/WAIT|WATCH|รอ/.test(t)){
+      if(compact)compact.textContent='⚪ WATCH • รอ Opening Check';
       next.textContent='ยังไม่ยืนยัน Entry • เฝ้าดู Opening Structure และรอเงื่อนไขถัดไป';
       if(step)step.textContent='⚪ WAIT';
     }
