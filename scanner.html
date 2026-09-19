@@ -4779,6 +4779,32 @@ function v47SyncPositionPrice(){
    RENDER POSITION
 ======================================================== */
 
+function v5SyncPositionHero(x){
+  const card=document.getElementById("positionCard");
+  if(!card)return;
+  let hero=document.getElementById("v5PosHero");
+  if(!hero){
+    hero=document.createElement("div");
+    hero.id="v5PosHero";
+    hero.className="v5PosHero";
+    const grid=card.querySelector(".positionGrid");
+    if(grid)grid.insertAdjacentElement("beforebegin",hero);
+  }
+  const p=x.position||{}, lv=x.levels||{};
+  const state=x.label||x.state||"HOLD";
+  const add=x.add_allowed?"🟢 ADD ALLOWED":"🟡 ADD NOT YET";
+  hero.classList.add("show");
+  hero.innerHTML=
+    '<div class="v5PosHeroTop"><div><small>POSITION STATUS</small><b>'+state+'</b></div>'+
+    '<div style="text-align:right"><small>TICKER</small><b class="v5PosTicker">'+((selected&&selected.ticker)||"—")+'</b></div></div>'+
+    '<div class="v5PosQuick">'+
+      '<div><span>POSITION</span><strong>'+(p.shares==null?"—":Number(p.shares).toFixed(4).replace(/\\.?0+$/,"")+" @ "+fmt(p.avg_cost))+'</strong></div>'+
+      '<div><span>CURRENT</span><strong>'+fmt(p.price)+'</strong></div>'+
+      '<div><span>ADD STATUS</span><strong>'+add+'</strong></div>'+
+      '<div><span>ADD TRIGGER</span><strong>'+fmt(lv.add_trigger)+'</strong></div>'+
+    '</div>'+
+    '<div class="v5PosNext"><span>NEXT ACTION</span><strong>'+(x.next_step||"ติดตาม Position ตามแผน")+'</strong></div>';
+}
 function v47RenderPosition(x){
 
   const dash=
@@ -5008,8 +5034,33 @@ function v47RenderPosition(x){
     "HOLD"
   );
 
+  v5SyncPositionHero(x);
+
 }
 
+
+
+/* ========================================================
+   V5 POSITION COMMAND VIEW — presentation only
+======================================================== */
+.v5PosHero{display:none;margin:12px 0;padding:14px;border:1px solid #2d628a;border-radius:16px;background:#102b43}
+.v5PosHero.show{display:block}
+.v5PosHeroTop{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.v5PosHero small{display:block;color:#8fa9c1;font-size:10px;font-weight:900;margin-bottom:4px}
+.v5PosHero b{font-size:20px;line-height:1.25}
+.v5PosTicker{font-size:13px!important;color:#bcd3e8}
+.v5PosQuick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.v5PosQuick div{background:#112b43;border-radius:12px;padding:10px}
+.v5PosQuick span{display:block;color:#8fa9c1;font-size:10px;margin-bottom:3px}
+.v5PosQuick strong{font-size:15px}
+.v5PosNext{margin-top:10px;padding:12px;border:1px solid #3976a5;border-radius:13px;background:#123553}
+.v5PosNext span{display:block;color:#8fa9c1;font-size:10px;font-weight:900;margin-bottom:4px}
+.v5PosNext strong{font-size:14px;line-height:1.45}
+.positionCard .positionFlow{display:none!important}
+.positionCard > .status.info{display:none!important}
+.positionCard .positionGrid{grid-template-columns:1fr 1fr}
+.positionCard .positionGrid input{width:100%;box-sizing:border-box}
+@media(max-width:560px){.positionCard .positionGrid{grid-template-columns:1fr 1fr}}
 
 /* ========================================================
    POSITION REQUEST
