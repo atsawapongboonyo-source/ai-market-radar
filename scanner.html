@@ -610,6 +610,18 @@ button:disabled{
     font-size:25px
   }
 }
+
+/* V5 Premarket workflow */
+.v5PmBox{margin-top:14px;padding:14px;border:1px solid #2d5f86;border-radius:16px;background:#0d2740}
+.v5PmTitle{font-weight:900;font-size:16px;margin-bottom:4px}
+.v5PmHelp{font-size:11px;color:#9eb1c6;line-height:1.5;margin-bottom:12px}
+.v5PmFields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v5PmField{display:block}
+.v5PmField:first-child{grid-column:1/-1}
+.v5PmField span{display:block;font-size:10px;font-weight:800;color:#9eb1c6;margin:0 0 5px 2px}
+.v5PmField input{width:100%;box-sizing:border-box}
+.v5PmOptional{opacity:.8}
+@media(max-width:560px){.v5PmFields{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 
@@ -793,40 +805,24 @@ Auto Context ใช้ breadth ของหุ้นใน Watchlist เป็�
 ></div>
 
 
-<div class="gateGrid">
-
-  <input
-    id="price"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    placeholder="ราคาปัจจุบันจาก Webull"
-  >
-
-  <input
-    id="premarketPct"
-    type="text"
-    inputmode="decimal"
-    autocomplete="off"
-    placeholder="% Premarket เช่น +4.00 หรือ -2.50"
-  >
-
-  <input
-    id="relVolume"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    min="0"
-    placeholder="Relative Volume เช่น 1.35"
-  >
-
-</div>
-
-
-<div class="gateNote">
-% Premarket = เปลี่ยนแปลงจากราคาปิดก่อนหน้า
-•
-Relative Volume เว้นว่างได้
+<div class="v5PmBox">
+  <div class="v5PmTitle">🌙 Premarket Check</div>
+  <div class="v5PmHelp">คัดลอกจาก Webull แค่ราคา + % Premarket • Relative Volume ใส่เมื่อมีข้อมูล</div>
+  <div class="v5PmFields">
+    <label class="v5PmField">
+      <span>1 • ราคาปัจจุบันจาก WEBULL</span>
+      <input id="price" type="number" inputmode="decimal" step=".01" placeholder="เช่น 917.50">
+    </label>
+    <label class="v5PmField">
+      <span>2 • % PREMARKET</span>
+      <input id="premarketPct" type="text" inputmode="decimal" autocomplete="off" placeholder="เช่น +4.00 หรือ -2.50">
+    </label>
+    <label class="v5PmField v5PmOptional">
+      <span>3 • RV (ไม่บังคับ)</span>
+      <input id="relVolume" type="number" inputmode="decimal" step=".01" min="0" placeholder="เช่น 1.35">
+    </label>
+  </div>
+  <div class="gateNote">% Premarket เทียบราคาปิดก่อนหน้า • RV เว้นว่างได้</div>
 </div>
 
 
@@ -6350,5 +6346,42 @@ if(v471PositionCard){
 
 }
 
-</script></body>
+</script>
+<script>
+/* V5 Premarket status bridge — UI only; core V4.10 gate logic remains unchanged */
+(function(){
+  function setPmWorkflow(){
+    const gate=document.getElementById('gateResult');
+    const pm=document.getElementById('v5PmStep');
+    const next=document.getElementById('v5DecisionNext');
+    if(!gate||!pm||!next)return;
+    const t=(gate.textContent||'').trim();
+    if(/Block|BLOCK|🔴/.test(t)){
+      pm.textContent='🔴 BLOCK';
+      next.textContent='Premarket ไม่ผ่าน • งดเข้าใหม่และรอเงื่อนไขเปลี่ยน';
+    }else if(/HOT|ร้อน|🟠/.test(t)){
+      pm.textContent='🟠 HOT • ห้ามไล่';
+      next.textContent='Premarket ร้อน • รอราคา/Opening ยืนยัน ห้ามไล่ราคา';
+    }else if(/PASS|ผ่านแล้ว|ตรวจแล้ว|🟢/.test(t)){
+      pm.textContent='🟢 ผ่าน';
+      next.textContent='Premarket ผ่าน • รอ Opening Confirmation หลังตลาดเปิด';
+    }else if(/กำลังตรวจ|⏳/.test(t)){
+      pm.textContent='⏳ กำลังตรวจ';
+      next.textContent='กำลังประเมิน Premarket Gate';
+    }else{
+      pm.textContent='⚪ รอตรวจ';
+    }
+  }
+  function bind(){
+    const gate=document.getElementById('gateResult');
+    if(!gate||gate.dataset.v5PmBound)return;
+    gate.dataset.v5PmBound='1';
+    new MutationObserver(setPmWorkflow).observe(gate,{childList:true,subtree:true,characterData:true,attributes:true});
+    setPmWorkflow();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+  setTimeout(bind,500);
+})();
+</script>
+</body>
 </html>
