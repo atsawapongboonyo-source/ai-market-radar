@@ -3849,7 +3849,12 @@ body.v5TabMode #v5CommandCard{display:block!important}
    if(k==='home') return document.getElementById('v500Home')||document.getElementById('v5-home')||[].slice.call(document.querySelectorAll('.card')).find(function(x){return T(x).indexOf('วันนี้ดูตัวไหนก่อน')>=0});
    if(k==='scanner') return document.getElementById('v500Scanner')||document.getElementById('v5-scanner')||card('Candidate Ranking');
    if(k==='top') return document.getElementById('v500TopPick')||document.getElementById('v5-top')||card('Top Pick Engine');
-   if(k==='position') return document.getElementById('positionCard')||document.getElementById('v500Position')||document.getElementById('v5-position')||card('Position Engine');
+   if(k==='position'){
+     /* Position Engine is dynamically created by V4.7. Resolve it from its
+        unique input first so navigation survives any wrapper/id changes. */
+     var input=document.getElementById('positionShares');
+     return (input&&input.closest('.card,.openingCard'))||document.getElementById('positionCard')||document.getElementById('v500Position')||document.getElementById('v5-position')||card('Position Engine');
+   }
    if(k==='theme') return document.getElementById('v410ThemeCard')||document.getElementById('v500Theme')||document.getElementById('v5-theme')||card('Theme Rotation');
    return null;
  }
@@ -3898,8 +3903,11 @@ body{padding-bottom:84px!important}
    var hd=document.querySelector('.head > div:first-child');
    if(hd&&!document.getElementById('v500StaticBadge')){var b=document.createElement('div');b.id='v500StaticBadge';b.className='v500StaticBadge';b.textContent='V4.10 Logic Locked ✓';hd.appendChild(b)}
    var first=[].slice.call(document.querySelectorAll('.card')).find(function(x){return (x.textContent||'').indexOf('วันนี้ดูตัวไหนก่อน')>=0});if(first)first.id='v5-home';
-   var m={scanner:cardByText('Candidate Ranking'),top:cardByText('Top Pick Engine'),position:document.getElementById('positionCard'),theme:cardByText('Theme Rotation')};
+   var m={scanner:cardByText('Candidate Ranking'),top:cardByText('Top Pick Engine'),theme:cardByText('Theme Rotation')};
    Object.keys(m).forEach(function(k){if(m[k])m[k].id='v5-'+k});
+   /* Never rename positionCard: V4.7 Position Engine uses this exact id. */
+   var pos=document.getElementById('positionCard');
+   if(pos)pos.setAttribute('data-v5-target','position');
  }
  function go(k,btn){var el=document.getElementById('v5-'+k);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('#v500StaticNav button').forEach(function(x){x.classList.remove('active')});btn.classList.add('active')}
  /* Navigation is owned by v502TabsScript. Do not attach a second click handler here. */
