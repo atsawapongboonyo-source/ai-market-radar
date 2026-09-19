@@ -622,6 +622,20 @@ button:disabled{
 .v5PmField input{width:100%;box-sizing:border-box}
 .v5PmOptional{opacity:.8}
 @media(max-width:560px){.v5PmFields{grid-template-columns:1fr 1fr}}
+
+/* V5 Opening Workflow — UI only; V4.10 opening logic remains unchanged */
+.v5OpeningBox{margin-top:14px;padding:14px;border:1px solid #2d5f86;border-radius:16px;background:#0d2740}
+.v5OpeningTitle{font-weight:900;font-size:16px;margin-bottom:4px}
+.v5OpeningHelp{font-size:11px;color:#9eb1c6;line-height:1.5;margin-bottom:12px}
+.v5OpeningFields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v5OpeningField{display:block}
+.v5OpeningField span{display:block;font-size:10px;font-weight:800;color:#9eb1c6;margin:0 0 5px 2px}
+.v5OpeningField input{width:100%;box-sizing:border-box}
+.v5OpeningField.v5OpeningOptional{grid-column:1/-1;opacity:.8}
+.v5OpeningStateBar{margin-top:12px;padding:12px;border:1px solid #28577b;border-radius:14px;background:#102b43}
+.v5OpeningStateBar span{display:block;color:#8fa9c1;font-size:10px;font-weight:800;margin-bottom:5px}
+.v5OpeningStateBar b{font-size:15px;line-height:1.4}
+
 </style>
 </head>
 
@@ -1048,62 +1062,36 @@ V4.6
 </div>
 
 
-<div class="openingGrid">
-
-  <input
-    id="openingPrice"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    placeholder="ราคาปัจจุบัน"
-  >
-
-  <input
-    id="openPrice"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    placeholder="ราคา Open"
-  >
-
-  <input
-    id="openingHigh"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    placeholder="Opening High"
-  >
-
-  <input
-    id="openingLow"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    placeholder="Opening Low"
-  >
-
-</div>
-
-
-<div class="openingGrid">
-
-  <input
-    id="openingRV"
-    type="number"
-    inputmode="decimal"
-    step=".01"
-    min="0"
-    placeholder="Relative Volume (ถ้ามี)"
-  >
-
-</div>
-
-
-<div class="gateNote">
-Opening High / Low ใช้ช่วงเปิดตลาดที่คุณกำลังประเมิน
-เช่นช่วงแรกประมาณ 5–15 นาที
-•
-Relative Volume ยังเป็น Optional
+<div class="v5OpeningBox">
+  <div class="v5OpeningTitle">🌅 Opening Check</div>
+  <div class="v5OpeningHelp">หลังตลาดเปิด คัดลอกจาก Webull ตามลำดับ • Current → Open → Opening High → Opening Low • RV ใส่เมื่อมีข้อมูล</div>
+  <div class="v5OpeningFields">
+    <label class="v5OpeningField">
+      <span>1 • CURRENT</span>
+      <input id="openingPrice" type="number" inputmode="decimal" step=".01" placeholder="เช่น 917.50">
+    </label>
+    <label class="v5OpeningField">
+      <span>2 • OPEN</span>
+      <input id="openPrice" type="number" inputmode="decimal" step=".01" placeholder="เช่น 918.20">
+    </label>
+    <label class="v5OpeningField">
+      <span>3 • OPENING HIGH</span>
+      <input id="openingHigh" type="number" inputmode="decimal" step=".01" placeholder="เช่น 925.00">
+    </label>
+    <label class="v5OpeningField">
+      <span>4 • OPENING LOW</span>
+      <input id="openingLow" type="number" inputmode="decimal" step=".01" placeholder="เช่น 914.80">
+    </label>
+    <label class="v5OpeningField v5OpeningOptional">
+      <span>5 • RV (ไม่บังคับ)</span>
+      <input id="openingRV" type="number" inputmode="decimal" step=".01" min="0" placeholder="เช่น 1.50">
+    </label>
+  </div>
+  <div class="gateNote">Opening High / Low ใช้ช่วงเปิดตลาดที่กำลังประเมิน เช่นประมาณ 5–15 นาที • RV เว้นว่างได้</div>
+  <div class="v5OpeningStateBar">
+    <span>NEXT ACTION</span>
+    <b id="v5OpeningNext">กรอก Current + Open + High + Low แล้วกดตรวจ Opening Confirmation</b>
+  </div>
 </div>
 
 
@@ -3892,6 +3880,50 @@ body{padding-bottom:84px!important}
  function go(k,btn){var el=document.getElementById('v5-'+k);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});document.querySelectorAll('#v500StaticNav button').forEach(function(x){x.classList.remove('active')});btn.classList.add('active')}
  document.querySelectorAll('#v500StaticNav button').forEach(function(btn){btn.addEventListener('click',function(){go(btn.dataset.v5,btn)})});
  apply();setTimeout(apply,1200);setTimeout(apply,3000);
+})();
+</script>
+
+
+<script>
+/* V5 Opening status bridge — presentation only */
+(function(){
+  function syncV5Opening(){
+    const s=document.getElementById('openingStatus');
+    const state=document.getElementById('openingState');
+    const next=document.getElementById('v5OpeningNext');
+    const step=document.getElementById('v5OpenStep');
+    const globalNext=document.getElementById('v5DecisionNext');
+    if(!s||!next)return;
+    const t=((state&&state.textContent)||'')+' '+(s.textContent||'');
+    if(/INVALIDATED|🔴/.test(t)){
+      next.textContent='โครงสร้าง Opening ไม่ผ่าน • งดเข้าใหม่และรอ Setup ใหม่';
+      if(step)step.textContent='🔴 INVALIDATED';
+      if(globalNext)globalNext.textContent='Opening ไม่ผ่าน • งดเข้าใหม่และรอ Setup ใหม่';
+    }else if(/ENTRY\s*1|ENTRY1/.test(t)){
+      next.textContent='Opening ผ่านระดับ ENTRY 1 • ตรวจราคาเทียบ Buy Zone และ Position Guard ก่อนดำเนินการ';
+      if(step)step.textContent='🟢 ENTRY 1';
+      if(globalNext)globalNext.textContent='Opening ยืนยัน ENTRY 1 • ทำตามระดับราคาและ Position Guard';
+    }else if(/ARMED/.test(t)){
+      next.textContent='Setup ARMED • รอ Trigger/Confirmation ถัดไป ห้ามไล่ราคา';
+      if(step)step.textContent='🔵 ARMED';
+      if(globalNext)globalNext.textContent='Opening = ARMED • รอ Trigger ถัดไป';
+    }else if(/WAIT|WATCH|รอ/.test(t)){
+      next.textContent='ยังไม่ยืนยัน Entry • เฝ้าดู Opening Structure และรอเงื่อนไขถัดไป';
+      if(step)step.textContent='⚪ WAIT';
+    }
+  }
+  function bind(){
+    ['openingStatus','openingState'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el&&!el.dataset.v5OpeningBound){
+        el.dataset.v5OpeningBound='1';
+        new MutationObserver(syncV5Opening).observe(el,{childList:true,subtree:true,characterData:true,attributes:true});
+      }
+    });
+    syncV5Opening();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+  setTimeout(bind,500);
 })();
 </script>
 
