@@ -232,7 +232,7 @@ body{padding-bottom:calc(var(--v5nav-h) + env(safe-area-inset-bottom))}
       p.innerHTML=cards.length?cards.map((c,i)=>{
         const ticker=(c.querySelector('.ticker')?.textContent||'').replace(/\s+/g,' ').trim();
         const score=(c.querySelector('.pickScore')?.textContent||'—').trim();
-        return '<div class="v500Pick" role="button" tabindex="0" onclick="v500OpenPick('+i+')" onkeydown="if(event.key===\\'Enter\\'||event.key===\\' \\'){event.preventDefault();v500OpenPick('+i+')}" aria-label="เปิด Final Confirmation อันดับ '+(i+1)+'"><div class="v500PickRank">'+(i+1)+'</div><div><div class="v500PickTicker">'+ticker+'</div><div class="small">Watch Score • ใช้เพื่อจัดลำดับเฝ้าดู</div><div class="v500PickHint">แตะเพื่อเปิด Final Confirmation →</div></div><div class="v500PickScore">'+score+'</div></div>';
+        return '<div class="v500Pick" role="button" tabindex="0" onclick="v500OpenPick('+i+')" aria-label="เปิด Final Confirmation อันดับ '+(i+1)+'"><div class="v500PickRank">'+(i+1)+'</div><div><div class="v500PickTicker">'+ticker+'</div><div class="small">Watch Score • ใช้เพื่อจัดลำดับเฝ้าดู</div><div class="v500PickHint">แตะเพื่อเปิด Final Confirmation →</div></div><div class="v500PickScore">'+score+'</div></div>';
       }).join(''):'<div class="small">Top Picks จะขึ้นหลังระบบคัดเสร็จ</div>';
     }
   }
