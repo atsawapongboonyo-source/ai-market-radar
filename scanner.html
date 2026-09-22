@@ -6532,5 +6532,81 @@ if(v471PositionCard){
 
 
 
+
+<style id="v510PositionPanelStyle">
+#v510PositionPanel{display:none;position:fixed;inset:0;z-index:250000;background:#061423;overflow-y:auto;padding:14px 14px 110px}
+#v510PositionPanel.open{display:block!important}
+#v510PositionPanel .v510Head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;background:#061423;padding:4px 0 12px}
+#v510PositionPanel .v510Head strong{font-size:22px;color:#eef6ff}
+#v510PositionPanel .v510Close{width:auto!important;padding:10px 16px!important;border-radius:12px!important;background:#153a5b!important;color:#fff!important}
+#v510PositionMount>#positionCard{display:block!important;visibility:visible!important;opacity:1!important;margin:0!important}
+body.v510PositionOpen{overflow:hidden!important}
+</style>
+<div id="v510PositionPanel">
+  <div class="v510Head"><strong>▣ Position Engine</strong><button type="button" class="v510Close" id="v510PositionClose">✕ ปิด</button></div>
+  <div id="v510PositionMount"></div>
+</div>
+<script id="v510PositionPanelScript">
+(function(){
+  var originalParent=null, originalNext=null;
+  function ensurePosition(){
+    var p=document.getElementById('positionCard');
+    if(!p && typeof v47CreatePositionUI==='function'){
+      try{v47CreatePositionUI()}catch(e){}
+      p=document.getElementById('positionCard');
+    }
+    return p;
+  }
+  function openPosition(e){
+    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
+    var panel=document.getElementById('v510PositionPanel');
+    var mount=document.getElementById('v510PositionMount');
+    var p=ensurePosition();
+    if(!panel||!mount||!p)return false;
+    if(p.parentNode!==mount){
+      originalParent=p.parentNode;
+      originalNext=p.nextSibling;
+      mount.appendChild(p);
+    }
+    p.classList.add('show','v5Show');
+    p.style.setProperty('display','block','important');
+    panel.classList.add('open');
+    document.body.classList.add('v510PositionOpen');
+    panel.scrollTop=0;
+    var nav=document.getElementById('v500StaticNav');
+    if(nav){
+      nav.querySelectorAll('[data-v5]').forEach(function(x){x.classList.remove('active')});
+      var b=nav.querySelector('[data-v5="position"]');if(b)b.classList.add('active');
+    }
+    return false;
+  }
+  function closePosition(){
+    var panel=document.getElementById('v510PositionPanel');
+    var p=document.getElementById('positionCard');
+    if(p&&originalParent){
+      try{originalParent.insertBefore(p,originalNext)}catch(e){originalParent.appendChild(p)}
+    }
+    if(panel)panel.classList.remove('open');
+    document.body.classList.remove('v510PositionOpen');
+  }
+  function wire(){
+    var nav=document.getElementById('v500StaticNav');
+    var b=nav&&nav.querySelector('[data-v5="position"]');
+    if(b&&!b.dataset.v510){
+      b.dataset.v510='1';
+      b.addEventListener('click',openPosition,true);
+    }
+    var close=document.getElementById('v510PositionClose');
+    if(close&&!close.dataset.v510){
+      close.dataset.v510='1';
+      close.addEventListener('click',closePosition);
+    }
+  }
+  window.v510OpenPosition=openPosition;
+  window.v510ClosePosition=closePosition;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});else wire();
+  setTimeout(wire,500);setTimeout(wire,1800);
+})();
+</script>
 </body>
 </html>
