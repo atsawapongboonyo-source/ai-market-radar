@@ -244,7 +244,10 @@ def _secondary_reorder_research(records):
 
 
 def _rotation_quality_research(records):
-    rotation = [x for x in records if x.get("focus_type") == "ROTATION_WATCH"]
+    rotation = [
+        x for x in records
+        if x.get("focus_type") in {"ROTATION_WATCH", "ROTATION_MONITOR"}
+    ]
 
     def pack(rows):
         return {

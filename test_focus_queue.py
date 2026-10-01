@@ -18,7 +18,8 @@ class FocusQueueTests(unittest.TestCase):
         self.assertEqual(rows[0]["key"], "cybersecurity")
         self.assertEqual(rows[0]["focus_type"], "CURRENT_LEADER")
         self.assertEqual(rows[1]["key"], "robotics")
-        self.assertEqual(rows[1]["focus_type"], "ROTATION_WATCH")
+        self.assertEqual(rows[1]["focus_type"], "NEXT_RANKED")
+        self.assertEqual(rows[2]["key"], "quantum")
 
     def test_queue_has_no_duplicates_and_max_three(self):
         radar = {
@@ -33,6 +34,9 @@ class FocusQueueTests(unittest.TestCase):
         self.assertEqual(len(rows), 3)
         self.assertEqual(len({x["key"] for x in rows}), 3)
         self.assertEqual(rows[1]["key"], "robotics")
+        self.assertEqual(rows[1]["focus_type"], "NEXT_RANKED")
+        self.assertEqual(rows[2]["key"], "quantum")
+        self.assertEqual(rows[2]["focus_type"], "ROTATION_MONITOR")
 
     def test_stock_focus_marks_confirmation(self):
         payload = {

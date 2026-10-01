@@ -12,7 +12,10 @@ def _theme_map(radar):
 
 
 def _candidate_keys(radar):
-    themes = list(radar.get("themes", []))
+    themes = sorted(
+        list(radar.get("themes", [])),
+        key=lambda x: x.get("rank", 99),
+    )
     if not themes:
         return []
 
@@ -25,20 +28,47 @@ def _candidate_keys(radar):
         "reason": "อันดับ 1 ของ Multi-Radar ตอนนี้",
     })
 
+    next_ranked = next(
+        (row for row in themes if row["key"] != leader["key"]),
+        None,
+    )
+    if next_ranked:
+        is_rotation = next_ranked.get("state") in {"EARLY_ROTATION", "ACCELERATING"}
+        selected.append({
+            "key": next_ranked["key"],
+            "focus_type": "NEXT_RANKED",
+            "focus_label": "Next Ranked Theme",
+            "reason": (
+                f'อันดับ {next_ranked.get("rank")} ของ Multi-Radar • '
+                f'{next_ranked.get("state_label")}'
+                + (" • Rotation state" if is_rotation else "")
+            ),
+        })
+
     transition = [
         row for row in themes
         if row.get("state") in {"EARLY_ROTATION", "ACCELERATING"}
-        and row["key"] != leader["key"]
+        and not any(x["key"] == row["key"] for x in selected)
     ]
-    transition.sort(key=lambda x: (x.get("rank", 99), -float(x.get("score_change_5d") or 0)))
-    if transition:
+    transition.sort(
+        key=lambda x: (
+            x.get("rank", 99),
+            -float(x.get("score_change_5d") or 0),
+        )
+    )
+    if transition and len(selected) < 3:
         row = transition[0]
         selected.append({
             "key": row["key"],
-            "focus_type": "ROTATION_WATCH",
-            "focus_label": "Rotation Watch",
-            "reason": f'{row.get("state_label")} • 5D {row.get("score_change_5d", 0):+.1f} • Rank5 {row.get("rank_change_5d", 0):+d}',
+            "focus_type": "ROTATION_MONITOR",
+            "focus_label": "Rotation Monitor",
+            "reason": (
+                f'{row.get("state_label")} • 5D '
+                f'{row.get("score_change_5d", 0):+.1f} • '
+                f'Rank5 {row.get("rank_change_5d", 0):+d}'
+            ),
         })
+
     for row in themes:
         if len(selected) >= 3:
             break
@@ -47,7 +77,7 @@ def _candidate_keys(radar):
         selected.append({
             "key": row["key"],
             "focus_type": "RANK_BACKUP",
-            "focus_label": "Next Ranked Theme",
+            "focus_label": "Rank Backup",
             "reason": f'อันดับ {row.get("rank")} ของ Multi-Radar • {row.get("state_label")}',
         })
 

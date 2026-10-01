@@ -86,3 +86,12 @@ Pre-merge hardening
 - Focus Queue now degrades per-theme: if one Stock Leader data request fails, the remaining queue still renders and only that theme reports Stock Leader data unavailable.
 - Focus Validation is on-demand and production-capped to 220 sessions; longer 2-3 year stress tests remain offline research only.
 - Focus #1 is presented as PRIMARY FOCUS; #2 and #3 are SECONDARY WATCH. This is attention priority, not a buy recommendation.
+
+Focus Queue priority policy after long-window validation
+- Priority #1 remains CURRENT_LEADER.
+- Priority #2 is now NEXT_RANKED by Multi-Radar rank; Rotation state alone no longer jumps ahead of rank #2.
+- Priority #3 is ROTATION_MONITOR when a distinct EARLY_ROTATION / ACCELERATING theme exists; otherwise it is RANK_BACKUP.
+- A rank #2 theme that is itself in a rotation state remains Priority #2 and is annotated as such; it is not duplicated in Priority #3.
+- In the 5-year stress sample using non-overlapping 5-session windows, CURRENT_LEADER remained the strongest attention bucket: theme excess versus QQQ averaged +0.28%, selected stock excess averaged +1.96%, and qualified stock leaders averaged +2.34%.
+- Rotation states remain useful as monitoring context, but the longer sample did not justify automatically promoting Rotation Watch above the next-ranked theme.
+- These are research diagnostics with current-universe / survivorship limitations, not trading-performance guarantees.
