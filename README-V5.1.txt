@@ -95,3 +95,10 @@ Focus Queue priority policy after long-window validation
 - In the 5-year stress sample using non-overlapping 5-session windows, CURRENT_LEADER remained the strongest attention bucket: theme excess versus QQQ averaged +0.28%, selected stock excess averaged +1.96%, and qualified stock leaders averaged +2.34%.
 - Rotation states remain useful as monitoring context, but the longer sample did not justify automatically promoting Rotation Watch above the next-ranked theme.
 - These are research diagnostics with current-universe / survivorship limitations, not trading-performance guarantees.
+
+Release-candidate runtime audit
+- Local cold latency: /scanner ~0.03s, Multi-Radar ~3.2s, Theme Stock Leader ~0.38s, Focus Queue ~3.73s.
+- Cached live endpoints returned effectively immediately in the local test.
+- Research-only cold latency at 220 sessions: Multi-Radar Research ~13.9s and Focus Queue Research ~17.9s; cached calls returned effectively immediately.
+- Research endpoints remain manual/on-demand and are not part of page boot.
+- render.yaml keeps the existing service plan and entrypoint but adds gunicorn --timeout 60 as safety margin for research requests; live decision logic is unchanged.
