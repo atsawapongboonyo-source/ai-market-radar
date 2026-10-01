@@ -30,17 +30,54 @@ def safe_float(v):
         return None
 
 
-def flatten_columns(df):
+def flatten_columns(df, ticker=None):
+    if not isinstance(df, pd.DataFrame):
+        return df
+
+    price_names = {"Open", "High", "Low", "Close", "Adj Close", "Volume"}
     if isinstance(df.columns, pd.MultiIndex):
-        level0 = list(df.columns.get_level_values(0))
-        level1 = list(df.columns.get_level_values(1))
-        price_names = {"Open", "High", "Low", "Close", "Adj Close", "Volume"}
-        if any(x in price_names for x in level0):
-            df = df.copy()
-            df.columns = df.columns.get_level_values(0)
-        elif any(x in price_names for x in level1):
-            df = df.copy()
-            df.columns = df.columns.get_level_values(1)
+        df = df.copy()
+        levels = [list(df.columns.get_level_values(i)) for i in range(df.columns.nlevels)]
+        price_level = next(
+            (i for i, values in enumerate(levels) if any(x in price_names for x in values)),
+            None,
+        )
+
+        if price_level is not None:
+            other_levels = [i for i in range(df.columns.nlevels) if i != price_level]
+            selected = df
+
+            if ticker and other_levels:
+                target = str(ticker).strip().upper()
+                matched = False
+                for level in other_levels:
+                    values = df.columns.get_level_values(level)
+                    mask = [str(v).strip().upper() == target for v in values]
+                    if any(mask):
+                        selected = df.loc[:, mask].copy()
+                        matched = True
+                        break
+
+                # Single-ticker requests should never mix another symbol's columns.
+                # If Yahoo changes shape and we cannot identify the requested ticker,
+                # keep the frame untouched so validation below fails loudly instead
+                # of silently calculating indicators from the wrong symbol.
+                if not matched:
+                    unique_other = {
+                        str(v).strip().upper()
+                        for level in other_levels
+                        for v in df.columns.get_level_values(level)
+                        if str(v).strip()
+                    }
+                    if len(unique_other) > 1:
+                        return df
+
+            selected.columns = selected.columns.get_level_values(price_level)
+            df = selected
+
+    if df.columns.duplicated().any():
+        df = df.loc[:, ~df.columns.duplicated()].copy()
+
     return df
 
 
@@ -83,7 +120,7 @@ def download_history(ticker, period="1y"):
             threads=False,
             timeout=15,
         )
-        data = flatten_columns(data)
+        data = flatten_columns(data, ticker)
         if data is not None and not data.empty:
             _HISTORY_CACHE[cache_key] = (now, data.copy())
             return data
@@ -97,14 +134,14 @@ def download_history(ticker, period="1y"):
             auto_adjust=False,
             timeout=15,
         )
-        data = flatten_columns(data)
+        data = flatten_columns(data, ticker)
         if data is not None and not data.empty:
             _HISTORY_CACHE[cache_key] = (now, data.copy())
             return data
     except TypeError:
         try:
             data = yf.Ticker(ticker).history(period=period, interval="1d", auto_adjust=False)
-            data = flatten_columns(data)
+            data = flatten_columns(data, ticker)
             if data is not None and not data.empty:
                 _HISTORY_CACHE[cache_key] = (now, data.copy())
                 return data
