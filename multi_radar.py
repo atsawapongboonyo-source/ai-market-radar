@@ -159,13 +159,44 @@ def _score_theme(data, benchmark, theme, end=None):
     }
 
 
-def _state(score, rank, acceleration):
-    if rank == 1 and score >= 12:
+def _transition_metrics(key, history):
+    points = []
+    for day in history:
+        row = next((x for x in day.get("ranking", []) if x.get("key") == key), None)
+        if row:
+            points.append({"score": float(row["score"]), "rank": int(row["rank"])})
+    if not points:
+        return {"score_change_1d": 0.0, "score_change_5d": 0.0, "rank_change_5d": 0}
+
+    latest = points[-1]
+    prev = points[-2] if len(points) >= 2 else latest
+    base5 = points[-6] if len(points) >= 6 else points[0]
+    return {
+        "score_change_1d": round(latest["score"] - prev["score"], 1),
+        "score_change_5d": round(latest["score"] - base5["score"], 1),
+        "rank_change_5d": int(base5["rank"] - latest["rank"]),
+    }
+
+
+def _state(score, rank, metrics):
+    d1 = float(metrics.get("score_change_1d") or 0)
+    d5 = float(metrics.get("score_change_5d") or 0)
+    rank5 = int(metrics.get("rank_change_5d") or 0)
+
+    if rank == 1 and score >= 12 and d5 >= -4:
         return "LEADING", "Leading"
-    if score >= 12 and acceleration > 2:
+    if score >= 8 and d5 <= -6:
+        return "COOLING", "Cooling"
+    if score >= 8 and (d1 >= 2 or d5 >= 6) and d5 > -6 and rank <= 4:
         return "ACCELERATING", "Accelerating"
+    if score < 12 and d5 >= 8 and rank5 >= 1 and rank <= 4:
+        return "EARLY_ROTATION", "Early Rotation"
+    if score <= -12 and d5 > 8 and rank5 >= 1:
+        return "EARLY_ROTATION", "Early Rotation"
     if score <= -12:
         return "LAGGING", "Lagging"
+    if d5 <= -8 and rank5 <= -1:
+        return "COOLING", "Cooling"
     return "NEUTRAL", "Neutral"
 
 
@@ -204,10 +235,7 @@ def build_multi_radar(force=False):
     config = _load_config()
     data = _download(config)
     benchmark = config["benchmark"]
-    previous = {}
     hist = _history(data, config, sessions=15)
-    if len(hist) >= 2:
-        previous = {x["key"]: x["score"] for x in hist[-2]["ranking"]}
 
     themes = []
     for key, theme in config["themes"].items():
@@ -215,21 +243,33 @@ def build_multi_radar(force=False):
         if not scored:
             continue
         scored.update({"key": key, "label": theme["label"]})
-        scored["acceleration"] = round(scored["score"] - previous.get(key, scored["score"]), 1)
         themes.append(scored)
 
     themes.sort(key=lambda x: x["score"], reverse=True)
     for idx, row in enumerate(themes, start=1):
         row["rank"] = idx
-        row["state"], row["state_label"] = _state(row["score"], idx, row["acceleration"])
+        metrics = _transition_metrics(row["key"], hist)
+        row.update(metrics)
+        row["acceleration"] = metrics["score_change_1d"]
+        row["state"], row["state_label"] = _state(row["score"], idx, metrics)
 
     leader = themes[0] if themes else None
+    early_rotation = [x for x in themes if x["state"] == "EARLY_ROTATION"]
+    accelerating = [x for x in themes if x["state"] == "ACCELERATING"]
+    cooling = [x for x in themes if x["state"] == "COOLING"]
+    transition = {
+        "early_rotation": early_rotation,
+        "accelerating": accelerating,
+        "cooling": cooling,
+        "watch_first": (early_rotation + accelerating)[:3],
+    }
     payload = {
         "version": "5.1",
         "benchmark": benchmark,
         "themes": themes,
         "leader": leader,
         "history": hist,
+        "transition": transition,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "cached": False,
         "note": (
