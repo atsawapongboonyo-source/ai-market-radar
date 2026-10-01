@@ -1,6 +1,7 @@
 import unittest
 
 from focus_queue import _candidate_keys, _stock_focus
+from focus_queue_research import _secondary_reorder_research
 
 
 class FocusQueueTests(unittest.TestCase):
@@ -53,6 +54,19 @@ class FocusQueueTests(unittest.TestCase):
         result = _stock_focus(payload)
         self.assertEqual(result["ticker"], "AAA")
         self.assertTrue(result["qualified"])
+
+    def test_secondary_quality_reorder_can_select_priority_three(self):
+        records = [
+            {"date": "2026-10-01", "priority": 2, "theme_rank": 3, "theme_excess_pct": 0.2,
+             "stock_qualified": True, "stock_score": 60, "stock_excess_pct": 1.0},
+            {"date": "2026-10-01", "priority": 3, "theme_rank": 2, "theme_excess_pct": 0.5,
+             "stock_qualified": True, "stock_score": 80, "stock_excess_pct": 3.0},
+        ]
+        result = _secondary_reorder_research(records)
+        self.assertEqual(result["n"], 1)
+        self.assertEqual(result["quality_selected_p3_pct"], 100.0)
+        self.assertEqual(result["quality_pick_stock"]["avg"], 3.0)
+        self.assertEqual(result["actual_p2_stock"]["avg"], 1.0)
 
     def test_stock_focus_can_be_unconfirmed(self):
         payload = {

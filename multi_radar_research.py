@@ -17,14 +17,14 @@ _CACHE = {"ts": 0.0, "sessions": None, "payload": None}
 _CACHE_TTL = 30 * 60
 
 
-def _download_research(config):
+def _download_research(config, period="1y"):
     symbols = {config["benchmark"]}
     for theme in config["themes"].values():
         symbols.add(theme["proxy"])
         symbols.update(theme["members"])
     data = yf.download(
         sorted(symbols),
-        period="1y",
+        period=period,
         interval="1d",
         auto_adjust=False,
         progress=False,

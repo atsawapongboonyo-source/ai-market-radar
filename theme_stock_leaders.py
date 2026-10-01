@@ -43,26 +43,29 @@ def _pct_rank(values, value):
     return (less + 0.5 * equal) / len(clean) * 100.0
 
 
-def _stock_snapshot(data, ticker, benchmark, proxy):
+def _stock_snapshot(data, ticker, benchmark, proxy, end=None):
     close = _series(data, ticker, "Close")
     bench_close = _series(data, benchmark, "Close")
     proxy_close = _series(data, proxy, "Close")
-    if min(len(close), len(bench_close), len(proxy_close)) < 22:
+    close_at = close if end is None else close.loc[:end]
+    bench_at = bench_close if end is None else bench_close.loc[:end]
+    proxy_at = proxy_close if end is None else proxy_close.loc[:end]
+    if min(len(close_at), len(bench_at), len(proxy_at)) < 22:
         return None
 
-    r1 = _ret(close, 1)
-    r5 = _ret(close, 5)
-    r20 = _ret(close, 20)
-    p1 = _ret(proxy_close, 1)
-    p5 = _ret(proxy_close, 5)
-    p20 = _ret(proxy_close, 20)
-    b5 = _ret(bench_close, 5)
+    r1 = _ret(close, 1, end)
+    r5 = _ret(close, 5, end)
+    r20 = _ret(close, 20, end)
+    p1 = _ret(proxy_close, 1, end)
+    p5 = _ret(proxy_close, 5, end)
+    p20 = _ret(proxy_close, 20, end)
+    b5 = _ret(bench_close, 5, end)
     if None in (r1, r5, r20, p1, p5, p20, b5):
         return None
 
-    ema20 = _ema20_state(close)
-    volume_ratio = _volume_ratio(data, ticker)
-    last = float(close.dropna().iloc[-1])
+    ema20 = _ema20_state(close, end)
+    volume_ratio = _volume_ratio(data, ticker, end)
+    last = float(close_at.dropna().iloc[-1])
     return {
         "ticker": ticker,
         "price": round(last, 2),

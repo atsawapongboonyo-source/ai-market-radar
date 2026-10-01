@@ -70,3 +70,13 @@ Focus Queue
 - Focus Queue loads only selected themes and is cached for 5 minutes; it does not preload every theme on page open.
 - Tapping a Focus Queue row opens the selected theme's Top 3 stock leaders.
 - It does not modify or bypass the existing AI Top Pick, Premarket Gate, Opening Confirmation, Final Decision or Position Engine.
+
+Focus Queue historical validation
+- Added research-only replay using the same historical Theme Rotation + Stock Leader formulas.
+- Production endpoint: /api/focus-queue-research, intentionally capped at 220 sessions (~1 year) so Render is not asked to run heavy 2-3 year stress tests.
+- 1Y non-overlapping 5-session sample: Focus #1 Theme vs QQQ avg +0.72%, median +1.43%, positive 64.3% (n=42). Focus #1 stock vs QQQ avg +2.95%, median +1.65%. Qualified Focus #1 stock (Confirm >=4/5) avg +3.93%, median +2.30% (n=38).
+- 2Y stress: Focus #1 Theme avg +0.33%, median +1.02%, positive 61.6% (n=86). Qualified Focus #1 stock avg +2.49%, median +2.05% (n=78).
+- ~3Y stress using a 5Y data pull / last 660 sessions: Focus #1 Theme avg +0.47%, median +0.67%, positive 58.5% (n=130). Qualified Focus #1 stock avg +3.29%, median +2.30%, positive 61.5% (n=122).
+- Secondary #2/#3 reorder tests did not show a strong enough robust difference to justify changing live selection/order. Existing Focus Queue logic is therefore preserved.
+- Rotation Watch vs Next Ranked occasionally differs materially at the stock level, but paired differing samples remain small and volatile; no live rule change is made from that diagnostic.
+- Current-universe / survivorship bias remains an important limitation. Results validate attention ranking only, not a trading strategy with entries, exits, slippage or risk controls.

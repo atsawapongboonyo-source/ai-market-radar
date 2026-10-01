@@ -13,6 +13,7 @@ from multi_radar import build_multi_radar
 from multi_radar_research import build_rotation_research
 from theme_stock_leaders import build_theme_stock_leaders
 from focus_queue import build_focus_queue
+from focus_queue_research import build_focus_queue_research
 
 app = v494.app
 
@@ -59,6 +60,24 @@ def _v510_focus_queue_api():
         return jsonify({"ok": False, "version": "5.1-focus-queue", "error": str(exc)}), 200
 
 
+@app.route("/api/focus-queue-research")
+def _v510_focus_queue_research_api():
+    try:
+        force = str(request.args.get("force") or "").lower() in {"1", "true", "yes"}
+        try:
+            sessions = int(request.args.get("sessions") or 220)
+        except (TypeError, ValueError):
+            sessions = 220
+        # Production on-demand validation is intentionally capped at ~1 year.
+        sessions = max(60, min(220, sessions))
+        return jsonify({
+            "ok": True,
+            "data": build_focus_queue_research(force=force, sessions=sessions),
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "version": "5.1-focus-research", "error": str(exc)}), 200
+
+
 _MULTI_RADAR_UI = r"""
 <style id="v510MultiRadarStyle">
 .v510Card{background:#0b2135;border-color:#315a7e}
@@ -71,7 +90,7 @@ _MULTI_RADAR_UI = r"""
 .v510Score{text-align:right;font-size:19px;font-weight:900}.v510Up{color:#bfe9cf}.v510Down{color:#f0b6b6}
 .v510StockPanel{display:none;margin-top:12px;padding:11px;border-radius:13px;background:#0d2840;border:1px solid #39749f}.v510StockPanel.show{display:block}.v510StockGrid{display:grid;gap:7px;margin-top:8px}.v510StockRow{display:grid;grid-template-columns:28px minmax(0,1fr) 58px;gap:8px;align-items:center;background:#10263c;border:1px solid #24425f;border-radius:11px;padding:9px}.v510StockTicker{font-size:16px;font-weight:900}.v510StockMeta{font-size:10px;color:#91a9c1;line-height:1.4}.v510History{margin-top:12px;padding:11px;border-radius:13px;background:#10263c;border:1px solid #24425f}
 .v510HistoryLine{font-size:11px;color:#b8c9d8;line-height:1.55}.v510Actions{display:flex;gap:8px;margin-top:12px}
-.v510Actions button{margin:0;flex:1}.v510Focus{display:none;margin-top:10px;padding:11px;border-radius:13px;background:#10263c;border:1px solid #39749f}.v510Focus.show{display:block}.v510FocusGrid{display:grid;gap:8px;margin-top:8px}.v510FocusRow{display:grid;grid-template-columns:30px minmax(0,1fr) 64px;gap:8px;align-items:center;background:#0d2840;border:1px solid #24425f;border-radius:12px;padding:10px}.v510FocusType{font-size:10px;font-weight:900;color:#9ec8e8}.v510FocusStock{font-size:16px;font-weight:900}.v510Research{display:none;margin-top:10px;padding:11px;border-radius:13px;background:#0f2a42;border:1px solid #315a7e}.v510Research.show{display:block}.v510ResearchGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.v510ResearchBox{background:#10263c;border:1px solid #24425f;border-radius:12px;padding:10px}.v510ResearchBox span{display:block;font-size:10px;color:#91a9c1}.v510ResearchBox b{display:block;margin-top:4px;font-size:16px}.v510Note{margin-top:9px;font-size:10px;color:#7fa3c2;line-height:1.45}
+.v510Actions button{margin:0;flex:1}.v510Focus{display:none;margin-top:10px;padding:11px;border-radius:13px;background:#10263c;border:1px solid #39749f}.v510Focus.show{display:block}.v510FocusGrid{display:grid;gap:8px;margin-top:8px}.v510FocusRow{display:grid;grid-template-columns:30px minmax(0,1fr) 64px;gap:8px;align-items:center;background:#0d2840;border:1px solid #24425f;border-radius:12px;padding:10px}.v510FocusType{font-size:10px;font-weight:900;color:#9ec8e8}.v510FocusStock{font-size:16px;font-weight:900}.v510FocusResearch{display:none;margin-top:10px;padding:11px;border-radius:13px;background:#0d2840;border:1px solid #315a7e}.v510FocusResearch.show{display:block}.v510Research{display:none;margin-top:10px;padding:11px;border-radius:13px;background:#0f2a42;border:1px solid #315a7e}.v510Research.show{display:block}.v510ResearchGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.v510ResearchBox{background:#10263c;border:1px solid #24425f;border-radius:12px;padding:10px}.v510ResearchBox span{display:block;font-size:10px;color:#91a9c1}.v510ResearchBox b{display:block;margin-top:4px;font-size:16px}.v510Note{margin-top:9px;font-size:10px;color:#7fa3c2;line-height:1.45}
 @media(max-width:420px){.v510Row{grid-template-columns:26px minmax(0,1fr) 52px}.v510Name{font-size:13px}}
 </style>
 <script id="v510MultiRadar">
@@ -90,6 +109,7 @@ _MULTI_RADAR_UI = r"""
       '<div id="v510History" class="v510History"><div class="small">Rotation history จะขึ้นหลังโหลดข้อมูล</div></div>'+
       '<div class="v510Actions"><button onclick="window.v510LoadMultiRadar(true)">↻ Refresh Multi-Radar</button><button class="alt" onclick="window.v510LoadFocusQueue()">Focus Queue</button><button class="alt" onclick="window.v510LoadResearch()">Research 1Y</button></div>'+
       '<div id="v510Focus" class="v510Focus"><div class="small">กด Focus Queue เพื่อจัดลำดับ Theme → Stock</div></div>'+
+      '<div id="v510FocusResearch" class="v510FocusResearch"><div class="small">Focus Validation จะโหลดเมื่อกดจาก Focus Queue</div></div>'+
       '<div id="v510Research" class="v510Research"><div class="small">กด Research 1Y เพื่อดู historical ranking test</div></div>'+
       '<div class="v510Note">คะแนนใช้ relative momentum + member breadth + EMA20 participation + volume confirmation เพื่อจัดลำดับกลุ่ม ไม่ใช่สัญญาณซื้อขายโดยตรง</div>';
     if(anchor)anchor.parentNode.insertBefore(card,anchor);else document.querySelector('.w')?.appendChild(card);
@@ -167,16 +187,17 @@ _MULTI_RADAR_UI = r"""
     el.classList.add('show');
     el.innerHTML='<div class="small">FOCUS QUEUE • Theme → Stock • Attention Priority</div>'+
       '<div class="v510FocusGrid">'+rows.map(function(q){
-        var s=q.stock||{},qualified=!!s.qualified;
+        var s=q.stock||{},qualified=!!s.qualified,tier=q.priority===1?'PRIMARY FOCUS':'SECONDARY WATCH';
         return '<div class="v510FocusRow" role="button" tabindex="0" onclick="window.v510LoadThemeStocks(\''+esc(q.key)+'\')">'+
           '<div class="v510Rank">'+esc(q.priority)+'</div><div>'+
-          '<div class="v510FocusType">'+esc(q.focus_label)+'</div>'+
+          '<div class="v510FocusType">'+esc(tier)+' • '+esc(q.focus_label)+'</div>'+
           '<div class="v510Name">'+stateIcon(q.theme_state)+' '+esc(q.theme_label)+' <span class="small">Rank '+esc(q.theme_rank)+'</span></div>'+
           '<div class="v510StockMeta">'+esc(q.reason)+'<br>'+
           (s.ticker?'<span class="v510FocusStock">'+esc(s.ticker)+'</span> • '+(qualified?'Qualified':'Unconfirmed')+
           ' • Stock '+esc(s.confirmation_count)+'/'+esc(s.confirmation_total)+' • 5D vs Theme '+signed(s.relative_proxy_5d_pct)+'%':'ยังไม่มี Stock Leader')+
           '</div></div><div class="v510Score">'+(s.ticker?esc(s.leader_score):'—')+'</div></div>'
       }).join('')+'</div>'+
+      '<div class="v510Actions"><button class="alt" onclick="window.v510LoadFocusValidation()">Historical Validation 1Y</button></div>'+
       '<div class="v510Note">Focus Queue จัดลำดับสิ่งที่ควรเปิดดูก่อนเท่านั้น • แตะแถวเพื่อเปิด Top 3 ของ Theme • ไม่ใช่ Buy List</div>';
   }
   async function loadFocusQueue(){
@@ -188,6 +209,31 @@ _MULTI_RADAR_UI = r"""
     }catch(e){el.innerHTML='<div class="status bad">Focus Queue ไม่สำเร็จ: '+esc(e.message)+'</div>'}
   }
   window.v510LoadFocusQueue=loadFocusQueue;
+  function renderFocusValidation(x){
+    var el=document.getElementById('v510FocusResearch');if(!el)return;
+    var r5=((x.results||{})['5']||{}),bp=r5.by_priority||{},p1=bp['1']||{},p2=bp['2']||{},p3=bp['3']||{};
+    var sec=r5.secondary_reorder||{};
+    el.classList.add('show');
+    el.innerHTML='<div class="small" style="margin-bottom:8px">FOCUS VALIDATION • 5 SESSIONS • '+esc(x.sessions_requested)+' historical sessions</div>'+
+      '<div class="v510ResearchGrid">'+
+        researchBox('Focus #1 Theme vs QQQ',p1.theme_vs_qqq)+
+        researchBox('Focus #1 Stock vs QQQ',p1.stock_vs_qqq)+
+        researchBox('Focus #2 Stock vs QQQ',p2.stock_vs_qqq)+
+        researchBox('Focus #3 Stock vs QQQ',p3.stock_vs_qqq)+
+      '</div>'+
+      '<div class="v510HistoryLine" style="margin-top:8px">Qualified #1 stock '+signed((p1.qualified_stock_vs_qqq||{}).avg)+'% avg • Median '+signed((p1.qualified_stock_vs_qqq||{}).median)+'% • n='+esc((p1.qualified_stock_vs_qqq||{}).n)+'</div>'+
+      '<div class="v510HistoryLine">Secondary quality-reorder stock avg '+signed((sec.quality_pick_stock||{}).avg)+'% vs current #2 '+signed((sec.actual_p2_stock||{}).avg)+'% • ยังไม่ใช้เปลี่ยน live order</div>'+
+      '<div class="v510Note">Validation only • production จำกัด ~1 ปีเพื่อไม่ให้ Render หนัก • stress tests ระยะยาวเก็บออฟไลน์ • ไม่ใช่ Buy Signal</div>';
+  }
+  async function loadFocusValidation(){
+    ensure();var el=document.getElementById('v510FocusResearch');if(!el)return;
+    el.classList.add('show');el.innerHTML='<div class="small">กำลังคำนวณ Focus Validation 1Y...</div>';
+    try{
+      var r=await fetch('/api/focus-queue-research?sessions=220',{cache:'no-store'}),j=await r.json();
+      if(!r.ok||!j.ok)throw Error(j.error||('HTTP '+r.status));renderFocusValidation(j.data||{});
+    }catch(e){el.innerHTML='<div class="status bad">Focus Validation ไม่สำเร็จ: '+esc(e.message)+'</div>'}
+  }
+  window.v510LoadFocusValidation=loadFocusValidation;
   function researchBox(label,stat,suffix){
     stat=stat||{};
     return '<div class="v510ResearchBox"><span>'+esc(label)+'</span><b>'+signed(stat.avg)+(suffix||'%')+'</b><div class="small">Median '+signed(stat.median)+'% • Positive '+esc(stat.positive_pct)+'% • n='+esc(stat.n)+'</div></div>';
