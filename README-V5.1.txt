@@ -42,3 +42,12 @@ Rotation structure
 - Tracks leader handoffs across the recent 15-session history.
 - Exposes current leader streak, total handoffs, and the most recent handoff.
 - Keeps current leadership separate from confirmed Early Rotation and unconfirmed Recovery Watch.
+
+Research / historical validation
+- Research endpoint is isolated from the live decision engine: /api/multi-radar-research
+- Default research window: up to 220 sessions using 1-year Yahoo history.
+- Repeated daily states are de-duplicated; state-entry research uses a 5-session cooldown.
+- Immediate EARLY_ROTATION / ACCELERATING and raw leader handoffs did not show a robust standalone forward-return edge versus QQQ in the longer sample.
+- The cross-sectional ranking test is more aligned with the engine's purpose.
+- In the 220-session non-overlapping 5-session test, current rank #1 averaged +0.89% versus the last-ranked theme, Top 2 averaged +0.71% versus Bottom 2, and the current leader finished in the future top half 69.0% of the tested windows.
+- These figures are research diagnostics only and may contain current-universe / survivorship bias. They are not used as a Buy Signal.

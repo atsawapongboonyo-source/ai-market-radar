@@ -10,6 +10,7 @@ import scanner_v494 as v494
 from flask import jsonify, request
 
 from multi_radar import build_multi_radar
+from multi_radar_research import build_rotation_research
 
 app = v494.app
 
@@ -21,6 +22,20 @@ def _v510_multi_radar_api():
         return jsonify({"ok": True, "data": build_multi_radar(force=force)})
     except Exception as exc:
         return jsonify({"ok": False, "version": "5.1", "error": str(exc)}), 200
+
+
+@app.route("/api/multi-radar-research")
+def _v510_multi_radar_research_api():
+    try:
+        force = str(request.args.get("force") or "").lower() in {"1", "true", "yes"}
+        try:
+            sessions = int(request.args.get("sessions") or 220)
+        except (TypeError, ValueError):
+            sessions = 220
+        sessions = max(60, min(220, sessions))
+        return jsonify({"ok": True, "data": build_rotation_research(force=force, sessions=sessions)})
+    except Exception as exc:
+        return jsonify({"ok": False, "version": "5.1-research", "error": str(exc)}), 200
 
 
 _MULTI_RADAR_UI = r"""
@@ -35,7 +50,7 @@ _MULTI_RADAR_UI = r"""
 .v510Score{text-align:right;font-size:19px;font-weight:900}.v510Up{color:#bfe9cf}.v510Down{color:#f0b6b6}
 .v510History{margin-top:12px;padding:11px;border-radius:13px;background:#10263c;border:1px solid #24425f}
 .v510HistoryLine{font-size:11px;color:#b8c9d8;line-height:1.55}.v510Actions{display:flex;gap:8px;margin-top:12px}
-.v510Actions button{margin:0;flex:1}.v510Note{margin-top:9px;font-size:10px;color:#7fa3c2;line-height:1.45}
+.v510Actions button{margin:0;flex:1}.v510Research{display:none;margin-top:10px;padding:11px;border-radius:13px;background:#0f2a42;border:1px solid #315a7e}.v510Research.show{display:block}.v510ResearchGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.v510ResearchBox{background:#10263c;border:1px solid #24425f;border-radius:12px;padding:10px}.v510ResearchBox span{display:block;font-size:10px;color:#91a9c1}.v510ResearchBox b{display:block;margin-top:4px;font-size:16px}.v510Note{margin-top:9px;font-size:10px;color:#7fa3c2;line-height:1.45}
 @media(max-width:420px){.v510Row{grid-template-columns:26px minmax(0,1fr) 52px}.v510Name{font-size:13px}}
 </style>
 <script id="v510MultiRadar">
@@ -51,7 +66,8 @@ _MULTI_RADAR_UI = r"""
       '<div id="v510Status" class="status info" style="margin-top:12px">กำลังโหลด Rotation Engine...</div>'+
       '<div id="v510Grid" class="v510Grid"></div>'+
       '<div id="v510History" class="v510History"><div class="small">Rotation history จะขึ้นหลังโหลดข้อมูล</div></div>'+
-      '<div class="v510Actions"><button onclick="window.v510LoadMultiRadar(true)">↻ Refresh Multi-Radar</button></div>'+
+      '<div class="v510Actions"><button onclick="window.v510LoadMultiRadar(true)">↻ Refresh Multi-Radar</button><button class="alt" onclick="window.v510LoadResearch()">Research 1Y</button></div>'+
+      '<div id="v510Research" class="v510Research"><div class="small">กด Research 1Y เพื่อดู historical ranking test</div></div>'+
       '<div class="v510Note">คะแนนใช้ relative momentum + member breadth + EMA20 participation + volume confirmation เพื่อจัดลำดับกลุ่ม ไม่ใช่สัญญาณซื้อขายโดยตรง</div>';
     if(anchor)anchor.parentNode.insertBefore(card,anchor);else document.querySelector('.w')?.appendChild(card);
   }
@@ -97,7 +113,34 @@ _MULTI_RADAR_UI = r"""
       if(!r.ok||!j.ok)throw Error(j.error||('HTTP '+r.status));render(j.data||{});
     }catch(e){if(st){st.className='status bad';st.textContent='Multi-Radar ไม่สำเร็จ: '+e.message}}
   }
+  function researchBox(label,stat,suffix){
+    stat=stat||{};
+    return '<div class="v510ResearchBox"><span>'+esc(label)+'</span><b>'+signed(stat.avg)+(suffix||'%')+'</b><div class="small">Median '+signed(stat.median)+'% • Positive '+esc(stat.positive_pct)+'% • n='+esc(stat.n)+'</div></div>';
+  }
+  function renderResearch(x){
+    var el=document.getElementById('v510Research');if(!el)return;
+    var c=x.cross_sectional||{},d5=c['5']||{},d3=c['3']||{};
+    el.classList.add('show');
+    el.innerHTML='<div class="small" style="margin-bottom:8px">RESEARCH • CROSS-SECTIONAL RANKING • '+esc(x.sessions_requested)+' sessions</div>'+
+      '<div class="v510ResearchGrid">'+
+        researchBox('5D Leader vs QQQ',d5.top1_vs_qqq)+
+        researchBox('5D #1 − Last',d5.top1_minus_bottom1)+
+        researchBox('5D Top2 − Bottom2',d5.top2_minus_bottom2)+
+        '<div class="v510ResearchBox"><span>5D Leader in Top Half</span><b>'+esc(d5.leader_top_half_pct)+'%</b><div class="small">Non-overlapping ranking windows</div></div>'+
+      '</div>'+
+      '<div class="v510HistoryLine" style="margin-top:8px">3D #1 − Last '+signed((d3.top1_minus_bottom1||{}).avg)+'% • 5D sample n='+esc((d5.top1_minus_bottom1||{}).n)+'</div>'+
+      '<div class="v510Note">Research only • current-universe / survivorship bias possible • ไม่ใช่ Buy Signal และไม่ถูกใช้เปลี่ยน live decision engine</div>';
+  }
+  async function loadResearch(){
+    ensure();var el=document.getElementById('v510Research');if(!el)return;
+    el.classList.add('show');el.innerHTML='<div class="small">กำลังคำนวณ Research 1Y...</div>';
+    try{
+      var r=await fetch('/api/multi-radar-research?sessions=220',{cache:'no-store'}),j=await r.json();
+      if(!r.ok||!j.ok)throw Error(j.error||('HTTP '+r.status));renderResearch(j.data||{});
+    }catch(e){el.innerHTML='<div class="status bad">Research ไม่สำเร็จ: '+esc(e.message)+'</div>'}
+  }
   window.v510LoadMultiRadar=load;
+  window.v510LoadResearch=loadResearch;
   function hookScan(){
     if(window.__v510ScanHooked)return;
     var original=window.scan;if(typeof original!=='function')return;
