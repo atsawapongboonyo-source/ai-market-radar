@@ -59,3 +59,14 @@ Theme → Stock Leader Bridge
 - Group Leader eligibility requires at least 4 of 5 confirmation checks: beats theme proxy 1D, 5D and 20D, above EMA20, and volume ratio >= 1.0.
 - A higher raw momentum score with fewer than 4 confirmations cannot displace a qualified Group Leader.
 - This bridge does not modify or bypass the existing AI Top Pick, Premarket Gate, Opening Confirmation, Final Decision or Position Engine.
+
+Focus Queue
+- On-demand endpoint: /api/focus-queue
+- Purpose: rank what to inspect first, not what to buy.
+- Slot 1 always shows the current Multi-Radar leader, even when that leader is Cooling.
+- Slot 2 prefers a confirmed EARLY_ROTATION / ACCELERATING theme when available.
+- Slot 3 uses the next highest-ranked non-duplicate theme.
+- Each selected theme is paired with its Stock Leader Bridge result.
+- Focus Queue loads only selected themes and is cached for 5 minutes; it does not preload every theme on page open.
+- Tapping a Focus Queue row opens the selected theme's Top 3 stock leaders.
+- It does not modify or bypass the existing AI Top Pick, Premarket Gate, Opening Confirmation, Final Decision or Position Engine.
