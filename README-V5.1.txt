@@ -30,3 +30,10 @@ Runtime
 - Render entrypoint remains: gunicorn scanner:app
 - scanner.py now loads scanner_v510.py
 - API: /api/multi-radar
+
+Rotation confirmation filter
+- EARLY ROTATION now requires group-level confirmation, not score/rank recovery alone.
+- Confirmation checks: breadth >= 50%, EMA20 participation >= 50%, member median 20D relative strength >= 0, proxy 5D relative strength >= 0, median volume ratio >= 0.90.
+- Breadth + EMA20 + member relative strength are mandatory core checks.
+- At least 4 of 5 checks must pass for confirmed EARLY ROTATION.
+- Unconfirmed rebound is classified as RECOVERING and shown separately from the main Transition Watch.

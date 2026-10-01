@@ -42,7 +42,7 @@ _MULTI_RADAR_UI = r"""
 (function(){
   function esc(v){return String(v==null?'—':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
   function signed(v){var n=Number(v);return Number.isFinite(n)?(n>0?'+':'')+n.toFixed(1):'—'}
-  function stateIcon(s){if(s==='LEADING')return '🟢';if(s==='EARLY_ROTATION')return '🟣';if(s==='ACCELERATING')return '🔵';if(s==='COOLING')return '🟠';if(s==='LAGGING')return '🔴';return '🟡'}
+  function stateIcon(s){if(s==='LEADING')return '🟢';if(s==='EARLY_ROTATION')return '🟣';if(s==='ACCELERATING')return '🔵';if(s==='RECOVERING')return '⚪';if(s==='COOLING')return '🟠';if(s==='LAGGING')return '🔴';return '🟡'}
   function ensure(){
     if(document.getElementById('v510MultiRadarCard'))return;
     var anchor=document.getElementById('v410ThemeCard')||Array.from(document.querySelectorAll('.card')).find(function(x){return (x.textContent||'').includes('Theme Rotation')});
@@ -64,18 +64,22 @@ _MULTI_RADAR_UI = r"""
       var ac=Number(t.acceleration||0),cls=t.rank===1?' lead':'',acls=ac>0?'v510Up':ac<0?'v510Down':'';
       return '<div class="v510Row'+cls+'"><div class="v510Rank">'+esc(t.rank)+'</div><div><div class="v510Name">'+stateIcon(t.state)+' '+esc(t.label)+'</div>'+
         '<div class="v510Meta">'+esc(t.state_label)+' • '+esc(t.proxy)+' • 5D vs '+esc(x.benchmark)+' '+signed(t.proxy_rel_5d_pct)+'% • 20D '+signed(t.proxy_rel_20d_pct)+'%<br>'+
-        'Breadth '+esc(t.breadth_5d_pct)+'% • EMA20 '+esc(t.above_ema20_pct)+'% • 1D <span class="'+acls+'">'+signed(t.score_change_1d)+'</span> • 5D '+signed(t.score_change_5d)+' • Rank5 '+signed(t.rank_change_5d)+'</div></div>'+
+        'Breadth '+esc(t.breadth_5d_pct)+'% • EMA20 '+esc(t.above_ema20_pct)+'% • Confirm '+esc(t.rotation_confirmation_count)+'/'+esc(t.rotation_confirmation_total)+' '+esc(t.rotation_confidence)+'<br>'+
+        '1D <span class="'+acls+'">'+signed(t.score_change_1d)+'</span> • 5D '+signed(t.score_change_5d)+' • Rank5 '+signed(t.rank_change_5d)+'</div></div>'+
         '<div class="v510Score">'+esc(t.score)+'</div></div>'
     }).join('');
     var h=(x.history||[]).slice(-5).reverse();
     if(hist){
-      var tr=x.transition||{},watch=tr.watch_first||[];
+      var tr=x.transition||{},watch=tr.watch_first||[],recovery=tr.recovery_watch||[];
       var watchHtml=watch.length?'<div class="small" style="margin:8px 0 4px">TRANSITION WATCH</div>'+watch.map(function(t){
-        return '<div class="v510HistoryLine">'+stateIcon(t.state)+' <b>'+esc(t.label)+'</b> • '+esc(t.state_label)+' • 5D '+signed(t.score_change_5d)+' • Rank5 '+signed(t.rank_change_5d)+'</div>'
+        return '<div class="v510HistoryLine">'+stateIcon(t.state)+' <b>'+esc(t.label)+'</b> • '+esc(t.state_label)+' • Confirm '+esc(t.rotation_confirmation_count)+'/'+esc(t.rotation_confirmation_total)+' • 5D '+signed(t.score_change_5d)+' • Rank5 '+signed(t.rank_change_5d)+'</div>'
+      }).join(''):'';
+      var recoveryHtml=recovery.length?'<div class="small" style="margin:8px 0 4px">RECOVERY WATCH • ยังไม่ยืนยัน</div>'+recovery.map(function(t){
+        return '<div class="v510HistoryLine">'+stateIcon(t.state)+' <b>'+esc(t.label)+'</b> • Confirm '+esc(t.rotation_confirmation_count)+'/'+esc(t.rotation_confirmation_total)+' • รอ breadth / EMA20 / relative strength</div>'
       }).join(''):'';
       hist.innerHTML='<div class="small" style="margin-bottom:5px">RECENT ROTATION LEADERS</div>'+h.map(function(d){
         return '<div class="v510HistoryLine"><b>'+esc(d.date)+'</b> • '+esc(d.leader_label)+' • '+esc(d.leader_score)+'</div>'
-      }).join('')+watchHtml;
+      }).join('')+watchHtml+recoveryHtml;
     }
     var command=document.getElementById('v500Leader');
     if(command&&leader)command.textContent=leader.label+' • '+leader.score;

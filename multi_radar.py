@@ -178,10 +178,34 @@ def _transition_metrics(key, history):
     }
 
 
-def _state(score, rank, metrics):
+def _rotation_confirmation(row):
+    checks = {
+        "breadth": float(row.get("breadth_5d_pct") or 0) >= 50.0,
+        "ema20": float(row.get("above_ema20_pct") or 0) >= 50.0,
+        "member_rs": float(row.get("member_median_rel_20d_pct") or 0) >= 0.0,
+        "proxy_5d": float(row.get("proxy_rel_5d_pct") or 0) >= 0.0,
+        "volume": float(row.get("volume_ratio_median") or 0) >= 0.90,
+    }
+    count = sum(1 for ok in checks.values() if ok)
+    core = checks["breadth"] and checks["ema20"] and checks["member_rs"]
+    confirmed = core and count >= 4
+    confidence = "HIGH" if confirmed and count == 5 else "MEDIUM" if confirmed else "LOW"
+    return {
+        "rotation_confirmed": confirmed,
+        "rotation_confirmation_count": count,
+        "rotation_confirmation_total": len(checks),
+        "rotation_confidence": confidence,
+        "rotation_checks": checks,
+    }
+
+
+def _state(row, metrics):
+    score = float(row.get("score") or 0)
+    rank = int(row.get("rank") or 99)
     d1 = float(metrics.get("score_change_1d") or 0)
     d5 = float(metrics.get("score_change_5d") or 0)
     rank5 = int(metrics.get("rank_change_5d") or 0)
+    confirmed = bool(row.get("rotation_confirmed"))
 
     if rank == 1 and score >= 12 and d5 >= -4:
         return "LEADING", "Leading"
@@ -190,9 +214,9 @@ def _state(score, rank, metrics):
     if score >= 8 and (d1 >= 2 or d5 >= 6) and d5 > -6 and rank <= 4:
         return "ACCELERATING", "Accelerating"
     if score < 12 and d5 >= 8 and rank5 >= 1 and rank <= 4:
-        return "EARLY_ROTATION", "Early Rotation"
+        return ("EARLY_ROTATION", "Early Rotation") if confirmed else ("RECOVERING", "Recovering")
     if score <= -12 and d5 > 8 and rank5 >= 1:
-        return "EARLY_ROTATION", "Early Rotation"
+        return ("EARLY_ROTATION", "Early Rotation") if confirmed else ("RECOVERING", "Recovering")
     if score <= -12:
         return "LAGGING", "Lagging"
     if d5 <= -8 and rank5 <= -1:
@@ -250,18 +274,22 @@ def build_multi_radar(force=False):
         row["rank"] = idx
         metrics = _transition_metrics(row["key"], hist)
         row.update(metrics)
+        row.update(_rotation_confirmation(row))
         row["acceleration"] = metrics["score_change_1d"]
-        row["state"], row["state_label"] = _state(row["score"], idx, metrics)
+        row["state"], row["state_label"] = _state(row, metrics)
 
     leader = themes[0] if themes else None
     early_rotation = [x for x in themes if x["state"] == "EARLY_ROTATION"]
     accelerating = [x for x in themes if x["state"] == "ACCELERATING"]
+    recovering = [x for x in themes if x["state"] == "RECOVERING"]
     cooling = [x for x in themes if x["state"] == "COOLING"]
     transition = {
         "early_rotation": early_rotation,
         "accelerating": accelerating,
+        "recovering": recovering,
         "cooling": cooling,
         "watch_first": (early_rotation + accelerating)[:3],
+        "recovery_watch": recovering[:3],
     }
     payload = {
         "version": "5.1",
