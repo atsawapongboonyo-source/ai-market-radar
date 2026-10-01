@@ -243,6 +243,62 @@ def _secondary_reorder_research(records):
     }
 
 
+def _rotation_quality_research(records):
+    rotation = [x for x in records if x.get("focus_type") == "ROTATION_WATCH"]
+
+    def pack(rows):
+        return {
+            "n": len(rows),
+            "theme_vs_qqq": _stats([
+                x["theme_excess_pct"] for x in rows
+                if x.get("theme_excess_pct") is not None
+            ]),
+            "stock_vs_qqq": _stats([
+                x["stock_excess_pct"] for x in rows
+                if x.get("stock_excess_pct") is not None
+            ]),
+            "stock_vs_theme": _stats([
+                x["stock_vs_theme_pct"] for x in rows
+                if x.get("stock_vs_theme_pct") is not None
+            ]),
+            "stock_robust": _robust_stats([
+                x["stock_excess_pct"] for x in rows
+                if x.get("stock_excess_pct") is not None
+            ]),
+        }
+
+    dual = [
+        x for x in rotation
+        if int(x.get("theme_confirmation") or 0) >= 4
+        and bool(x.get("stock_qualified"))
+    ]
+    top3_dual = [
+        x for x in dual
+        if int(x.get("theme_rank") or 99) <= 3
+    ]
+    strong_5d = [
+        x for x in top3_dual
+        if float(x.get("theme_score_change_5d") or 0) >= 8.0
+    ]
+    early_only = [
+        x for x in top3_dual
+        if x.get("theme_state") == "EARLY_ROTATION"
+    ]
+    accel_only = [
+        x for x in top3_dual
+        if x.get("theme_state") == "ACCELERATING"
+    ]
+
+    return {
+        "all": pack(rotation),
+        "dual_confirmed": pack(dual),
+        "top3_dual": pack(top3_dual),
+        "top3_dual_strong5d": pack(strong_5d),
+        "top3_dual_early": pack(early_only),
+        "top3_dual_accelerating": pack(accel_only),
+    }
+
+
 def _candidate_forward_record(data, config, theme_row, end, horizon, strategy, leader_cache):
     key = theme_row["key"]
     theme = config["themes"].get(key)
@@ -268,6 +324,9 @@ def _candidate_forward_record(data, config, theme_row, end, horizon, strategy, l
         "theme_key": key,
         "theme_rank": theme_row.get("rank"),
         "theme_state": theme_row.get("state"),
+        "theme_confirmation": theme_row.get("rotation_confirmation_count"),
+        "theme_score_change_5d": theme_row.get("score_change_5d"),
+        "theme_rank_change_5d": theme_row.get("rank_change_5d"),
         "theme_excess_pct": theme_forward["excess_pct"],
         "stock_ticker": stock.get("ticker") if stock else None,
         "stock_qualified": stock.get("qualified") if stock else False,
@@ -442,6 +501,9 @@ def build_focus_queue_research(force=False, sessions=220):
                     "theme_rank": theme_row.get("rank"),
                     "theme_state": theme_row.get("state"),
                     "theme_score": theme_row.get("score"),
+                    "theme_confirmation": theme_row.get("rotation_confirmation_count"),
+                    "theme_score_change_5d": theme_row.get("score_change_5d"),
+                    "theme_rank_change_5d": theme_row.get("rank_change_5d"),
                     "theme_excess_pct": theme_forward["excess_pct"],
                     "stock_ticker": stock.get("ticker") if stock else None,
                     "stock_score": stock.get("leader_score") if stock else None,
@@ -455,6 +517,7 @@ def build_focus_queue_research(force=False, sessions=220):
             "by_priority": _summarize_records(records),
             "by_focus_type": _summarize_focus_types(records),
             "winner_stats": _winner_stats(records),
+            "rotation_quality": _rotation_quality_research(records),
             "secondary_reorder": _secondary_reorder_research(records),
             "slot2_strategy": _slot2_strategy_research(
                 data, config, snapshots, horizon, leader_cache

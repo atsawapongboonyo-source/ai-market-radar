@@ -90,13 +90,20 @@ def build_focus_queue(force=False):
     for priority, slot in enumerate(slots, start=1):
         key = slot["key"]
         theme = themes.get(key) or {}
-        stocks = build_theme_stock_leaders(key, force=force)
-        stock = _stock_focus(stocks)
+        stock_error = None
+        try:
+            stocks = build_theme_stock_leaders(key, force=force)
+            stock = _stock_focus(stocks)
+        except Exception as exc:
+            stock = None
+            stock_error = str(exc)
 
         if stock and stock["qualified"]:
             stock_note = "Qualified Group Leader"
         elif stock:
             stock_note = "Top relative stock • confirmation ยังไม่ครบ"
+        elif stock_error:
+            stock_note = "Stock Leader data unavailable"
         else:
             stock_note = "ยังไม่มี stock data"
 
@@ -114,6 +121,7 @@ def build_focus_queue(force=False):
             "theme_confirmation_total": theme.get("rotation_confirmation_total"),
             "stock": stock,
             "stock_note": stock_note,
+            "stock_error": stock_error,
         })
 
     payload = {

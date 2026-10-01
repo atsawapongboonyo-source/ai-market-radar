@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import patch
 
-from focus_queue import _candidate_keys, _stock_focus
+from focus_queue import _candidate_keys, _stock_focus, build_focus_queue
 from focus_queue_research import _secondary_reorder_research
 
 
@@ -67,6 +68,45 @@ class FocusQueueTests(unittest.TestCase):
         self.assertEqual(result["quality_selected_p3_pct"], 100.0)
         self.assertEqual(result["quality_pick_stock"]["avg"], 3.0)
         self.assertEqual(result["actual_p2_stock"]["avg"], 1.0)
+
+    def test_focus_queue_survives_one_stock_data_failure(self):
+        radar = {
+            "themes": [
+                {"key": "cybersecurity", "label": "Cybersecurity", "rank": 1, "score": 10,
+                 "state": "LEADING", "state_label": "Leading", "score_change_5d": 1,
+                 "rank_change_5d": 0, "rotation_confirmation_count": 4, "rotation_confirmation_total": 5},
+                {"key": "robotics", "label": "Robotics", "rank": 2, "score": 5,
+                 "state": "EARLY_ROTATION", "state_label": "Early Rotation", "score_change_5d": 8,
+                 "rank_change_5d": 1, "rotation_confirmation_count": 4, "rotation_confirmation_total": 5},
+                {"key": "quantum", "label": "Quantum", "rank": 3, "score": 2,
+                 "state": "NEUTRAL", "state_label": "Neutral", "score_change_5d": 0,
+                 "rank_change_5d": 0, "rotation_confirmation_count": 2, "rotation_confirmation_total": 5},
+            ],
+            "leader": {"key": "cybersecurity"},
+            "rotation_summary": {},
+        }
+
+        def fake_stocks(key, force=False):
+            if key == "robotics":
+                raise RuntimeError("temporary data failure")
+            return {"top3": [{
+                "ticker": "AAA", "rank": 1, "leader_score": 75,
+                "confirmation_count": 4, "confirmation_total": 5,
+                "state": "GROUP_LEADER", "state_label": "Group Leader",
+                "relative_proxy_5d_pct": 2.0, "relative_proxy_20d_pct": 4.0,
+                "volume_ratio": 1.2, "above_ema20": True,
+            }]}
+
+        with patch("focus_queue.build_multi_radar", return_value=radar), patch(
+            "focus_queue.build_theme_stock_leaders", side_effect=fake_stocks
+        ):
+            result = build_focus_queue(force=True)
+
+        self.assertEqual(len(result["queue"]), 3)
+        failed = next(x for x in result["queue"] if x["key"] == "robotics")
+        self.assertIsNone(failed["stock"])
+        self.assertEqual(failed["stock_note"], "Stock Leader data unavailable")
+        self.assertIn("temporary data failure", failed["stock_error"])
 
     def test_stock_focus_can_be_unconfirmed(self):
         payload = {

@@ -80,3 +80,9 @@ Focus Queue historical validation
 - Secondary #2/#3 reorder tests did not show a strong enough robust difference to justify changing live selection/order. Existing Focus Queue logic is therefore preserved.
 - Rotation Watch vs Next Ranked occasionally differs materially at the stock level, but paired differing samples remain small and volatile; no live rule change is made from that diagnostic.
 - Current-universe / survivorship bias remains an important limitation. Results validate attention ranking only, not a trading strategy with entries, exits, slippage or risk controls.
+
+Pre-merge hardening
+- Fresh local benchmark: Multi-Radar ~3.19s, Focus Queue ~3.74s, cached Focus Queue ~0.001s, Theme Stock Leader ~0.37s, /scanner ~0.027s.
+- Focus Queue now degrades per-theme: if one Stock Leader data request fails, the remaining queue still renders and only that theme reports Stock Leader data unavailable.
+- Focus Validation is on-demand and production-capped to 220 sessions; longer 2-3 year stress tests remain offline research only.
+- Focus #1 is presented as PRIMARY FOCUS; #2 and #3 are SECONDARY WATCH. This is attention priority, not a buy recommendation.
