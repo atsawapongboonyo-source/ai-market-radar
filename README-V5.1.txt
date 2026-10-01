@@ -51,3 +51,11 @@ Research / historical validation
 - The cross-sectional ranking test is more aligned with the engine's purpose.
 - In the 220-session non-overlapping 5-session test, current rank #1 averaged +0.89% versus the last-ranked theme, Top 2 averaged +0.71% versus Bottom 2, and the current leader finished in the future top half 69.0% of the tested windows.
 - These figures are research diagnostics only and may contain current-universe / survivorship bias. They are not used as a Buy Signal.
+
+Theme → Stock Leader Bridge
+- New on-demand endpoint: /api/theme-stock-leaders?theme=<key>
+- Tapping a Multi-Radar theme loads Top 3 members for that theme only; the page does not preload every theme.
+- Stock Leader Score is cross-sectional within the selected theme using relative 1D/5D/20D momentum, EMA20 and volume.
+- Group Leader eligibility requires at least 4 of 5 confirmation checks: beats theme proxy 1D, 5D and 20D, above EMA20, and volume ratio >= 1.0.
+- A higher raw momentum score with fewer than 4 confirmations cannot displace a qualified Group Leader.
+- This bridge does not modify or bypass the existing AI Top Pick, Premarket Gate, Opening Confirmation, Final Decision or Position Engine.
