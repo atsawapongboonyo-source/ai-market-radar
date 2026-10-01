@@ -249,6 +249,44 @@ def _history(data, config, sessions=15):
     return trail
 
 
+def _rotation_summary(history):
+    if not history:
+        return {
+            "leader_changes": 0,
+            "leader_streak_sessions": 0,
+            "last_handoff": None,
+            "events": [],
+        }
+
+    events = []
+    previous = history[0]
+    for day in history[1:]:
+        if day.get("leader") != previous.get("leader"):
+            events.append({
+                "date": day.get("date"),
+                "from": previous.get("leader"),
+                "from_label": previous.get("leader_label"),
+                "to": day.get("leader"),
+                "to_label": day.get("leader_label"),
+                "to_score": day.get("leader_score"),
+            })
+        previous = day
+
+    current = history[-1].get("leader")
+    streak = 0
+    for day in reversed(history):
+        if day.get("leader") != current:
+            break
+        streak += 1
+
+    return {
+        "leader_changes": len(events),
+        "leader_streak_sessions": streak,
+        "last_handoff": events[-1] if events else None,
+        "events": events[-10:],
+    }
+
+
 def build_multi_radar(force=False):
     now = time.time()
     if not force and _CACHE["payload"] and now - _CACHE["ts"] < _CACHE_TTL:
@@ -297,6 +335,7 @@ def build_multi_radar(force=False):
         "themes": themes,
         "leader": leader,
         "history": hist,
+        "rotation_summary": _rotation_summary(hist),
         "transition": transition,
         "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
         "cached": False,

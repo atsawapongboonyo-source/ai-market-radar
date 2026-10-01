@@ -1,6 +1,6 @@
 import unittest
 
-from multi_radar import _rotation_confirmation, _state
+from multi_radar import _rotation_confirmation, _rotation_summary, _state
 
 
 class MultiRadarLogicTests(unittest.TestCase):
@@ -48,6 +48,19 @@ class MultiRadarLogicTests(unittest.TestCase):
         metrics = {"score_change_1d": 2.0, "score_change_5d": -18.4, "rank_change_5d": 0}
         row.update(_rotation_confirmation(row))
         self.assertEqual(_state(row, metrics)[0], "COOLING")
+
+    def test_rotation_summary_tracks_handoff_and_streak(self):
+        history = [
+            {"date": "2026-09-28", "leader": "ai", "leader_label": "AI", "leader_score": 20},
+            {"date": "2026-09-29", "leader": "ai", "leader_label": "AI", "leader_score": 18},
+            {"date": "2026-09-30", "leader": "robotics", "leader_label": "Robotics", "leader_score": 14},
+            {"date": "2026-10-01", "leader": "robotics", "leader_label": "Robotics", "leader_score": 17},
+        ]
+        result = _rotation_summary(history)
+        self.assertEqual(result["leader_changes"], 1)
+        self.assertEqual(result["leader_streak_sessions"], 2)
+        self.assertEqual(result["last_handoff"]["from"], "ai")
+        self.assertEqual(result["last_handoff"]["to"], "robotics")
 
 
 if __name__ == "__main__":

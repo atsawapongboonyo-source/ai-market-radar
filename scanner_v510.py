@@ -77,7 +77,11 @@ _MULTI_RADAR_UI = r"""
       var recoveryHtml=recovery.length?'<div class="small" style="margin:8px 0 4px">RECOVERY WATCH • ยังไม่ยืนยัน</div>'+recovery.map(function(t){
         return '<div class="v510HistoryLine">'+stateIcon(t.state)+' <b>'+esc(t.label)+'</b> • Confirm '+esc(t.rotation_confirmation_count)+'/'+esc(t.rotation_confirmation_total)+' • รอ breadth / EMA20 / relative strength</div>'
       }).join(''):'';
-      hist.innerHTML='<div class="small" style="margin-bottom:5px">RECENT ROTATION LEADERS</div>'+h.map(function(d){
+      var rs=x.rotation_summary||{},hand=rs.last_handoff||null;
+      var summaryHtml='<div class="small" style="margin-bottom:5px">ROTATION STRUCTURE</div>'+
+        '<div class="v510HistoryLine">Leader streak <b>'+esc(rs.leader_streak_sessions||0)+'</b> sessions • Handoffs '+esc(rs.leader_changes||0)+'</div>'+
+        (hand?'<div class="v510HistoryLine">Last handoff <b>'+esc(hand.date)+'</b> • '+esc(hand.from_label)+' → '+esc(hand.to_label)+'</div>':'');
+      hist.innerHTML=summaryHtml+'<div class="small" style="margin:8px 0 4px">RECENT ROTATION LEADERS</div>'+h.map(function(d){
         return '<div class="v510HistoryLine"><b>'+esc(d.date)+'</b> • '+esc(d.leader_label)+' • '+esc(d.leader_score)+'</div>'
       }).join('')+watchHtml+recoveryHtml;
     }

@@ -37,3 +37,8 @@ Rotation confirmation filter
 - Breadth + EMA20 + member relative strength are mandatory core checks.
 - At least 4 of 5 checks must pass for confirmed EARLY ROTATION.
 - Unconfirmed rebound is classified as RECOVERING and shown separately from the main Transition Watch.
+
+Rotation structure
+- Tracks leader handoffs across the recent 15-session history.
+- Exposes current leader streak, total handoffs, and the most recent handoff.
+- Keeps current leadership separate from confirmed Early Rotation and unconfirmed Recovery Watch.
