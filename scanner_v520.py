@@ -109,7 +109,9 @@ _TRIGGER_MONITOR_UI = r"""
   function getNum(id){
     var e=document.getElementById(id);
     if(!e)return null;
-    var n=Number(String(e.value||'').replace(',','.').replace('%',''));
+    var raw=String(e.value==null?'':e.value).trim();
+    if(raw==='')return null;
+    var n=Number(raw.replace(',','.').replace('%',''));
     return Number.isFinite(n)?n:null;
   }
 
