@@ -12,6 +12,7 @@ import scanner_v510 as v510
 from flask import jsonify, request
 
 from trigger_monitor import get_intraday_quote
+from telegram_alerts import send_entry_alert, telegram_configured
 
 app = v510.app
 
@@ -24,6 +25,41 @@ def _v520_trigger_quote_api():
         return jsonify({"ok": True, "data": get_intraday_quote(ticker, force=force)})
     except Exception as exc:
         return jsonify({"ok": False, "version": "5.2-trigger-monitor", "error": str(exc)}), 200
+
+
+@app.route("/api/telegram-health")
+def _v520_telegram_health_api():
+    return jsonify({"ok": True, "configured": telegram_configured()})
+
+
+@app.route("/api/telegram-entry-alert", methods=["POST"])
+def _v520_telegram_entry_alert_api():
+    try:
+        payload = request.get_json(silent=True) or {}
+        ticker = str(payload.get("ticker") or "").strip().upper()
+        entry = payload.get("entry")
+        buy_low = payload.get("buy_low")
+        buy_high = payload.get("buy_high")
+        opening = str(payload.get("opening") or "").upper()
+        final_status = str(payload.get("final_status") or "").upper()
+
+        if not ticker or entry is None or buy_low is None or buy_high is None:
+            return jsonify({"ok": False, "error": "missing_signal_fields"}), 400
+
+        entry_f = float(entry)
+        low_f = float(buy_low)
+        high_f = float(buy_high)
+        if low_f <= 0 or high_f < low_f or entry_f < low_f or entry_f > high_f * 1.005:
+            return jsonify({"ok": False, "error": "entry_outside_allowed_zone"}), 400
+
+        if opening != "ENTRY1" or final_status != "CONFIRMED":
+            return jsonify({"ok": False, "error": "signal_not_confirmed"}), 400
+
+        result = send_entry_alert(payload)
+        code = 200 if result.get("ok") else 503
+        return jsonify(result), code
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 500
 
 
 _TRIGGER_MONITOR_UI = r"""
@@ -156,6 +192,36 @@ _TRIGGER_MONITOR_UI = r"""
     return M.lastFinal;
   }
 
+  async function sendTelegramEntry(price,op,fd){
+    try{
+      var ctx=(typeof context!=='undefined'&&context)||{};
+      var sg=(ctx.groups&&selected&&ctx.groups[selected.group])||{};
+      var payload={
+        ticker:M.ticker,
+        entry:price,
+        buy_low:selected.buy_low,
+        buy_high:selected.buy_high,
+        score:fd&&fd.score,
+        opening:op&&op.state,
+        final_status:fd&&fd.status,
+        market:ctx.market||'unknown',
+        group:sg.state||'unknown',
+        time_label:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+      };
+      var r=await fetch('/api/telegram-entry-alert',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        cache:'no-store',
+        body:JSON.stringify(payload)
+      });
+      var j=await r.json();
+      if(!r.ok||!j.ok)throw Error(j.error||j.reason||('HTTP '+r.status));
+      return j;
+    }catch(e){
+      return {ok:false,error:e.message};
+    }
+  }
+
   function notify(msg){
     try{if(navigator.vibrate)navigator.vibrate([200,100,200])}catch(e){}
     try{
@@ -190,6 +256,11 @@ _TRIGGER_MONITOR_UI = r"""
             if(fd.status==='CONFIRMED'){
               status('<b>🟢 ENTRY 1 CONFIRMED</b> • '+M.ticker+' '+money(p)+' • Opening + Final ผ่าน','good');
               notify(M.ticker+' Entry 1 confirmed at '+money(p));
+              sendTelegramEntry(p,op,fd).then(function(tg){
+                if(tg&&tg.ok&&tg.sent){
+                  status('<b>🟢 ENTRY 1 CONFIRMED</b> • '+M.ticker+' '+money(p)+' • ส่ง Telegram แล้ว','good');
+                }
+              });
             }else{
               status('<b>🟡 TRIGGER ผ่าน แต่ Final ยังไม่ผ่าน</b> • '+(fd.label||fd.status||'WAIT'),'warn');
             }
