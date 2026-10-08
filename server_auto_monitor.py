@@ -735,6 +735,7 @@ def status():
         and cycle_age is not None
         and -2 <= cycle_age <= max(120, _POLL_SECONDS * 4)
         and not out.get("last_error")
+        and out.get("session") == _market_window(now)
     )
     out["health"] = {
         "state": "HEALTHY" if healthy else ("DISABLED" if not _ENABLED else "NOT_HEALTHY"),
