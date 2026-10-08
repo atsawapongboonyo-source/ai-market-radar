@@ -1,5 +1,6 @@
 import json
 import math
+import threading
 import time
 from pathlib import Path
 
@@ -10,6 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent
 _CONFIG_PATH = BASE_DIR / "multi_radar_universe.json"
 _CACHE = {"ts": 0.0, "payload": None}
 _CACHE_TTL = 10 * 60
+_REFRESH_LOCK = threading.Lock()
 
 
 def _load_config():
@@ -294,6 +296,20 @@ def build_multi_radar(force=False):
         payload["cached"] = True
         return payload
 
+    if not _REFRESH_LOCK.acquire(blocking=False):
+        if _CACHE["payload"]:
+            payload = dict(_CACHE["payload"])
+            payload["cached"] = True
+            payload["refresh_in_progress"] = True
+            return payload
+        raise RuntimeError("Multi-Radar refresh already in progress; retry shortly")
+    try:
+        return _build_multi_radar_uncached(now)
+    finally:
+        _REFRESH_LOCK.release()
+
+
+def _build_multi_radar_uncached(now):
     config = _load_config()
     data = _download(config)
     benchmark = config["benchmark"]
