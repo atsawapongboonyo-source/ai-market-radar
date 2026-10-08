@@ -721,4 +721,29 @@ def status():
     out["switch_margin"] = _SWITCH_MARGIN
     out["switch_confirmations"] = _SWITCH_CONFIRMATIONS
     out["enabled"] = _ENABLED
+    # Read-only diagnostics. Never infer health from an HTTP 200 alone.
+    now = datetime.now(ET)
+    thread_alive = bool(_THREAD is not None and _THREAD.is_alive())
+    last = out.get("last_cycle_at")
+    try:
+        last_dt = datetime.fromisoformat(last) if last else None
+        cycle_age = (now - last_dt).total_seconds() if last_dt else None
+    except (TypeError, ValueError):
+        cycle_age = None
+    healthy = bool(
+        _ENABLED and thread_alive and out.get("running")
+        and cycle_age is not None
+        and -2 <= cycle_age <= max(120, _POLL_SECONDS * 4)
+        and not out.get("last_error")
+    )
+    out["health"] = {
+        "state": "HEALTHY" if healthy else ("DISABLED" if not _ENABLED else "NOT_HEALTHY"),
+        "thread_alive": thread_alive,
+        "server_now_et": now.isoformat(),
+        "expected_session": _market_window(now),
+        "reported_session": out.get("session"),
+        "session_matches": out.get("session") == _market_window(now),
+        "last_cycle_age_seconds": round(cycle_age, 1) if cycle_age is not None else None,
+        "last_rerank_at": out.get("last_rerank_at"),
+    }
     return out
