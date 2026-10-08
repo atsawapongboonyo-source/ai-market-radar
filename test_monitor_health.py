@@ -46,6 +46,41 @@ class MonitorHealthTests(unittest.TestCase):
                 last_cycle_at=now.isoformat(), session=monitor._market_window(now))
             self.assertEqual(monitor.status()["health"]["state"], "HEALTHY")
 
+    def test_in_progress_cycle_diagnostics_visible_without_declaring_healthy(self):
+        now = datetime.now(monitor.ET)
+        with patch.object(monitor, "_ENABLED", True), patch.object(monitor, "_THREAD") as thread:
+            thread.is_alive.return_value = True
+            monitor._STATE.update(
+                running=True, last_error=None,
+                last_cycle_at=(now - timedelta(minutes=15)).isoformat(),
+                last_cycle_started_at=now.isoformat(),
+                last_cycle_finished_at=None,
+                last_cycle_duration_seconds=None,
+                cycle_in_progress=True,
+                session=monitor._market_window(now),
+            )
+            health = monitor.status()["health"]
+            self.assertEqual(health["state"], "NOT_HEALTHY")
+            self.assertTrue(health["cycle_in_progress"])
+            self.assertIsNone(health["last_cycle_duration_seconds"])
+
+    def test_completed_cycle_diagnostics_are_reported(self):
+        now = datetime.now(monitor.ET)
+        with patch.object(monitor, "_ENABLED", True), patch.object(monitor, "_THREAD") as thread:
+            thread.is_alive.return_value = True
+            monitor._STATE.update(
+                running=True, last_error=None, last_cycle_at=now.isoformat(),
+                last_cycle_started_at=(now - timedelta(seconds=3)).isoformat(),
+                last_cycle_finished_at=now.isoformat(),
+                last_cycle_duration_seconds=3.0,
+                cycle_in_progress=False,
+                session=monitor._market_window(now),
+            )
+            health = monitor.status()["health"]
+            self.assertEqual(health["state"], "HEALTHY")
+            self.assertFalse(health["cycle_in_progress"])
+            self.assertEqual(health["last_cycle_duration_seconds"], 3.0)
+
     def test_dead_thread_is_not_healthy(self):
         now = datetime.now(monitor.ET)
         with patch.object(monitor, "_ENABLED", True), patch.object(monitor, "_THREAD") as thread:
