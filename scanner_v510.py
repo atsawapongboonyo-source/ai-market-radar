@@ -152,7 +152,12 @@ _MULTI_RADAR_UI = r"""
     ensure();var st=document.getElementById('v510Status');
     if(st){st.className='status info';st.textContent='กำลังคำนวณ Multi-Radar Rotation...'}
     try{
-      var r=await fetch('/api/multi-radar'+(force?'?force=1':''),{cache:'no-store'}),j=await r.json();
+      var r=await fetch('/api/multi-radar'+(force?'?force=1':''),{cache:'no-store'});
+      var contentType=r.headers.get('content-type')||'';
+      if(!contentType.toLowerCase().includes('application/json')){
+        throw Error('API ตอบกลับไม่ใช่ JSON (HTTP '+r.status+'). กรุณารอแล้วลองใหม่; ไม่ได้เปลี่ยนสัญญาณหุ้น');
+      }
+      var j=await r.json();
       if(!r.ok||!j.ok)throw Error(j.error||('HTTP '+r.status));render(j.data||{});
     }catch(e){if(st){st.className='status bad';st.textContent='Multi-Radar ไม่สำเร็จ: '+e.message}}
   }
