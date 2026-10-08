@@ -118,3 +118,30 @@ def send_entry_alert(payload, force=False):
         "deduped": False,
         "message_id": (body.get("result") or {}).get("message_id"),
     }
+
+
+def send_test_message():
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        return {"ok": False, "configured": False, "reason": "telegram_not_configured"}
+
+    text = "🧪 AI RADAR — TELEGRAM TEST\nเชื่อมต่อ Telegram สำเร็จแล้ว\nระบบจะส่งเฉพาะ ENTRY SIGNAL ที่ผ่านเงื่อนไข"
+    data = urllib.parse.urlencode({
+        "chat_id": chat_id,
+        "text": text,
+        "disable_web_page_preview": "true",
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data=data,
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            body = json.loads(resp.read().decode("utf-8", "replace"))
+    except Exception as exc:
+        return {"ok": False, "configured": True, "reason": f"telegram_send_failed: {exc}"}
+    return {"ok": bool(body.get("ok")), "configured": True}

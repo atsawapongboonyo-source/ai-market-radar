@@ -9,10 +9,13 @@ Trigger Monitor is read-only / alert-only. It never sends orders.
 """
 
 import scanner_v510 as v510
+import os
+import threading
+import time
 from flask import jsonify, request
 
 from trigger_monitor import get_intraday_quote
-from telegram_alerts import send_entry_alert, telegram_configured
+from telegram_alerts import send_entry_alert, telegram_configured, send_test_message
 
 app = v510.app
 
@@ -317,3 +320,10 @@ def _v520_inject_trigger_monitor(response):
     except Exception:
         pass
     return response
+
+
+if os.getenv("TELEGRAM_TEST_ON_BOOT") == "1":
+    def _telegram_boot_test():
+        time.sleep(3)
+        send_test_message()
+    threading.Thread(target=_telegram_boot_test, daemon=True).start()
