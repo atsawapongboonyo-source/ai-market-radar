@@ -15,8 +15,16 @@ def test_weekend_is_closed():
     assert _market_window(et(2026, 10, 10, 10, 0)) == "CLOSED_WEEKEND"
 
 
-def test_premarket_before_open():
-    assert _market_window(et(2026, 10, 8, 8, 0)) == "PREMARKET"
+def test_early_premarket_collect():
+    assert _market_window(et(2026, 10, 8, 8, 0)) == "PREMARKET_COLLECT"
+
+
+def test_premarket_prep_window():
+    assert _market_window(et(2026, 10, 8, 8, 45)) == "PREMARKET_PREP"
+
+
+def test_premarket_lock_before_open():
+    assert _market_window(et(2026, 10, 8, 9, 25)) == "PREMARKET_LOCK"
 
 
 def test_opening_range_is_fail_closed():
