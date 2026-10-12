@@ -34,6 +34,16 @@ class MultiRadarRefreshSafetyTests(unittest.TestCase):
         finally:
             radar._REFRESH_LOCK.release()
 
+    def test_failed_download_releases_lock_and_preserves_previous_cache(self):
+        old_payload = {"version": "5.1", "leader": {"key": "prior"}}
+        radar._CACHE.update(ts=0.0, payload=old_payload)
+        with patch.object(radar, "_load_config", return_value={"benchmark": "SPY", "themes": {}}):
+            with patch.object(radar, "_download", side_effect=TimeoutError("upstream timeout")):
+                with self.assertRaisesRegex(TimeoutError, "upstream timeout"):
+                    radar.build_multi_radar(force=True)
+        self.assertFalse(radar._REFRESH_LOCK.locked())
+        self.assertEqual(radar._CACHE["payload"], old_payload)
+
     def test_fresh_cache_does_not_trigger_download(self):
         radar._CACHE.update(ts=radar.time.time(), payload={"version": "5.1"})
         with patch.object(radar, "_download") as download:
