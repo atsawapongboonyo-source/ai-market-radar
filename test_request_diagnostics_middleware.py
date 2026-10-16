@@ -59,7 +59,7 @@ class MiddlewareTests(unittest.TestCase):
 
     def test_sensitive_path_is_not_logged(self):
         self.assertEqual(safe_path({"PATH_INFO": "/token/secret"}), "UNMAPPED")
-        self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>"}), "/api/<symbol>")
+        self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>"}), "UNMAPPED")
         self.assertEqual(safe_path({"radar.route_template": "/api/scan"}), "/api/scan")
         self.assertEqual(safe_path({"radar.route_template": "/api/user-secret"}), "UNMAPPED")
         self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>/private-secret"}), "UNMAPPED")
