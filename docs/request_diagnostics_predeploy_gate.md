@@ -120,3 +120,13 @@ Verified from Render service and deploy metadata (no mutations):
 - Prior baseline Render deploy SHA `0eca2343ee06d2118fab347cb3c5a70773d49e3e` must be rechecked immediately before release. Render auto-deploys on `main` commits.
 - Outstanding gates: verify authorized rollback operator path, reconfirm actual live deployment and service health, obtain separate explicit approvals for merge/auto-deploy and for enabling diagnostics.
 - **Decision: HOLD PRODUCTION DEPLOY.** No production flag, branch or service setting has been changed.
+
+## Final read-only diff and memory review — 2026-10-16
+
+- GitHub compare `main...diagnostics/worker-crash-139-20261016`: **93 ahead, zero behind, 28 changed files**. The only pre-existing production source changed is `scanner.py` (+13/-0); remaining files are new CI helpers, tests, documentation and diagnostics modules. This is diff-scope evidence, not proof of runtime equivalence.
+- Render service still has `autoDeploy=yes` on `main`, 1 instance, 0.5 CPU / 512 MiB; PR merge would trigger production deployment.
+- Render memory metrics sampled every 5 minutes from 12:00 to 14:30 UTC show approximately **203–247 MB used**, against approximately **537 MB reported limit**. These observations cannot exclude sub-5-minute spikes, worker-local memory exhaustion or native SIGSEGV.
+- CI #176 (38911201519) passed 11/11 isolated jobs. Latest documentation-only commits have not changed the scanner implementation; recheck CI and exact SHA before any authorized release.
+- Operator-confirmed Render specific-commit picker lists baseline `0eca234`. Render warns that a specific-commit deploy disables Auto-Deploy; rollback operation itself remains untested.
+- Outstanding: root cause of code 139 unknown; production monitor loop with market-data concurrency and production load not reproduced; rollback execution untested; no explicit approval for production merge or enabling diagnostics.
+- **HOLD PRODUCTION DEPLOY.**
