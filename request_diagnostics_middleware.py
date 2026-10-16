@@ -11,7 +11,7 @@ import time
 import uuid
 
 _ALLOWED = re.compile(r"^[A-Za-z0-9_./<>:-]{1,160}$")
-_LOG = logging.getLogger("radar.request_diagnostics")
+_LOG = logging.getLogger("gunicorn.error")
 
 
 def safe_path(environ):
@@ -62,7 +62,7 @@ class RequestDiagnosticsMiddleware:
                     if close is not None:
                         close()
                 finally:
-                    self.emit("REQUEST_END id=%s pid=%d status=%s elapsed_ms=%d",
-                              request_id, pid, status,
+                    self.emit("REQUEST_END id=%s pid=%d route=%s status=%s elapsed_ms=%d",
+                              request_id, pid, safe_path(environ), status,
                               int((self.clock() - started) * 1000))
         return stream()
