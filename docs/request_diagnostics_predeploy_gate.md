@@ -110,3 +110,13 @@ Verified from Render service and deploy metadata (no mutations):
 - Production environment variable values cannot be read using the currently available connector. Operator must verify flags privately in Render UI; do not send secrets.
 - CI #153 passed eight jobs, but no SIGSEGV root cause or production fix has been proven.
 - Decision: **HOLD MERGE / HOLD DEPLOY / HOLD DIAGNOSTICS FLAG** until production flags and rollback execution procedure are verified, with separate approvals for merge and enabling diagnostics.
+
+## CI #176 and operator-reported Render flags (2026-10-16)
+
+- GitHub Actions run 38911201519 (#176) **SUCCESS: 11/11 jobs**, including monitor-enabled import wiring, harmless real monitor thread start, and Gunicorn worker lifecycle with a CI-only replacement of the monitor loop (diagnostics OFF/ON).
+- The earlier CI #174 failure was a safety assertion in the pre-existing Gunicorn test requiring `SERVER_AUTO_MONITOR_ENABLED=0`; the updated test only allows `1` when the CI-only shim is present. It is not evidence of a production worker crash.
+- These are isolated offline tests. The actual monitor loop, Yahoo traffic, concurrent market load, 512 MB memory pressure and SIGSEGV code 139 have **not** been reproduced or cleared.
+- Operator reports Render `SERVER_AUTO_MONITOR_ENABLED=1`, `TELEGRAM_TEST_ON_BOOT=0`, and no `RADAR_REQUEST_DIAGNOSTICS` entry (defaults OFF). `LIVE_TRADING` was not shown in the reported list. This is user-reported dashboard evidence, not a connector read or proof that every broker dispatch path is disabled.
+- Prior baseline Render deploy SHA `0eca2343ee06d2118fab347cb3c5a70773d49e3e` must be rechecked immediately before release. Render auto-deploys on `main` commits.
+- Outstanding gates: verify authorized rollback operator path, reconfirm actual live deployment and service health, obtain separate explicit approvals for merge/auto-deploy and for enabling diagnostics.
+- **Decision: HOLD PRODUCTION DEPLOY.** No production flag, branch or service setting has been changed.
