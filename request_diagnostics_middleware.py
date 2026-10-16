@@ -78,4 +78,6 @@ class RequestDiagnosticsMiddleware:
                         close()
                 finally:
                     finish()
-        return ClosingIterator(stream(), [finish])
+        close_original = getattr(iterable, "close", None)
+        callbacks = ([close_original] if close_original is not None else []) + [finish]
+        return ClosingIterator(stream(), callbacks)
