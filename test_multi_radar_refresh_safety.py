@@ -6,11 +6,14 @@ import multi_radar as radar
 
 class MultiRadarRefreshSafetyTests(unittest.TestCase):
     def setUp(self):
+        self.original_backoff = radar._FAILURE_UNTIL
+        radar._FAILURE_UNTIL = 0.0
         self.original_cache = dict(radar._CACHE)
         radar._CACHE.update(ts=0.0, payload=None)
 
     def tearDown(self):
         radar._CACHE.update(self.original_cache)
+        radar._FAILURE_UNTIL = self.original_backoff
 
     def test_concurrent_refresh_returns_cached_data_without_downloading(self):
         radar._CACHE.update(ts=0.0, payload={"version": "5.1", "leader": None})
@@ -43,6 +46,20 @@ class MultiRadarRefreshSafetyTests(unittest.TestCase):
                     radar.build_multi_radar(force=True)
         self.assertFalse(radar._REFRESH_LOCK.locked())
         self.assertEqual(radar._CACHE["payload"], old_payload)
+
+    def test_failure_enters_cooldown_without_second_provider_call(self):
+        with patch.object(radar, "_build_multi_radar_uncached", side_effect=TimeoutError("provider")) as build:
+            with self.assertRaises(TimeoutError):
+                radar.build_multi_radar(force=True)
+            with self.assertRaisesRegex(RuntimeError, "cooling down"):
+                radar.build_multi_radar(force=True)
+            self.assertEqual(build.call_count, 1)
+
+    def test_cooldown_expiry_allows_retry(self):
+        radar._FAILURE_UNTIL = radar.time.time() - 1
+        with patch.object(radar, "_build_multi_radar_uncached", return_value={"version": "5.1"}) as build:
+            self.assertEqual(radar.build_multi_radar(force=True)["version"], "5.1")
+            build.assert_called_once()
 
     def test_fresh_cache_does_not_trigger_download(self):
         radar._CACHE.update(ts=radar.time.time(), payload={"version": "5.1"})
