@@ -125,6 +125,36 @@ class MiddlewareTests(unittest.TestCase):
         self.assertNotIn("secret-cookie", "\n".join(self.logs))
 
 
+    def test_exception_before_response_does_not_log_private_details(self):
+        def app(env, start):
+            raise ValueError("credential=never-log-this")
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        with self.assertRaisesRegex(ValueError, "credential=never-log-this"):
+            middleware({"PATH_INFO": "/private/secret"}, lambda *args: None)
+        self.assertEqual(sum("REQUEST_START" in line for line in self.logs), 1)
+        self.assertEqual(sum("REQUEST_EXCEPTION" in line for line in self.logs), 1)
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 0)
+        self.assertNotIn("never-log-this", "\n".join(self.logs))
+
+    def test_close_without_iteration_twice_is_idempotent(self):
+        closed = []
+        class Body:
+            def __iter__(self):
+                yield b"unused"
+            def close(self):
+                closed.append(1)
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {}, lambda *args: None
+        )
+        response.close()
+        response.close()
+        self.assertEqual(closed, [1])
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
+
+
 
 if __name__ == "__main__":
     unittest.main()
