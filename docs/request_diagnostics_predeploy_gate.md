@@ -41,3 +41,12 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - Production auto-deploys on `main` commits. **Do not merge this draft PR as an offline test or to enable a preview.**
 - Offline route contract covers statically registered legacy API routes, not dynamic registrations in the full extension chain. Full runtime boot, production environment flag value, operational health, and rollback permissions remain unverified.
 - **Decision: HOLD DEPLOY.** Next safe action: prepare a staging-equivalent full runtime smoke test with providers/monitor side effects disabled and no broker execution; review results and request separate explicit approvals before merging and before enabling diagnostics.
+
+## Full runtime smoke result (2026-10-16)
+
+- GitHub Actions #115 (run 38890860122) **SUCCESS**: diagnostics and full-runtime-import jobs both passed.
+- Full runtime smoke built project dependencies and imported actual `scanner:app` twice in separate Docker containers with `--network none`: diagnostics OFF and ON. `SERVER_AUTO_MONITOR_ENABLED=0`, `TELEGRAM_TEST_ON_BOOT=0`, `LIVE_TRADING=0` were enforced. Route presence, Flask app, runtime version, middleware state, and absence of the named server monitor thread were asserted.
+- This verifies **import/startup only**; it does not exercise real scanner API responses, live network integrations, production credentials, or native crash reproduction.
+- Latest compare at review: 59 commits ahead, 0 behind `main`; production Render still shows live `0eca2343ee06d2118fab347cb3c5a70773d49e3e`.
+- Remaining: inspect Render env flag value with authorized metadata, verify production health/rollback operator access, perform bounded read-only API parity tests, and obtain separate approvals for merge (auto-deploy) and enabling diagnostics.
+- **Decision remains HOLD PRODUCTION DEPLOY.**
