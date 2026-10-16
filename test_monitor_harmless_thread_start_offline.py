@@ -44,5 +44,5 @@ thread.join(timeout=3)
 assert ran.is_set(), "harmless replacement loop did not execute"
 assert not thread.is_alive(), "replacement thread failed to exit"
 assert monitor.status()["enabled"] is True
-assert monitor.status()["healthy"] is False, "no real monitor cycle must never be healthy"
+assert monitor.status()["health"]["state"] == "NOT_HEALTHY", "no real monitor cycle must never be healthy"
 print("MONITOR_HARMLESS_THREAD_START_OK")
