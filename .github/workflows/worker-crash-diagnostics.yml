@@ -67,3 +67,12 @@ jobs:
       - run: docker build -f Dockerfile.runtime-smoke -t radar-native-audit .
       - name: Inventory native dependencies without network access
         run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-audit audit_native_dependencies.py
+
+  native-import-repetition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-native-repeat .
+      - name: Repeat native imports in isolated child processes
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-repeat test_native_import_repetition.py
