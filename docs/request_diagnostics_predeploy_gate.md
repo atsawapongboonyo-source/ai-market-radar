@@ -50,3 +50,12 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - Latest compare at review: 59 commits ahead, 0 behind `main`; production Render still shows live `0eca2343ee06d2118fab347cb3c5a70773d49e3e`.
 - Remaining: inspect Render env flag value with authorized metadata, verify production health/rollback operator access, perform bounded read-only API parity tests, and obtain separate approvals for merge (auto-deploy) and enabling diagnostics.
 - **Decision remains HOLD PRODUCTION DEPLOY.**
+
+## Render read-only release review (2026-10-16, after CI #119)
+
+- CI #119 run 38891960049: **SUCCESS** for diagnostics and real-runtime Docker smoke including the read-only `/api/server-monitor-status` API contract with diagnostics OFF and ON. This does not prove all API routes are equivalent.
+- Render service `srv-daek7uqd0e5s738riq40` on `main`: `autoDeploy=yes`, `autoDeployTrigger=commit`, one instance, Python runtime, `gunicorn scanner:app`, 0.5 CPU / 512 MB. **Merging into main will trigger deployment.**
+- Latest live deploy `dep-db3qeoff3r2c7389mu90` remains commit `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. Prior known deploy `dep-db3fd0l040hc73a04e60` at `4e892fbf594118b97b3c0cf321f23c6afbaaeedd` is deactivated; its existence is not proof that rollback will work.
+- No production environment-variable values were read; `RADAR_REQUEST_DIAGNOSTICS`, `SERVER_AUTO_MONITOR_ENABLED`, `TELEGRAM_TEST_ON_BOOT`, and other flags remain **unverified in production**. Do not infer their values from source defaults.
+- A rollback runbook must be rehearsed/authorized separately; do not claim rollback is proven. No Render settings, deploys, or production secrets were modified during this review.
+- **HOLD** until explicit approval for production merge/auto-deploy and a separate approval to enable diagnostics, plus confirmed rollback access and production flag values.
