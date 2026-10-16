@@ -19,8 +19,8 @@ def make_app(enabled, messages):
         return {"ok": True}
 
     @app.get("/api/catalyst/<ticker>")
-    def catalyst(symbol):
-        return {"ok": True, "symbol": symbol}
+    def catalyst(ticker):
+        return {"ok": True, "symbol": ticker}
 
     @app.get("/private/<secret>")
     def private(secret):
