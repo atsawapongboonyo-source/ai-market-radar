@@ -9,7 +9,7 @@ on:
       - worker_crash_diagnostics.py
       - worker_crash_correlation.py
       - request_diagnostics_middleware.py
-      - test_request_diagnostics_middleware.py test_request_diagnostics_integration.py
+      - test_request_diagnostics_middleware.py test_request_diagnostics_integration.py scanner.py
       - test_request_diagnostics_integration.py
       - scanner.py
       - test_worker_crash_correlation.py
