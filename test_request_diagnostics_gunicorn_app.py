@@ -14,7 +14,7 @@ def route_template():
 def scan():
     return {"ok": True}
 
-@app.get("/api/catalyst/<symbol>")
+@app.get("/api/catalyst/<ticker>")
 def catalyst(symbol):
     return {"symbol": symbol}
 
