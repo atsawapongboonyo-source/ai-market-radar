@@ -114,3 +114,12 @@ jobs:
         run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-monitor-wiring test_monitor_enabled_import_wiring_offline.py
       - name: Verify monitor-enabled wiring without starting its thread (diagnostics ON)
         run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 --entrypoint python radar-monitor-wiring test_monitor_enabled_import_wiring_offline.py
+
+  monitor-harmless-thread-start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-monitor-harmless .
+      - name: Start a harmless monitor thread without network or market calls
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-monitor-harmless test_monitor_harmless_thread_start_offline.py
