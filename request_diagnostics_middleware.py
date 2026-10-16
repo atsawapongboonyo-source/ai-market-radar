@@ -64,6 +64,16 @@ class RequestDiagnosticsMiddleware:
                       request_id, pid, safe_path(environ), status,
                       int((self.clock() - started) * 1000))
 
+        original_closed = False
+        def close_original_once():
+            nonlocal original_closed
+            if original_closed:
+                return
+            original_closed = True
+            close = getattr(iterable, "close", None)
+            if close is not None:
+                close()
+
         def stream():
             try:
                 yield from iterable
@@ -72,12 +82,8 @@ class RequestDiagnosticsMiddleware:
                           request_id, pid, int((self.clock() - started) * 1000))
                 raise
             finally:
-                close = getattr(iterable, "close", None)
                 try:
-                    if close is not None:
-                        close()
+                    close_original_once()
                 finally:
                     finish()
-        close_original = getattr(iterable, "close", None)
-        callbacks = ([close_original] if close_original is not None else []) + [finish]
-        return ClosingIterator(stream(), callbacks)
+        return ClosingIterator(stream(), [close_original_once, finish])
