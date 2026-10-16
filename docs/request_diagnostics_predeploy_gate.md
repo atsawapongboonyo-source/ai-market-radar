@@ -99,3 +99,14 @@ Read-only Render application log query: 11:08–12:15 UTC, 23 records, no additi
 - This confirms only the tested boot/read-only request scenario, not production traffic, memory pressure, market-data calls, or a fix for SIGSEGV 139.
 - The readiness estimate for diagnostic instrumentation is ~80% (informal milestone estimate, not measured crash-fix probability). Remaining gates: confirm Render production environment flags without exposing secrets, verify a working rollback operator procedure, obtain separate explicit approvals for merge/auto-deploy and diagnostic flag enablement.
 - **HOLD DEPLOY**. No live changes authorized.
+
+## Read-only Render release preflight — 2026-10-16
+
+Verified from Render service and deploy metadata (no mutations):
+- Service `srv-daek7uqd0e5s738riq40` is on `main`, `autoDeploy=yes`, `autoDeployTrigger=commit`; merging to `main` will initiate deployment automatically.
+- Live deploy `dep-db3qeoff3r2c7389mu90` at Git SHA `0eca2343ee06d2118fab347cb3c5a70773d49e3e`, status `live`.
+- Runtime: Python, `gunicorn scanner:app`, one instance, plan `0.5c-512mb`.
+- Earlier deactivated deploys are visible but **not** proof of an operator-tested rollback path.
+- Production environment variable values cannot be read using the currently available connector. Operator must verify flags privately in Render UI; do not send secrets.
+- CI #153 passed eight jobs, but no SIGSEGV root cause or production fix has been proven.
+- Decision: **HOLD MERGE / HOLD DEPLOY / HOLD DIAGNOSTICS FLAG** until production flags and rollback execution procedure are verified, with separate approvals for merge and enabling diagnostics.
