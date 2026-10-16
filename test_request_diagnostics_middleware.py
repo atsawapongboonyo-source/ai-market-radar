@@ -63,7 +63,7 @@ class MiddlewareTests(unittest.TestCase):
         self.assertEqual(safe_path({"radar.route_template": "/api/scan"}), "/api/scan")
         self.assertEqual(safe_path({"radar.route_template": "/api/user-secret"}), "UNMAPPED")
         self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>/private-secret"}), "UNMAPPED")
-        self.assertEqual(safe_path({"radar.route_template": "/api/catalyst/<symbol>"}), "/api/catalyst/<symbol>")
+        self.assertEqual(safe_path({"radar.route_template": "/api/catalyst/<ticker>"}), "/api/catalyst/<ticker>")
         self.assertEqual(safe_path({"radar.route_template": "/private/account"}), "UNMAPPED")
 
     def test_app_exception_logs_and_reraises(self):
