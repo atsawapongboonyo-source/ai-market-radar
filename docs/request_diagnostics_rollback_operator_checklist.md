@@ -36,3 +36,10 @@ CI #119 passed isolated diagnostics and read-only API smoke. Production environm
 - Candidate rollback baseline remains `0eca2343ee06d2118fab347cb3c5a70773d49e3e`, observed live on Render. A rollback deploy would be a production change and requires explicit authorization.
 - Do not invoke any deployment or restart as part of preflight. A separate operator check of commit selection (without confirmation) may further establish feasibility, but must not submit a deployment.
 - **HOLD DEPLOY** pending explicit approval for merge and separate diagnostics flag activation; no production action authorized.
+
+## Operator verified commit picker and Auto-Deploy side effect — 2026-10-16
+
+- Operator screenshot of Render `Deploy a specific commit` dialog confirms baseline `0eca234` is listed and selectable, with an input for a commit SHA. No commit was deployed during this inspection.
+- **Critical UI warning:** Render explicitly states `Auto-Deploy will be disabled for this service to prevent accidental deploys.` Therefore a rollback via specific-commit deployment will change the auto-deploy setting. After any separately authorized rollback, confirm the service is running the intended baseline, then explicitly decide when to restore auto-deploy; do not automatically re-enable it while an unsafe `main` tip remains.
+- Visibility of the baseline and this warning increases rollback-path confidence but does not prove a successful deploy or operational recovery. Operator should close the dialog without selecting/deploying.
+- Release still requires explicit authorization for merging PR #18 (auto-deploy) and separately for enabling `RADAR_REQUEST_DIAGNOSTICS=1`. **HOLD PRODUCTION DEPLOY.**
