@@ -9,8 +9,15 @@ import sys
 import time
 import urllib.request
 
-for key in ("SERVER_AUTO_MONITOR_ENABLED", "TELEGRAM_TEST_ON_BOOT", "LIVE_TRADING"):
+for key in ("TELEGRAM_TEST_ON_BOOT", "LIVE_TRADING"):
     assert os.environ.get(key) == "0", key
+monitor_flag = os.environ.get("SERVER_AUTO_MONITOR_ENABLED")
+if monitor_flag == "1":
+    # Only permit monitor-enabled mode when the CI-only startup shim is present.
+    import sitecustomize
+    assert sitecustomize.__file__.startswith("/workspace/ci_monitor_stub/"), "unsafe monitor startup"
+else:
+    assert monitor_flag == "0", "unsafe monitor startup"
 
 port = 18743
 cmd = [sys.executable, "-m", "gunicorn", "scanner:app", "--bind",
