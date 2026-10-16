@@ -92,3 +92,10 @@ Read-only Render application log query: 11:08–12:15 UTC, 23 records, no additi
 **Interpretation limits:** Access logs do not identify the serving worker PID. An HTTP 200 close to a crash is not proof the corresponding endpoint caused it. A rapid post-boot crash is a clue, not proof of an import-time or native-library bug. No request tracing was active. No production changes were made.
 
 **Recommended next offline investigation:** inventory compiled/native dependencies and runtime import behavior; compare memory/worker lifecycle with the log timestamps. Keep separate from opt-in instrumentation rollout; do not modify locked scanner algorithms. **HOLD PRODUCTION DEPLOY.**
+
+## CI #153 completed; release gate remains HOLD
+
+- GitHub Actions run 38905283563: **SUCCESS** across all eight jobs, including the real Gunicorn lifecycle smoke with `RADAR_REQUEST_DIAGNOSTICS=1` in an offline container.
+- This confirms only the tested boot/read-only request scenario, not production traffic, memory pressure, market-data calls, or a fix for SIGSEGV 139.
+- The readiness estimate for diagnostic instrumentation is ~80% (informal milestone estimate, not measured crash-fix probability). Remaining gates: confirm Render production environment flags without exposing secrets, verify a working rollback operator procedure, obtain separate explicit approvals for merge/auto-deploy and diagnostic flag enablement.
+- **HOLD DEPLOY**. No live changes authorized.
