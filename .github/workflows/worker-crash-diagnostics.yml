@@ -14,7 +14,7 @@ on:
       - test_request_diagnostics_e2e.py
       - test_request_diagnostics_gunicorn.py
       - test_request_diagnostics_gunicorn_app.py
-      - test_scanner_diagnostics_entrypoint.py
+      - test_scanner_diagnostics_entrypoint test_scanner_route_coverage.py
       - scanner.py
       - test_worker_crash_correlation.py
       - test_worker_crash_diagnostics.py
