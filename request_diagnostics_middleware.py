@@ -17,7 +17,8 @@ _LOG = logging.getLogger("gunicorn.error")
 _SAFE_ROUTES = frozenset({
     "/api/scan", "/api/top-picks", "/api/theme-rotation",
     "/api/multi-radar", "/api/server-monitor-status",
-    "/api/catalyst/<ticker>",
+    "/api/catalyst/<ticker>", "/api/scan/refresh",
+    "/api/auto-confirm", "/api/opening-confirm", "/api/position-manage",
 })
 
 
