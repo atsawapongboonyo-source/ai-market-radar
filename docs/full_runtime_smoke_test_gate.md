@@ -19,3 +19,11 @@ Status: **DESIGN ONLY / HOLD**. This document does not authorize a live import, 
 
 ## Current decision
 The isolated Flask/Gunicorn tests and offline route contract pass. **Full real-runtime import has not yet been executed**, and safe network isolation plus import-time side-effect review are still required. Remain HOLD DEPLOY.
+
+## Import-chain review update (2026-10-16)
+
+- Confirmed chain: `scanner.py → scanner_v531 → scanner_v530 → scanner_v520 → scanner_v510 → scanner_v494 → legacy_scanner` (additional imports in intermediate modules remain to be audited).
+- `scanner_v530.py` invokes `start_server_monitor()` unconditionally at module import; `server_auto_monitor.py` checks `SERVER_AUTO_MONITOR_ENABLED` (default `0`) before starting a daemon thread. Set `SERVER_AUTO_MONITOR_ENABLED=0` explicitly in the isolated test.
+- `scanner_v520.py` can start a daemon thread and send a Telegram test message on import when `TELEGRAM_TEST_ON_BOOT=1`. Set `TELEGRAM_TEST_ON_BOOT=0` explicitly and provide no Telegram credentials in the isolated test.
+- `scanner_v510.py` registers Multi-Radar endpoints whose handlers call market-data research functions; do not call them in smoke tests without hard provider mocks and network egress denial.
+- The previously passing CI #104 only exercised isolated/stubbed modules; the full-runtime import is **not yet proven safe**. No production configuration or runtime changed.
