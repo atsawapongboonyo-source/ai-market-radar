@@ -15,8 +15,8 @@ def scan():
     return {"ok": True}
 
 @app.get("/api/catalyst/<ticker>")
-def catalyst(symbol):
-    return {"symbol": symbol}
+def catalyst(ticker):
+    return {"symbol": ticker}
 
 @app.get("/private/<secret>")
 def private(secret):
