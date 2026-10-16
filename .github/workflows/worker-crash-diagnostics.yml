@@ -85,3 +85,12 @@ jobs:
       - run: docker build -f Dockerfile.runtime-smoke -t radar-native-concurrent .
       - name: Bounded concurrent NumPy and pandas computation offline
         run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-concurrent test_native_concurrent_compute.py
+
+  gunicorn-worker-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-worker-lifecycle .
+      - name: Smoke test real Gunicorn workers on loopback only
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-worker-lifecycle test_gunicorn_worker_lifecycle_offline.py
