@@ -9,6 +9,7 @@ import os
 import re
 import time
 import uuid
+from werkzeug.wsgi import ClosingIterator
 
 _ALLOWED = re.compile(r"^/api/[A-Za-z0-9_./<>:-]{1,155}$")
 _LOG = logging.getLogger("gunicorn.error")
@@ -53,6 +54,16 @@ class RequestDiagnosticsMiddleware:
                       request_id, pid, int((self.clock() - started) * 1000))
             raise
 
+        completed = False
+        def finish():
+            nonlocal completed
+            if completed:
+                return
+            completed = True
+            self.emit("REQUEST_END id=%s pid=%d route=%s status=%s elapsed_ms=%d",
+                      request_id, pid, safe_path(environ), status,
+                      int((self.clock() - started) * 1000))
+
         def stream():
             try:
                 yield from iterable
@@ -66,7 +77,5 @@ class RequestDiagnosticsMiddleware:
                     if close is not None:
                         close()
                 finally:
-                    self.emit("REQUEST_END id=%s pid=%d route=%s status=%s elapsed_ms=%d",
-                              request_id, pid, safe_path(environ), status,
-                              int((self.clock() - started) * 1000))
-        return stream()
+                    finish()
+        return ClosingIterator(stream(), [finish])
