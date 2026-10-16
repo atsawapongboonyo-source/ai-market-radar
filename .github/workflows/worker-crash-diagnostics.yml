@@ -12,6 +12,8 @@ on:
       - test_request_diagnostics_middleware.py
       - test_request_diagnostics_integration.py
       - test_request_diagnostics_e2e.py
+      - test_request_diagnostics_gunicorn.py
+      - test_request_diagnostics_gunicorn_app.py
       - scanner.py
       - test_worker_crash_correlation.py
       - test_worker_crash_diagnostics.py
@@ -26,6 +28,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install 'Flask==3.1.2'
-      - run: python -m unittest -v test_worker_crash_diagnostics test_worker_crash_correlation test_request_diagnostics_middleware test_request_diagnostics_integration test_request_diagnostics_e2e
-      - run: python -m py_compile worker_crash_diagnostics.py test_worker_crash_diagnostics.py worker_crash_correlation.py test_worker_crash_correlation.py request_diagnostics_middleware.py test_request_diagnostics_middleware.py test_request_diagnostics_integration.py test_request_diagnostics_e2e.py scanner.py
+      - run: python -m pip install 'Flask==3.1.2' 'gunicorn==23.0.0'
+      - run: python -m unittest -v test_worker_crash_diagnostics test_worker_crash_correlation test_request_diagnostics_middleware test_request_diagnostics_integration test_request_diagnostics_e2e test_request_diagnostics_gunicorn
+      - run: python -m py_compile worker_crash_diagnostics.py test_worker_crash_diagnostics.py worker_crash_correlation.py test_worker_crash_correlation.py request_diagnostics_middleware.py test_request_diagnostics_middleware.py test_request_diagnostics_integration.py test_request_diagnostics_e2e.py test_request_diagnostics_gunicorn.py test_request_diagnostics_gunicorn_app.py scanner.py
