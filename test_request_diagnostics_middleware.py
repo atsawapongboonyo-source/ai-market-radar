@@ -24,6 +24,39 @@ class MiddlewareTests(unittest.TestCase):
         self.assertTrue(self.logs[0].startswith("REQUEST_START"))
         self.assertIn("status=200", self.logs[-1])
 
+    def test_underlying_iterable_closed_once_on_consumption(self):
+        counts = []
+        class Body:
+            def __iter__(self):
+                yield b"ok"
+            def close(self):
+                counts.append("close")
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        response = middleware({}, lambda *a: None)
+        self.assertEqual(list(response), [b"ok"])
+        response.close()
+        self.assertEqual(counts, ["close"])
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+
+    def test_underlying_iterable_closed_once_without_consumption(self):
+        counts = []
+        class Body:
+            def __iter__(self):
+                yield b"ok"
+            def close(self):
+                counts.append("close")
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        response = middleware({}, lambda *a: None)
+        response.close()
+        self.assertEqual(counts, ["close"])
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+
     def test_sensitive_path_is_not_logged(self):
         self.assertEqual(safe_path({"PATH_INFO": "/token/secret"}), "UNMAPPED")
         self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>"}), "/api/<symbol>")
