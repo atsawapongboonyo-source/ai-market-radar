@@ -18,6 +18,7 @@ on:
       - test_scanner_route_coverage.py
       - scanner.py
       - test_full_runtime_import_smoke.py
+      - test_request_diagnostics_release_guard.py
       - Dockerfile.runtime-smoke
       - test_worker_crash_correlation.py
       - test_worker_crash_diagnostics.py
@@ -44,3 +45,15 @@ jobs:
       - run: docker build -f Dockerfile.runtime-smoke -t radar-smoke .
       - run: docker run --rm --network none -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 radar-smoke
       - run: docker run --rm --network none -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 radar-smoke
+
+  release-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest -v test_request_diagnostics_release_guard
