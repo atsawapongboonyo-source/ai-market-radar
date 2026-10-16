@@ -65,3 +65,11 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - GitHub Actions run 38898592963: **SUCCESS**, all three jobs `release-guard`, `full-runtime-import`, and `diagnostics`.
 - Release guard verifies the diagnostics exact opt-in, unchanged locked scanner modules against `origin/main`, and unchanged deployment configuration files. This is a code-diff gate only; it does not inspect production environment variables or prove crash remediation.
 - Release approval remains blocked on verifying production flag values and a working operator rollback route. No production deployment or flag changes authorized.
+
+## Additional production crashes (2026-10-16, read-only Render logs)
+
+- 11:12:36 UTC (18:12:36 Bangkok): Gunicorn logged `Worker (pid:20086) was sent code 139!`; a replacement worker PID 20300 booted immediately afterward.
+- 12:10:38 UTC (19:10:38 Bangkok): Gunicorn logged `Worker (pid:20300) was sent code 139!`; replacement PID 20436 booted afterward.
+- At 11:12:31–34 UTC, access logs include HTTP 200 for `/api/scan`, `/api/top-picks`, and `/api/theme-rotation`. These are temporal observations **not causal proof**. Do not attribute crashes to a particular route or library from proximity alone.
+- This evidence was retrieved read-only from the existing production service; no environment variable or deploy changed. Crash diagnostics PR is still unmerged.
+- **HOLD** remains; request lifecycle instrumentation would help correlate requests but is not a crash fix. Production flag values and rollback execution are still unverified.
