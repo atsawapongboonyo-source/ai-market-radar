@@ -12,6 +12,8 @@ _CONFIG_PATH = BASE_DIR / "multi_radar_universe.json"
 _CACHE = {"ts": 0.0, "payload": None}
 _CACHE_TTL = 10 * 60
 _REFRESH_LOCK = threading.Lock()
+_FAILURE_BACKOFF_SECONDS = 120
+_FAILURE_UNTIL = 0.0
 
 
 def _load_config():
@@ -290,7 +292,12 @@ def _rotation_summary(history):
 
 
 def build_multi_radar(force=False):
+    global _FAILURE_UNTIL
     now = time.time()
+    # Circuit breaker prevents repeat provider calls after recoverable errors.
+    # Does not catch native crashes or coordinate across Gunicorn workers.
+    if now < _FAILURE_UNTIL:
+        raise RuntimeError("Multi-Radar provider cooling down; retry later")
     if not force and _CACHE["payload"] and now - _CACHE["ts"] < _CACHE_TTL:
         payload = dict(_CACHE["payload"])
         payload["cached"] = True
@@ -304,7 +311,13 @@ def build_multi_radar(force=False):
             return payload
         raise RuntimeError("Multi-Radar refresh already in progress; retry shortly")
     try:
-        return _build_multi_radar_uncached(now)
+        try:
+            result = _build_multi_radar_uncached(now)
+        except Exception:
+            _FAILURE_UNTIL = time.time() + _FAILURE_BACKOFF_SECONDS
+            raise
+        _FAILURE_UNTIL = 0.0
+        return result
     finally:
         _REFRESH_LOCK.release()
 
