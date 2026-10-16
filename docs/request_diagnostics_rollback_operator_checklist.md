@@ -18,3 +18,13 @@
 
 ## Current status
 CI #119 passed isolated diagnostics and read-only API smoke. Production environment values, operator rollback access, and rollback execution are **not verified**. **HOLD DEPLOY**.
+
+## Read-only preflight update — 2026-10-16
+
+- Render connector confirms service `srv-daek7uqd0e5s738riq40` remains `main`, `autoDeploy=yes`, `autoDeployTrigger=commit`, 1 instance, 0.5 CPU / 512 MB.
+- Current live deploy is `dep-db3qeoff3r2c7389mu90`, commit `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. This is a **baseline identifier**, not a proven rollback operation.
+- GitHub comparison of draft PR branch against `main`: 90 commits ahead, zero behind, 28 changed files. Confirm the exact diff again before any release; a merge would trigger automatic deployment.
+- CI #176 (run 38911201519) passed 11/11 isolated jobs, including monitor-enabled Gunicorn with a CI-only stub. This does not reproduce production SIGSEGV 139 or verify rollback.
+- Operator-reported Render flags: monitor enabled, Telegram boot test off, request diagnostics absent/default off. No secret values were collected.
+- **Rollback access and execution remain unverified.** An operator must confirm the Render dashboard offers an actionable rollback/redeploy control for the baseline or confirm an authorized Git revert path, taking into account automatic deployments. Do not click rollback/redeploy or alter production as part of this verification.
+- **HOLD**: No merge, production deploy, env edits or rollback have been authorized.
