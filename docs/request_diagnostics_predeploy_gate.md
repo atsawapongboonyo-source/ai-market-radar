@@ -130,3 +130,11 @@ Verified from Render service and deploy metadata (no mutations):
 - Operator-confirmed Render specific-commit picker lists baseline `0eca234`. Render warns that a specific-commit deploy disables Auto-Deploy; rollback operation itself remains untested.
 - Outstanding: root cause of code 139 unknown; production monitor loop with market-data concurrency and production load not reproduced; rollback execution untested; no explicit approval for production merge or enabling diagnostics.
 - **HOLD PRODUCTION DEPLOY.**
+
+## Offline memory test gate — planned, not yet executed
+
+- CI #186 (run 38915997357) passed 11/11 existing jobs. No dedicated 512 MiB memory-pressure test has been run.
+- Proposed next test: run a separate offline container capped at 512 MiB, monitor flag enabled with the CI-only harmless loop, trading and Telegram boot test disabled, diagnostics OFF and ON in separate runs. Use bounded requests to the read-only monitor status endpoint and collect peak cgroup memory plus Gunicorn worker exit codes.
+- Abort on worker crashes, non-JSON responses, memory-limit kills, or unexpected external calls. Do not exercise market-fetch, scan, or broker endpoints. A successful synthetic test would not establish the root cause of production exit 139.
+- The previous attempt to add this test was blocked by tool safety checks; there is no code commit or CI result for this new test. Keep this as a proposed test gate only.
+- **HOLD PRODUCTION DEPLOY** until an approved, successfully executed test and separate release authorization.
