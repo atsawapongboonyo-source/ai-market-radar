@@ -20,6 +20,7 @@ on:
       - test_full_runtime_import_smoke.py
       - test_request_diagnostics_release_guard.py
       - Dockerfile.runtime-smoke
+      - audit_native_dependencies.py
       - test_worker_crash_correlation.py
       - test_worker_crash_diagnostics.py
       - .github/workflows/worker-crash-diagnostics.yml
@@ -57,3 +58,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest -v test_request_diagnostics_release_guard
+
+  native-dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-native-audit .
+      - name: Inventory native dependencies without network access
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-audit audit_native_dependencies.py
