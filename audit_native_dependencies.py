@@ -25,7 +25,11 @@ for name in packages:
     inventory[name] = {"version": version}
 
 for name in ("numpy", "pandas", "yfinance", "curl_cffi", "lxml"):
+    if inventory[name]["version"] == "NOT_INSTALLED":
+        inventory[name]["import_status"] = "NOT_INSTALLED"
+        continue
     module = importlib.import_module(name)
+    inventory[name]["import_status"] = "OK"
     inventory[name]["origin"] = str(getattr(module, "__file__", "UNKNOWN"))
     inventory[name]["native_extension_count"] = sum(
         1 for item in sys.modules.values()
