@@ -18,7 +18,7 @@ def safe_path(environ):
     """Prefer Flask/Werkzeug route template to avoid logging personal path values."""
     template = environ.get("radar.route_template")
     if (isinstance(template, str) and _ALLOWED.fullmatch(template)
-            and (re.search(r"<(?:string|int|float|path|uuid)(?::[A-Za-z_][A-Za-z0-9_]*)?>", template) or template in {
+            and (re.search(r"<(?:(?:string|int|float|path|uuid):)?[A-Za-z_][A-Za-z0-9_]*>", template) or template in {
                 "/api/scan", "/api/top-picks", "/api/theme-rotation",
                 "/api/multi-radar", "/api/server-monitor-status",
             })):
