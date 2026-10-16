@@ -138,3 +138,11 @@ Verified from Render service and deploy metadata (no mutations):
 - Abort on worker crashes, non-JSON responses, memory-limit kills, or unexpected external calls. Do not exercise market-fetch, scan, or broker endpoints. A successful synthetic test would not establish the root cause of production exit 139.
 - The previous attempt to add this test was blocked by tool safety checks; there is no code commit or CI result for this new test. Keep this as a proposed test gate only.
 - **HOLD PRODUCTION DEPLOY** until an approved, successfully executed test and separate release authorization.
+
+## CI #190 — 512 MiB bounded offline smoke passed
+
+- GitHub Actions run 38922649012 (#190): **SUCCESS 12/12 jobs**. New `gunicorn-512mb-offline` job passed diagnostics OFF and ON under Docker `--memory 512m --memory-swap 512m`, `--network none`, read-only filesystem and CI-only monitor loop replacement.
+- The job reuses the 2-worker Gunicorn lifecycle smoke (20 read-only monitor status requests). It does **not** measure peak cgroup memory, test sustained load, exercise market-data APIs, or reproduce worker exit 139. The 512 MiB container limit is an enforced bound for this smoke, not proof of memory headroom during production spikes.
+- Read-only compare: branch 96 commits ahead of `main`, zero behind, 28 changed files; `scanner.py` is the only modified pre-existing file (+13/-0). Other files are added tests, diagnostics, docs and CI configuration.
+- Render live deploy remains `dep-db3qeoff3r2c7389mu90` at `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. Operator-confirmed specific-commit picker includes baseline; rollback has not been executed.
+- **HOLD PRODUCTION DEPLOY**. Separate approvals required for merge (auto-deploy) and enabling request diagnostics. Crash root cause remains unknown.
