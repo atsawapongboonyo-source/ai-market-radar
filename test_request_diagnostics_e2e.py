@@ -46,6 +46,7 @@ class RequestDiagnosticsEndToEndTests(unittest.TestCase):
         with make_app(True, messages).test_client() as client:
             response = client.get("/api/catalyst/SECRET-SYMBOL?token=PRIVATE")
         self.assertEqual(response.status_code, 200)
+        response.close()
         combined = "\n".join(messages)
         self.assertIn("route=/api/catalyst/<symbol>", combined)
         self.assertIn("REQUEST_START", combined)
