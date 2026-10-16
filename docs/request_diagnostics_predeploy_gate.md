@@ -24,3 +24,11 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - Rollback baseline must be revalidated at the moment of deployment.
 
 **Decision: HOLD PRODUCTION DEPLOY.** The current tests validate an isolated Flask application, not the complete scanner runtime. Continue offline review/tests without changing production.
+
+## Route coverage and lifecycle review (2026-10-16)
+
+- The Render entrypoint `scanner.py` exposes the same Flask app imported from `scanner_v531.py`, which extends `scanner_v530.py`. The opt-in WSGI wrapper therefore covers requests across the extension chain without changing Scanner scoring or entry logic.
+- The strict allowlist includes the confirmed legacy routes `/api/scan`, `/api/scan/refresh`, `/api/top-picks`, `/api/catalyst/<ticker>`, `/api/auto-confirm`, `/api/opening-confirm`, and `/api/position-manage`, plus named monitor and radar routes. Other routes remain `UNMAPPED` to avoid disclosing sensitive literal paths.
+- `REQUEST_START route=UNMAPPED` is **expected**: Flask has not resolved the URL rule before dispatch. `REQUEST_END` can include an allowlisted route template once Flask resolves it. Correlate by request ID and PID; do not interpret an unmapped START as a missing endpoint.
+- A native worker crash can prevent `REQUEST_END`. This is only an in-flight correlation clue, not proof that the request or Yahoo caused the crash.
+- The full production app was **not** booted in CI: entrypoint tests stub the legacy and latest scanner imports, while separate tests use minimal Flask/Gunicorn apps. Production deploy remains on hold pending explicit approval and a reversible staged rollout.
