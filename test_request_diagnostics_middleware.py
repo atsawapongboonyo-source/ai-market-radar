@@ -155,6 +155,30 @@ class MiddlewareTests(unittest.TestCase):
         self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
 
 
+    def test_stream_exception_closes_source_once_and_logs_once(self):
+        closed = []
+        class Body:
+            def __iter__(self):
+                yield b"first"
+                raise RuntimeError("private-stream-error")
+            def close(self):
+                closed.append(True)
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"QUERY_STRING": "token=hidden"}, lambda *args: None
+        )
+        with self.assertRaises(RuntimeError):
+            list(response)
+        response.close()
+        self.assertEqual(closed, [True])
+        self.assertEqual(sum("REQUEST_STREAM_EXCEPTION" in x for x in self.logs), 1)
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+        self.assertNotIn("private-stream-error", "\n".join(self.logs))
+        self.assertNotIn("hidden", "\n".join(self.logs))
+
+
 
 if __name__ == "__main__":
     unittest.main()
