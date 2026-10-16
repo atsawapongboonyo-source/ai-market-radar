@@ -59,3 +59,9 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - No production environment-variable values were read; `RADAR_REQUEST_DIAGNOSTICS`, `SERVER_AUTO_MONITOR_ENABLED`, `TELEGRAM_TEST_ON_BOOT`, and other flags remain **unverified in production**. Do not infer their values from source defaults.
 - A rollback runbook must be rehearsed/authorized separately; do not claim rollback is proven. No Render settings, deploys, or production secrets were modified during this review.
 - **HOLD** until explicit approval for production merge/auto-deploy and a separate approval to enable diagnostics, plus confirmed rollback access and production flag values.
+
+## CI #127 release-guard verification
+
+- GitHub Actions run 38898592963: **SUCCESS**, all three jobs `release-guard`, `full-runtime-import`, and `diagnostics`.
+- Release guard verifies the diagnostics exact opt-in, unchanged locked scanner modules against `origin/main`, and unchanged deployment configuration files. This is a code-diff gate only; it does not inspect production environment variables or prove crash remediation.
+- Release approval remains blocked on verifying production flag values and a working operator rollback route. No production deployment or flag changes authorized.
