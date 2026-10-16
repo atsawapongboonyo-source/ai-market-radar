@@ -64,7 +64,7 @@ class GunicornSmokeTests(unittest.TestCase):
             self.assertIn("REQUEST_START", log)
             self.assertIn("REQUEST_END", log)
             self.assertIn("status=404", log)
-            self.assertIn("route=/api/catalyst/<symbol>", log)
+            self.assertIn("route=/api/catalyst/<ticker>", log)
         else:
             self.assertNotIn("REQUEST_START", log)
             self.assertNotIn("REQUEST_END", log)
