@@ -32,3 +32,12 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - `REQUEST_START route=UNMAPPED` is **expected**: Flask has not resolved the URL rule before dispatch. `REQUEST_END` can include an allowlisted route template once Flask resolves it. Correlate by request ID and PID; do not interpret an unmapped START as a missing endpoint.
 - A native worker crash can prevent `REQUEST_END`. This is only an in-flight correlation clue, not proof that the request or Yahoo caused the crash.
 - The full production app was **not** booted in CI: entrypoint tests stub the legacy and latest scanner imports, while separate tests use minimal Flask/Gunicorn apps. Production deploy remains on hold pending explicit approval and a reversible staged rollout.
+
+## Latest offline release-gate review (2026-10-16)
+
+- CI run #100 (38881411182) passed at commit `136847a9edeccc46caac6c445c487db877361a89`, including AST-derived legacy API route coverage.
+- GitHub comparison: branch is 52 commits ahead of `main`, zero behind, 16 changed files. Only `scanner.py` changes the existing production entrypoint (13 added lines); other changes are new diagnostics/tests/docs/workflow.
+- Render's latest observed live deployment remains `dep-db3qeoff3r2c7389mu90` at `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. Reconfirm immediately before any rollout.
+- Production auto-deploys on `main` commits. **Do not merge this draft PR as an offline test or to enable a preview.**
+- Offline route contract covers statically registered legacy API routes, not dynamic registrations in the full extension chain. Full runtime boot, production environment flag value, operational health, and rollback permissions remain unverified.
+- **Decision: HOLD DEPLOY.** Next safe action: prepare a staging-equivalent full runtime smoke test with providers/monitor side effects disabled and no broker execution; review results and request separate explicit approvals before merging and before enabling diagnostics.
