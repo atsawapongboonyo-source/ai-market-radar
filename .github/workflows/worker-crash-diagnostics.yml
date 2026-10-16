@@ -9,7 +9,7 @@ on:
       - worker_crash_diagnostics.py
       - worker_crash_correlation.py
       - request_diagnostics_middleware.py
-      - test_request_diagnostics_middleware.py test_request_diagnostics_integration.py scanner.py
+      - test_request_diagnostics_middleware.py
       - test_request_diagnostics_integration.py
       - scanner.py
       - test_worker_crash_correlation.py
@@ -26,4 +26,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m unittest -v test_worker_crash_diagnostics test_worker_crash_correlation test_request_diagnostics_middleware test_request_diagnostics_integration
-      - run: python -m py_compile worker_crash_diagnostics.py test_worker_crash_diagnostics.py worker_crash_correlation.py test_worker_crash_correlation.py request_diagnostics_middleware.py test_request_diagnostics_middleware.py
+      - run: python -m py_compile worker_crash_diagnostics.py test_worker_crash_diagnostics.py worker_crash_correlation.py test_worker_crash_correlation.py request_diagnostics_middleware.py test_request_diagnostics_middleware.py test_request_diagnostics_integration.py scanner.py
