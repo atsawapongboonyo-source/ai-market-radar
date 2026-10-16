@@ -73,3 +73,22 @@ This is a **review record only**. No merge, Render environment change, or deploy
 - At 11:12:31–34 UTC, access logs include HTTP 200 for `/api/scan`, `/api/top-picks`, and `/api/theme-rotation`. These are temporal observations **not causal proof**. Do not attribute crashes to a particular route or library from proximity alone.
 - This evidence was retrieved read-only from the existing production service; no environment variable or deploy changed. Crash diagnostics PR is still unmerged.
 - **HOLD** remains; request lifecycle instrumentation would help correlate requests but is not a crash fix. Production flag values and rollback execution are still unverified.
+
+## Focused crash-window review (2026-10-16, read-only)
+
+Read-only Render application log query: 11:08–12:15 UTC, 23 records, no additional pages in this window.
+
+| UTC | Observed event |
+| --- | --- |
+| 11:12:31–34 | `/api/scan`, `/api/top-picks`, `/api/theme-rotation` each logged HTTP 200 |
+| 11:12:36.590 | Worker PID 20086 exited with code 139 |
+| 11:12:36.602 | PID 20300 booted |
+| 12:10:38.286 | Worker PID 20300 exited with code 139 |
+| 12:10:38.298 | PID 20436 booted |
+| 12:10:38–43 | Monitor status, scan, rotation, top picks returned HTTP 200 |
+| 12:10:45.271 | Worker PID 20436 exited with code 139, ~7 seconds after boot |
+| 12:10:45.284 | PID 20652 booted |
+
+**Interpretation limits:** Access logs do not identify the serving worker PID. An HTTP 200 close to a crash is not proof the corresponding endpoint caused it. A rapid post-boot crash is a clue, not proof of an import-time or native-library bug. No request tracing was active. No production changes were made.
+
+**Recommended next offline investigation:** inventory compiled/native dependencies and runtime import behavior; compare memory/worker lifecycle with the log timestamps. Keep separate from opt-in instrumentation rollout; do not modify locked scanner algorithms. **HOLD PRODUCTION DEPLOY.**
