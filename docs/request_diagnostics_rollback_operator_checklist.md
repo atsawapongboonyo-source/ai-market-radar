@@ -28,3 +28,11 @@ CI #119 passed isolated diagnostics and read-only API smoke. Production environm
 - Operator-reported Render flags: monitor enabled, Telegram boot test off, request diagnostics absent/default off. No secret values were collected.
 - **Rollback access and execution remain unverified.** An operator must confirm the Render dashboard offers an actionable rollback/redeploy control for the baseline or confirm an authorized Git revert path, taking into account automatic deployments. Do not click rollback/redeploy or alter production as part of this verification.
 - **HOLD**: No merge, production deploy, env edits or rollback have been authorized.
+
+## Operator dashboard verification — 2026-10-16
+
+- Operator screenshot confirms Render's `Manual Deploy` dropdown exposes `Deploy a specific commit`, alongside `Deploy latest commit`, `Clear build cache & deploy`, and `Restart service`.
+- This establishes a **visible potential rollback route**, NOT proof that the historical baseline SHA can be selected, that an old deployment can be restored successfully, or that the operator has executed a rollback.
+- Candidate rollback baseline remains `0eca2343ee06d2118fab347cb3c5a70773d49e3e`, observed live on Render. A rollback deploy would be a production change and requires explicit authorization.
+- Do not invoke any deployment or restart as part of preflight. A separate operator check of commit selection (without confirmation) may further establish feasibility, but must not submit a deployment.
+- **HOLD DEPLOY** pending explicit approval for merge and separate diagnostics flag activation; no production action authorized.
