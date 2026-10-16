@@ -38,3 +38,21 @@ Status: DRAFT / NO PRODUCTION AUTHORIZATION. This checklist is documentation, no
 - The middleware is not a native crash handler. SIGSEGV/code 139 cannot be caught reliably from Python.
 - The diagnostics are process-local and do not resolve Yahoo Finance timeout or worker crashes.
 - CI runs on a small Flask app, not the entire production application; CI passing does not guarantee safe production operation.
+
+## Bounded diagnostics activation decision gate — 2026-10-16 (plan only)
+
+**Current evidence:** CI #190 (run 38922649012) succeeded 12/12, including two 512 MiB offline Gunicorn lifecycle runs with diagnostics OFF and ON, no external network and a harmless CI-only monitor loop. This is not a peak-RAM or sustained-load measurement and does not resolve exit 139.
+
+**Preconditions before any production action:**
+1. Separate explicit approval to merge PR #18 (merge triggers Render auto-deploy). Keep diagnostics absent/OFF and confirm no execution flags changed.
+2. Before merge, record exact live SHA, monitor health state and cycle age, recent worker exit codes/502/5xx and memory/latency baselines; verify rollback picker and operator access. Do not infer health from `running:true` alone.
+3. After authorized merge, validate default-OFF behavior, response shapes, monitor freshness, worker stability and read-only endpoints. If abnormal, do not enable diagnostics.
+4. Obtain a **second separate explicit approval** before setting `RADAR_REQUEST_DIAGNOSTICS=1`. Treat the environment change as a restart/deploy event. Never turn on broker dispatch.
+
+**Suggested observation window, not an automatic deployment instruction:** Compare 15 minutes of pre-change baseline with at least 30 minutes after each authorized change, subject to normal traffic availability. Sample Render memory and HTTP status/latency metrics at available resolution and inspect logs. Record worker PID and REQUEST_START/END only after explicit flag authorization. Avoid secrets and raw paths.
+
+**Stop/rollback criteria:** Any new code 139, OOM or worker timeout; HTTP 502/5xx newly recurring or sustained above baseline; stale/dead monitor; malformed API JSON or changed read-only response contract; unexpected request data in logs; unexplained sustained memory growth or near-limit pressure. These are conservative qualitative triggers, not statistically validated thresholds. Stop activation, restore flag OFF (if ON) with approval, and if regression persists request an authorized rollback to the newly reverified baseline.
+
+**Rollback caveat:** Render's `Deploy a specific commit` dialog warns that it **disables Auto-Deploy**. After rollback, confirm live SHA and stability, and keep auto-deploy disabled until the `main` tip is reconciled and explicitly approved. A visible commit picker is not proof of a successful rollback.
+
+**Decision: HOLD.** No approval to merge, change env, restart, or deploy has been given. This plan does not authorize any production action.
