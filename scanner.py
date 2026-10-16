@@ -29,3 +29,10 @@ finally:
 
 app = _latest.app
 RUNTIME_VERSION = "5.3.1"
+
+# Optional read-only request diagnostics. Disabled unless explicitly enabled.
+# No effect on the scanner decision engine, routes or trading.
+import os as _os
+if _os.environ.get("RADAR_REQUEST_DIAGNOSTICS", "") == "1":
+    from request_diagnostics_middleware import RequestDiagnosticsMiddleware as _RequestDiagnosticsMiddleware
+    app.wsgi_app = _RequestDiagnosticsMiddleware(app.wsgi_app, enabled=True)
