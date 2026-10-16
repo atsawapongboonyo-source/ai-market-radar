@@ -10,14 +10,15 @@ import re
 import time
 import uuid
 
-_ALLOWED = re.compile(r"^[A-Za-z0-9_./<>:-]{1,160}$")
+_ALLOWED = re.compile(r"^/api/[A-Za-z0-9_./<>:-]{1,155}$")
 _LOG = logging.getLogger("gunicorn.error")
 
 
 def safe_path(environ):
     """Prefer Flask/Werkzeug route template to avoid logging personal path values."""
     template = environ.get("radar.route_template")
-    if isinstance(template, str) and _ALLOWED.fullmatch(template):
+    if (isinstance(template, str) and _ALLOWED.fullmatch(template)
+            and ("<" in template or template.count("/") <= 3)):
         return template
     return "UNMAPPED"
 
