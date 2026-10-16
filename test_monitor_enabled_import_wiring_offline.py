@@ -42,6 +42,6 @@ with scanner.app.test_client() as client:
     assert response.status_code == 200 and response.is_json
     data = response.get_json()["data"]
     assert data["enabled"] is True
-    assert data["running"] is True  # Registration state, not actual thread liveness.
+    assert data["running"] is False  # Intercepted thread never runs its loop.
 print("MONITOR_ENABLED_IMPORT_WIRING_OK diagnostics=" +
       os.environ["RADAR_REQUEST_DIAGNOSTICS"])
