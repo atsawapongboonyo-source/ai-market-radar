@@ -1,0 +1,23 @@
+name: Worker Crash Diagnostics Tests
+
+on:
+  push:
+    branches:
+      - diagnostics/worker-crash-139-20261016
+  pull_request:
+    paths:
+      - worker_crash_diagnostics.py
+      - test_worker_crash_diagnostics.py
+      - .github/workflows/worker-crash-diagnostics.yml
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest -v test_worker_crash_diagnostics
+      - run: python -m py_compile worker_crash_diagnostics.py test_worker_crash_diagnostics.py
