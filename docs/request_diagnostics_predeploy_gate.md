@@ -146,3 +146,11 @@ Verified from Render service and deploy metadata (no mutations):
 - Read-only compare: branch 96 commits ahead of `main`, zero behind, 28 changed files; `scanner.py` is the only modified pre-existing file (+13/-0). Other files are added tests, diagnostics, docs and CI configuration.
 - Render live deploy remains `dep-db3qeoff3r2c7389mu90` at `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. Operator-confirmed specific-commit picker includes baseline; rollback has not been executed.
 - **HOLD PRODUCTION DEPLOY**. Separate approvals required for merge (auto-deploy) and enabling request diagnostics. Crash root cause remains unknown.
+
+## Final release gate verification — 2026-10-16
+
+- Latest reviewed branch commit `568c35409e18f7691a52531737bc80ddc3ee9672`: CI #194 (run 38929203013) completed **SUCCESS 12/12** including 512 MiB bounded offline Gunicorn job.
+- GitHub compare: **98 commits ahead, zero behind**, 28 changed files, only existing production file `scanner.py` modified (+13/-0). Branch contains many commits but diff scope is limited; recheck exact candidate SHA after this documentation update.
+- Render remains on live deployment `dep-db3qeoff3r2c7389mu90`, SHA `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. Auto-deploy remains enabled for `main`.
+- This is an **offline test gate pass only**. Production worker crash 139 root cause unknown, real monitor workload not reproduced, and rollback execution not proven. The 512 MiB CI job is a bounded smoke, not sustained stress or peak-memory evidence.
+- **Decision: HOLD DEPLOY pending explicit separate approval to merge/auto-deploy; enabling `RADAR_REQUEST_DIAGNOSTICS=1` needs another explicit approval after default-OFF observation.**
