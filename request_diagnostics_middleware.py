@@ -6,25 +6,25 @@ Does not catch native crashes: a missing END after START is only a clue.
 """
 import logging
 import os
-import re
 import time
 import uuid
 from werkzeug.wsgi import ClosingIterator
 
-_ALLOWED = re.compile(r"^/api/[A-Za-z0-9_./<>:-]{1,155}$")
 _LOG = logging.getLogger("gunicorn.error")
+
+# Explicit, fixed route templates only. Do not emit arbitrary Flask route
+# patterns: literal segments may contain tenant names or other sensitive data.
+_SAFE_ROUTES = frozenset({
+    "/api/scan", "/api/top-picks", "/api/theme-rotation",
+    "/api/multi-radar", "/api/server-monitor-status",
+    "/api/catalyst/<symbol>",
+})
 
 
 def safe_path(environ):
-    """Prefer Flask/Werkzeug route template to avoid logging personal path values."""
+    """Return an approved route template; never include user-supplied paths."""
     template = environ.get("radar.route_template")
-    if (isinstance(template, str) and _ALLOWED.fullmatch(template)
-            and (re.search(r"<(?:(?:string|int|float|path|uuid):)?[A-Za-z_][A-Za-z0-9_]*>", template) or template in {
-                "/api/scan", "/api/top-picks", "/api/theme-rotation",
-                "/api/multi-radar", "/api/server-monitor-status",
-            })):
-        return template
-    return "UNMAPPED"
+    return template if isinstance(template, str) and template in _SAFE_ROUTES else "UNMAPPED"
 
 
 class RequestDiagnosticsMiddleware:
