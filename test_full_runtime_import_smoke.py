@@ -25,3 +25,19 @@ enabled = os.environ.get("RADAR_REQUEST_DIAGNOSTICS") == "1"
 assert isinstance(scanner.app.wsgi_app, RequestDiagnosticsMiddleware) == enabled
 assert not any(t.name == "ai-radar-server-monitor" for t in threading.enumerate())
 print("FULL_RUNTIME_IMPORT_OK diagnostics=" + str(enabled) + " routes=" + str(len(routes)))
+
+# Read-only API parity contract. This endpoint reads in-memory monitor state;
+# it does not fetch market data, refresh scanner rankings, or submit orders.
+with scanner.app.test_client() as client:
+    response = client.get("/api/server-monitor-status")
+    assert response.status_code == 200, "monitor status HTTP changed"
+    assert response.is_json, "monitor status must remain JSON"
+    payload = response.get_json()
+    assert payload.get("ok") is True, "monitor status response not ok"
+    assert payload.get("version") == "5.3", "monitor status version changed"
+    state = payload.get("data")
+    assert isinstance(state, dict), "monitor state missing"
+    assert state.get("enabled") is False, "monitor unexpectedly enabled"
+    assert state.get("running") is False, "monitor unexpectedly running"
+    assert "candidates" in state, "monitor candidates contract missing"
+print("READ_ONLY_API_PARITY_OK diagnostics=" + str(enabled))
