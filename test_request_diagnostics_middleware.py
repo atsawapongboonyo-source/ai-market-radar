@@ -90,6 +90,41 @@ class MiddlewareTests(unittest.TestCase):
         self.assertTrue(any("REQUEST_STREAM_EXCEPTION" in log for log in self.logs))
         self.assertTrue(any("REQUEST_END" in log for log in self.logs))
 
+    def test_early_close_after_first_chunk_logs_once(self):
+        closed = []
+        def app(env, start):
+            start("200 OK", [])
+            class Body:
+                def __iter__(self):
+                    yield b"first"
+                    yield b"second"
+                def close(self):
+                    closed.append(True)
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"PATH_INFO": "/private/secret", "QUERY_STRING": "token=secret"},
+            lambda *args: None,
+        )
+        iterator = iter(response)
+        self.assertEqual(next(iterator), b"first")
+        response.close()
+        response.close()
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
+        self.assertNotIn("secret", "\n".join(self.logs))
+
+    def test_response_status_does_not_log_headers(self):
+        def app(env, start):
+            start("503 Service Unavailable", [("Set-Cookie", "secret-cookie")])
+            return [b"unavailable"]
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"radar.route_template": "/api/scan"}, lambda *args: None
+        )
+        self.assertEqual(list(response), [b"unavailable"])
+        self.assertTrue(any("status=503" in line for line in self.logs))
+        self.assertNotIn("secret-cookie", "\n".join(self.logs))
+
+
 
 if __name__ == "__main__":
     unittest.main()
