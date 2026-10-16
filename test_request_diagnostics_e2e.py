@@ -18,7 +18,7 @@ def make_app(enabled, messages):
     def scan():
         return {"ok": True}
 
-    @app.get("/api/catalyst/<symbol>")
+    @app.get("/api/catalyst/<ticker>")
     def catalyst(symbol):
         return {"ok": True, "symbol": symbol}
 
@@ -48,7 +48,7 @@ class RequestDiagnosticsEndToEndTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         response.close()
         combined = "\n".join(messages)
-        self.assertIn("route=/api/catalyst/<symbol>", combined)
+        self.assertIn("route=/api/catalyst/<ticker>", combined)
         self.assertIn("REQUEST_START", combined)
         self.assertIn("REQUEST_END", combined)
         self.assertNotIn("SECRET-SYMBOL", combined)
