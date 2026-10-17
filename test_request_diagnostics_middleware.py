@@ -179,6 +179,24 @@ class MiddlewareTests(unittest.TestCase):
         self.assertNotIn("hidden", "\n".join(self.logs))
 
 
+    def test_stream_cleanup_error_still_emits_one_end(self):
+        class Body:
+            def __iter__(self):
+                yield b"ok"
+            def close(self):
+                raise RuntimeError("private-close-error")
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {}, lambda *args: None
+        )
+        with self.assertRaises(RuntimeError):
+            list(response)
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
+        self.assertNotIn("private-close-error", "\n".join(self.logs))
+
+
 
 if __name__ == "__main__":
     unittest.main()
