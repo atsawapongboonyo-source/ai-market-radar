@@ -1,0 +1,147 @@
+name: Worker Crash Diagnostics Tests
+
+on:
+  push:
+    branches:
+      - diagnostics/worker-crash-139-20261016
+  pull_request:
+    paths:
+      - worker_crash_diagnostics.py
+      - worker_crash_correlation.py
+      - request_diagnostics_middleware.py
+      - test_request_diagnostics_middleware.py
+      - test_request_diagnostics_integration.py
+      - test_request_diagnostics_e2e.py
+      - test_request_diagnostics_gunicorn.py
+      - test_request_diagnostics_gunicorn_app.py
+      - test_scanner_diagnostics_entrypoint.py
+      - test_scanner_route_coverage.py
+      - scanner.py
+      - test_full_runtime_import_smoke.py
+      - test_request_diagnostics_release_guard.py
+      - Dockerfile.runtime-smoke
+      - audit_native_dependencies.py
+      - test_worker_crash_correlation.py
+      - test_worker_crash_diagnostics.py
+      - .github/workflows/worker-crash-diagnostics.yml
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'Flask==3.1.2' 'gunicorn==23.0.0'
+      - run: python -m unittest -v test_worker_crash_diagnostics test_worker_crash_correlation test_request_diagnostics_middleware test_request_diagnostics_integration test_request_diagnostics_e2e test_request_diagnostics_gunicorn test_scanner_diagnostics_entrypoint test_scanner_route_coverage
+      - run: python -m py_compile worker_crash_diagnostics.py test_worker_crash_diagnostics.py worker_crash_correlation.py test_worker_crash_correlation.py request_diagnostics_middleware.py test_request_diagnostics_middleware.py test_request_diagnostics_integration.py test_request_diagnostics_e2e.py test_request_diagnostics_gunicorn.py test_request_diagnostics_gunicorn_app.py test_scanner_diagnostics_entrypoint.py test_scanner_route_coverage.py scanner.py
+
+  full-runtime-import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-smoke .
+      - run: docker run --rm --network none -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 radar-smoke
+      - run: docker run --rm --network none -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 radar-smoke
+
+  release-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest -v test_request_diagnostics_release_guard
+
+  native-dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-native-audit .
+      - name: Inventory native dependencies without network access
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-audit audit_native_dependencies.py
+
+  native-import-repetition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-native-repeat .
+      - name: Repeat native imports in isolated child processes
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-repeat test_native_import_repetition.py
+
+  native-concurrent-compute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-native-concurrent .
+      - name: Bounded concurrent NumPy and pandas computation offline
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 --entrypoint python radar-native-concurrent test_native_concurrent_compute.py
+
+  gunicorn-worker-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-worker-lifecycle .
+      - name: Smoke test real Gunicorn workers on loopback only
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-worker-lifecycle test_gunicorn_worker_lifecycle_offline.py
+
+  gunicorn-worker-lifecycle-diagnostics-on:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-worker-lifecycle-diag .
+      - name: Smoke test real Gunicorn workers with diagnostics enabled offline
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=0 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 --entrypoint python radar-worker-lifecycle-diag test_gunicorn_worker_lifecycle_offline.py
+
+  monitor-enabled-import-wiring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-monitor-wiring .
+      - name: Verify monitor-enabled wiring without starting its thread (diagnostics OFF)
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-monitor-wiring test_monitor_enabled_import_wiring_offline.py
+      - name: Verify monitor-enabled wiring without starting its thread (diagnostics ON)
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 --entrypoint python radar-monitor-wiring test_monitor_enabled_import_wiring_offline.py
+
+  monitor-harmless-thread-start:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-monitor-harmless .
+      - name: Start a harmless monitor thread without network or market calls
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-monitor-harmless test_monitor_harmless_thread_start_offline.py
+
+  gunicorn-monitor-enabled-safe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-gunicorn-monitor .
+      - name: Gunicorn with monitor enabled but market loop replaced (diagnostics OFF)
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e PYTHONPATH=/workspace/ci_monitor_stub:/workspace -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-gunicorn-monitor test_gunicorn_worker_lifecycle_offline.py
+      - name: Gunicorn with monitor enabled but market loop replaced (diagnostics ON)
+        run: docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e PYTHONPATH=/workspace/ci_monitor_stub:/workspace -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 --entrypoint python radar-gunicorn-monitor test_gunicorn_worker_lifecycle_offline.py
+
+  gunicorn-512mb-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -f Dockerfile.runtime-smoke -t radar-512mb-smoke .
+      - name: Bounded memory Gunicorn read-only smoke (diagnostics OFF)
+        run: docker run --rm --memory 512m --memory-swap 512m --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e PYTHONPATH=/workspace/ci_monitor_stub:/workspace -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=0 --entrypoint python radar-512mb-smoke test_gunicorn_worker_lifecycle_offline.py
+      - name: Bounded memory Gunicorn read-only smoke (diagnostics ON)
+        run: docker run --rm --memory 512m --memory-swap 512m --network none --read-only --tmpfs /tmp:rw,nosuid --cap-drop ALL --security-opt no-new-privileges -e PYTHONPATH=/workspace/ci_monitor_stub:/workspace -e SERVER_AUTO_MONITOR_ENABLED=1 -e TELEGRAM_TEST_ON_BOOT=0 -e LIVE_TRADING=0 -e RADAR_REQUEST_DIAGNOSTICS=1 --entrypoint python radar-512mb-smoke test_gunicorn_worker_lifecycle_offline.py
