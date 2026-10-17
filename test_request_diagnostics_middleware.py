@@ -197,6 +197,25 @@ class MiddlewareTests(unittest.TestCase):
         self.assertNotIn("private-close-error", "\n".join(self.logs))
 
 
+    def test_disabled_returns_original_iterable_unchanged(self):
+        class Body:
+            def __iter__(self):
+                yield b"original"
+        original = Body()
+        def app(env, start):
+            start("200 OK", [])
+            return original
+        middleware = RequestDiagnosticsMiddleware(app, enabled=False, emit=self.emit)
+        result = middleware({"PATH_INFO": "/private"}, lambda *args: None)
+        self.assertIs(result, original)
+        self.assertEqual(self.logs, [])
+
+    def test_safe_path_rejects_nonstring_and_untrusted_template(self):
+        for candidate in (None, 42, b"/api/scan", "/api/scan?token=secret",
+                          "/api/scan/secret", "/api/catalyst/SECRET"):
+            self.assertEqual(safe_path({"radar.route_template": candidate}), "UNMAPPED")
+
+
 
 if __name__ == "__main__":
     unittest.main()
