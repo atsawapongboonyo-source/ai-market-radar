@@ -1,0 +1,256 @@
+import unittest
+from request_diagnostics_middleware import RequestDiagnosticsMiddleware, safe_path
+
+
+class MiddlewareTests(unittest.TestCase):
+    def setUp(self):
+        self.logs = []
+        self.emit = lambda fmt, *args: self.logs.append(fmt % args)
+
+    def test_disabled_does_not_log(self):
+        def app(env, start):
+            start("200 OK", [])
+            return [b"ok"]
+        middleware = RequestDiagnosticsMiddleware(app, emit=self.emit)
+        self.assertEqual(list(middleware({}, lambda *a: None)), [b"ok"])
+        self.assertEqual(self.logs, [])
+
+    def test_success_has_start_and_end(self):
+        def app(env, start):
+            start("200 OK", [])
+            return [b"ok"]
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        self.assertEqual(list(middleware({}, lambda *a: None)), [b"ok"])
+        self.assertTrue(self.logs[0].startswith("REQUEST_START"))
+        self.assertIn("status=200", self.logs[-1])
+
+    def test_underlying_iterable_closed_once_on_consumption(self):
+        counts = []
+        class Body:
+            def __iter__(self):
+                yield b"ok"
+            def close(self):
+                counts.append("close")
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        response = middleware({}, lambda *a: None)
+        self.assertEqual(list(response), [b"ok"])
+        response.close()
+        self.assertEqual(counts, ["close"])
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+
+    def test_underlying_iterable_closed_once_without_consumption(self):
+        counts = []
+        class Body:
+            def __iter__(self):
+                yield b"ok"
+            def close(self):
+                counts.append("close")
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        response = middleware({}, lambda *a: None)
+        response.close()
+        self.assertEqual(counts, ["close"])
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+
+    def test_sensitive_path_is_not_logged(self):
+        self.assertEqual(safe_path({"PATH_INFO": "/token/secret"}), "UNMAPPED")
+        self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>"}), "UNMAPPED")
+        self.assertEqual(safe_path({"radar.route_template": "/api/scan"}), "/api/scan")
+        self.assertEqual(safe_path({"radar.route_template": "/api/user-secret"}), "UNMAPPED")
+        self.assertEqual(safe_path({"radar.route_template": "/api/<symbol>/private-secret"}), "UNMAPPED")
+        self.assertEqual(safe_path({"radar.route_template": "/api/catalyst/<ticker>"}), "/api/catalyst/<ticker>")
+        for template in ("/api/scan/refresh", "/api/auto-confirm", "/api/opening-confirm", "/api/position-manage"):
+            self.assertEqual(safe_path({"radar.route_template": template}), template)
+        self.assertEqual(safe_path({"radar.route_template": "/private/account"}), "UNMAPPED")
+
+    def test_app_exception_logs_and_reraises(self):
+        def app(env, start):
+            raise RuntimeError("private details")
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        with self.assertRaises(RuntimeError):
+            middleware({}, lambda *a: None)
+        self.assertIn("REQUEST_EXCEPTION", self.logs[-1])
+        self.assertNotIn("private details", self.logs[-1])
+
+    def test_stream_exception_logs_end(self):
+        def app(env, start):
+            start("200 OK", [])
+            def generate():
+                yield b"a"
+                raise RuntimeError("stream failure")
+            return generate()
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        with self.assertRaises(RuntimeError):
+            list(middleware({}, lambda *a: None))
+        self.assertTrue(any("REQUEST_STREAM_EXCEPTION" in log for log in self.logs))
+        self.assertTrue(any("REQUEST_END" in log for log in self.logs))
+
+    def test_early_close_after_first_chunk_logs_once(self):
+        closed = []
+        def app(env, start):
+            start("200 OK", [])
+            class Body:
+                def __iter__(self):
+                    yield b"first"
+                    yield b"second"
+                def close(self):
+                    closed.append(True)
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"PATH_INFO": "/private/secret", "QUERY_STRING": "token=secret"},
+            lambda *args: None,
+        )
+        iterator = iter(response)
+        self.assertEqual(next(iterator), b"first")
+        response.close()
+        response.close()
+        self.assertEqual(len(closed), 1)
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
+        self.assertNotIn("secret", "\n".join(self.logs))
+
+    def test_response_status_does_not_log_headers(self):
+        def app(env, start):
+            start("503 Service Unavailable", [("Set-Cookie", "secret-cookie")])
+            return [b"unavailable"]
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"radar.route_template": "/api/scan"}, lambda *args: None
+        )
+        self.assertEqual(list(response), [b"unavailable"])
+        self.assertTrue(any("status=503" in line for line in self.logs))
+        self.assertNotIn("secret-cookie", "\n".join(self.logs))
+
+
+    def test_exception_before_response_does_not_log_private_details(self):
+        def app(env, start):
+            raise ValueError("credential=never-log-this")
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        with self.assertRaisesRegex(ValueError, "credential=never-log-this"):
+            middleware({"PATH_INFO": "/private/secret"}, lambda *args: None)
+        self.assertEqual(sum("REQUEST_START" in line for line in self.logs), 1)
+        self.assertEqual(sum("REQUEST_EXCEPTION" in line for line in self.logs), 1)
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 0)
+        self.assertNotIn("never-log-this", "\n".join(self.logs))
+
+    def test_close_without_iteration_twice_is_idempotent(self):
+        closed = []
+        class Body:
+            def __iter__(self):
+                yield b"unused"
+            def close(self):
+                closed.append(1)
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {}, lambda *args: None
+        )
+        response.close()
+        response.close()
+        self.assertEqual(closed, [1])
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
+
+
+    def test_stream_exception_closes_source_once_and_logs_once(self):
+        closed = []
+        class Body:
+            def __iter__(self):
+                yield b"first"
+                raise RuntimeError("private-stream-error")
+            def close(self):
+                closed.append(True)
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"QUERY_STRING": "token=hidden"}, lambda *args: None
+        )
+        with self.assertRaises(RuntimeError):
+            list(response)
+        response.close()
+        self.assertEqual(closed, [True])
+        self.assertEqual(sum("REQUEST_STREAM_EXCEPTION" in x for x in self.logs), 1)
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+        self.assertNotIn("private-stream-error", "\n".join(self.logs))
+        self.assertNotIn("hidden", "\n".join(self.logs))
+
+
+    def test_stream_cleanup_error_still_emits_one_end(self):
+        class Body:
+            def __iter__(self):
+                yield b"ok"
+            def close(self):
+                raise RuntimeError("private-close-error")
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {}, lambda *args: None
+        )
+        with self.assertRaises(RuntimeError):
+            list(response)
+        self.assertEqual(sum("REQUEST_END" in line for line in self.logs), 1)
+        self.assertNotIn("private-close-error", "\n".join(self.logs))
+
+
+    def test_disabled_returns_original_iterable_unchanged(self):
+        class Body:
+            def __iter__(self):
+                yield b"original"
+        original = Body()
+        def app(env, start):
+            start("200 OK", [])
+            return original
+        middleware = RequestDiagnosticsMiddleware(app, enabled=False, emit=self.emit)
+        result = middleware({"PATH_INFO": "/private"}, lambda *args: None)
+        self.assertIs(result, original)
+        self.assertEqual(self.logs, [])
+
+    def test_safe_path_rejects_nonstring_and_untrusted_template(self):
+        for candidate in (None, 42, b"/api/scan", "/api/scan?token=secret",
+                          "/api/scan/secret", "/api/catalyst/SECRET"):
+            self.assertEqual(safe_path({"radar.route_template": candidate}), "UNMAPPED")
+
+
+    def test_delayed_start_response_during_stream(self):
+        def app(env, start):
+            def body():
+                start("202 Accepted", [("X-Secret", "never-log")])
+                yield b"delayed"
+            return body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"radar.route_template": "/api/scan"}, lambda *args: None
+        )
+        self.assertEqual(list(response), [b"delayed"])
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+        self.assertTrue(any("status=202" in x for x in self.logs))
+        self.assertNotIn("never-log", "\n".join(self.logs))
+
+
+    def test_start_response_failure_closes_stream_and_logs_once(self):
+        closed = []
+        class Body:
+            def __iter__(self):
+                yield b"chunk"
+            def close(self):
+                closed.append(True)
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        def failing_start(*args):
+            raise RuntimeError("private-server-error")
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        with self.assertRaises(RuntimeError):
+            middleware({}, failing_start)
+        self.assertEqual(closed, [])
+        self.assertEqual(sum("REQUEST_EXCEPTION" in x for x in self.logs), 1)
+        self.assertNotIn("private-server-error", "\n".join(self.logs))
+
+
+
+if __name__ == "__main__":
+    unittest.main()
