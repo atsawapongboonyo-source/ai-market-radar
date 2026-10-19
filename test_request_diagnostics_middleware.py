@@ -231,6 +231,26 @@ class MiddlewareTests(unittest.TestCase):
         self.assertNotIn("never-log", "\n".join(self.logs))
 
 
+    def test_start_response_failure_closes_stream_and_logs_once(self):
+        closed = []
+        class Body:
+            def __iter__(self):
+                yield b"chunk"
+            def close(self):
+                closed.append(True)
+        def app(env, start):
+            start("200 OK", [])
+            return Body()
+        def failing_start(*args):
+            raise RuntimeError("private-server-error")
+        middleware = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)
+        with self.assertRaises(RuntimeError):
+            middleware({}, failing_start)
+        self.assertEqual(closed, [])
+        self.assertEqual(sum("REQUEST_EXCEPTION" in x for x in self.logs), 1)
+        self.assertNotIn("private-server-error", "\n".join(self.logs))
+
+
 
 if __name__ == "__main__":
     unittest.main()
