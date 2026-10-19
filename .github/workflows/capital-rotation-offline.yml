@@ -19,7 +19,7 @@ on:
       - test_capital_rotation_data_quality.py
       - test_capital_rotation_market_session.py
       - test_capital_rotation_pipeline.py
-      - test_capital_rotation_cache.py test_capital_rotation_report.py capital_rotation_report.py
+      - test_capital_rotation_cache.py
       - .github/workflows/capital-rotation-offline.yml
 
 jobs:
