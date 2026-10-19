@@ -13,6 +13,9 @@ on:
       - capital_rotation_pipeline.py
       - capital_rotation_cache.py
       - capital_rotation_report.py
+      - capital_rotation_alpaca.py
+      - capital_rotation_alpaca_report.py
+      - test_capital_rotation_alpaca.py
       - test_capital_rotation_report.py
       - test_capital_rotation_offline.py
       - test_capital_rotation_confirmation.py
@@ -31,5 +34,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m unittest -v test_capital_rotation_offline test_capital_rotation_confirmation test_capital_rotation_data_quality test_capital_rotation_market_session test_capital_rotation_pipeline test_capital_rotation_cache test_capital_rotation_report
-      - run: python -m py_compile capital_rotation_offline.py capital_rotation_confirmation.py capital_rotation_data_quality.py capital_rotation_market_session.py capital_rotation_pipeline.py capital_rotation_cache.py test_capital_rotation_offline.py test_capital_rotation_confirmation.py test_capital_rotation_data_quality.py test_capital_rotation_market_session.py test_capital_rotation_pipeline.py test_capital_rotation_cache.py test_capital_rotation_report.py capital_rotation_report.py
+      - run: python -m unittest -v test_capital_rotation_offline test_capital_rotation_confirmation test_capital_rotation_data_quality test_capital_rotation_market_session test_capital_rotation_pipeline test_capital_rotation_cache test_capital_rotation_report test_capital_rotation_alpaca
+      - run: python -m py_compile capital_rotation_offline.py capital_rotation_confirmation.py capital_rotation_data_quality.py capital_rotation_market_session.py capital_rotation_pipeline.py capital_rotation_cache.py test_capital_rotation_offline.py test_capital_rotation_confirmation.py test_capital_rotation_data_quality.py test_capital_rotation_market_session.py test_capital_rotation_pipeline.py test_capital_rotation_cache.py test_capital_rotation_report.py capital_rotation_report.py capital_rotation_alpaca.py capital_rotation_alpaca_report.py test_capital_rotation_alpaca.py
