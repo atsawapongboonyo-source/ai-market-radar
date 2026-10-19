@@ -154,3 +154,12 @@ Verified from Render service and deploy metadata (no mutations):
 - Render remains on live deployment `dep-db3qeoff3r2c7389mu90`, SHA `0eca2343ee06d2118fab347cb3c5a70773d49e3e`. Auto-deploy remains enabled for `main`.
 - This is an **offline test gate pass only**. Production worker crash 139 root cause unknown, real monitor workload not reproduced, and rollback execution not proven. The 512 MiB CI job is a bounded smoke, not sustained stress or peak-memory evidence.
 - **Decision: HOLD DEPLOY pending explicit separate approval to merge/auto-deploy; enabling `RADAR_REQUEST_DIAGNOSTICS=1` needs another explicit approval after default-OFF observation.**
+
+## Offline coverage consolidation — 2026-10-19
+
+- Latest code/test commit `06232244af950369ceaff970d2421118a33c12ae`: CI #210 (run 39196746860) **SUCCESS 12/12**. This includes diagnostics unit/integration tests, 512 MiB isolated Gunicorn lifecycle, real-runtime import, and monitor-safe CI shim checks.
+- Current branch comparison: **106 ahead, 0 behind main**, 28 changed files. Live Render still reports `0eca2343ee06d2118fab347cb3c5a70773d49e3e`.
+- Recent regression additions cover: disabled middleware pass-through; strict safe-route allowlist; early close and repeated close; application exception before response; streaming exception and cleanup exception; delayed start_response; start_response failure; log privacy for headers, paths, query strings and exception details.
+- **Do not infer production stability**: the bounded offline tests do not replicate Yahoo Finance network calls, real monitor scheduling, production request concurrency, native SIGSEGV 139, memory spikes, or a completed rollback.
+- **Next highest-value offline gate:** an instrumented, isolated multi-worker request/load and memory/worker-exit observation using existing safe read-only endpoints and no external network. Require actual measurements, bounded time/requests, and clear pass/fail criteria rather than repeating more single-case middleware tests. Preserve `LIVE_TRADING=0`, `TELEGRAM_TEST_ON_BOOT=0`, CI-only harmless monitor stub, `--network none`, and no production service interaction.
+- **Decision: HOLD DEPLOY** until a separate explicit merge/auto-deploy authorization. Diagnostics flag activation needs separate authorization after default-OFF observation.
