@@ -73,6 +73,22 @@ try:
         assert len(worker_pids) == 2, f"expected 2 live workers, found {worker_pids}"
         rss_total = sum(rss_kib(pid) for pid in [proc.pid, *worker_pids])
         print(f"BOUNDED_OFFLINE_LOAD_OK requests=80 concurrency=4 rss_snapshot_kib={rss_total}", flush=True)
+        # cgroup v2 memory.peak records high-water memory since container start,
+        # unlike a point-in-time RSS snapshot. OOM counters catch transient kills.
+        peak_path = "/sys/fs/cgroup/memory.peak"
+        events_path = "/sys/fs/cgroup/memory.events"
+        if os.path.isfile(peak_path) and os.path.isfile(events_path):
+            with open(peak_path, encoding="utf-8") as handle:
+                peak_bytes = int(handle.read().strip())
+            with open(events_path, encoding="utf-8") as handle:
+                events = dict(line.split() for line in handle)
+            oom = int(events.get("oom", "0"))
+            oom_kill = int(events.get("oom_kill", "0"))
+            print(f"CGROUP_MEMORY_PEAK_BYTES={peak_bytes} OOM={oom} OOM_KILL={oom_kill}", flush=True)
+            assert peak_bytes > 0, "missing memory peak"
+            assert oom == 0 and oom_kill == 0, "cgroup memory exhaustion detected"
+        else:
+            print("CGROUP_MEMORY_PEAK_UNAVAILABLE: cgroup v2 memory files absent", flush=True)
     print("GUNICORN_WORKER_LIFECYCLE_OK workers=2 requests=20", flush=True)
 finally:
     proc.terminate()
