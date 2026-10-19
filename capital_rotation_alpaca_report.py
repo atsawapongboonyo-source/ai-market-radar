@@ -11,12 +11,14 @@ import json
 import sys
 from capital_rotation_alpaca import MarketDataError, fetch_from_environment
 from capital_rotation_report import build_report
+from capital_rotation_html import save_rotation_html
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("completed_session", type=date.fromisoformat)
     parser.add_argument("--feed", choices=("iex", "sip"), default="iex")
+    parser.add_argument("--html", help="Optional local static HTML output path")
     parser.add_argument("--max-age-hours", type=float, default=36)
     args = parser.parse_args(argv)
     if not 0 < args.max_age_hours <= 120:
@@ -32,6 +34,8 @@ def main(argv=None):
     report = build_report(snapshot, expected_session=args.completed_session,
                           now_utc=datetime.now(timezone.utc),
                           max_age_hours=args.max_age_hours)
+    if args.html:
+        save_rotation_html(report, args.html)
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0 if report["result"]["status"] == "RESEARCH_ONLY" else 2
 
