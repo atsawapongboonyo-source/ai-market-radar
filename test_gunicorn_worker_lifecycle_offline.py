@@ -4,6 +4,7 @@ Run with safe flags and diagnostics disabled; verify workers boot, answer a
 read-only monitor endpoint, and survive repeated short-lived connections.
 """
 import os
+from concurrent.futures import ThreadPoolExecutor
 import subprocess
 import sys
 import time
@@ -47,6 +48,31 @@ try:
             assert response.status == 200
             assert b'"ok"' in response.read()
     assert proc.poll() is None, "Gunicorn exited during read-only requests"
+    if os.environ.get("RADAR_BOUNDED_LOAD") == "1":
+        # Offline-only read-only concurrency gate; no external market calls.
+        def fetch_status(_):
+            with urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/api/server-monitor-status", timeout=6
+            ) as response:
+                payload = response.read()
+                assert response.status == 200 and b'"ok"' in payload
+                return len(payload)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            lengths = list(pool.map(fetch_status, range(80)))
+        assert len(lengths) == 80 and all(n > 0 for n in lengths)
+        assert proc.poll() is None, "Gunicorn exited during concurrent requests"
+        # Read current resident memory for master + direct worker processes.
+        def rss_kib(pid):
+            with open(f"/proc/{pid}/status", encoding="utf-8") as status:
+                for line in status:
+                    if line.startswith("VmRSS:"):
+                        return int(line.split()[1])
+            raise AssertionError("VmRSS missing")
+        with open(f"/proc/{proc.pid}/task/{proc.pid}/children", encoding="utf-8") as children:
+            worker_pids = [int(p) for p in children.read().split()]
+        assert len(worker_pids) == 2, f"expected 2 live workers, found {worker_pids}"
+        rss_total = sum(rss_kib(pid) for pid in [proc.pid, *worker_pids])
+        print(f"BOUNDED_OFFLINE_LOAD_OK requests=80 concurrency=4 rss_snapshot_kib={rss_total}", flush=True)
     print("GUNICORN_WORKER_LIFECYCLE_OK workers=2 requests=20", flush=True)
 finally:
     proc.terminate()
