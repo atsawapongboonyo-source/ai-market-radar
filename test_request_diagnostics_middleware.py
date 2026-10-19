@@ -216,6 +216,21 @@ class MiddlewareTests(unittest.TestCase):
             self.assertEqual(safe_path({"radar.route_template": candidate}), "UNMAPPED")
 
 
+    def test_delayed_start_response_during_stream(self):
+        def app(env, start):
+            def body():
+                start("202 Accepted", [("X-Secret", "never-log")])
+                yield b"delayed"
+            return body()
+        response = RequestDiagnosticsMiddleware(app, enabled=True, emit=self.emit)(
+            {"radar.route_template": "/api/scan"}, lambda *args: None
+        )
+        self.assertEqual(list(response), [b"delayed"])
+        self.assertEqual(sum("REQUEST_END" in x for x in self.logs), 1)
+        self.assertTrue(any("status=202" in x for x in self.logs))
+        self.assertNotIn("never-log", "\n".join(self.logs))
+
+
 
 if __name__ == "__main__":
     unittest.main()
