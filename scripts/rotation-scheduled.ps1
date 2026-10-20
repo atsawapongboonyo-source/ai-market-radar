@@ -110,7 +110,7 @@ if ($exitCode -eq 0 -and (Test-Path -LiteralPath (Join-Path $InstallRoot 'publis
             [void]$publisherProcess.Start()
             $publishOut = $publisherProcess.StandardOutput.ReadToEndAsync()
             $publishErr = $publisherProcess.StandardError.ReadToEndAsync()
-            if (-not $publisherProcess.WaitForExit(90000)) { $publisherProcess.Kill() }
+            if (-not $publisherProcess.WaitForExit(90000)) { $publisherProcess.Kill(); throw 'Publisher timeout' }
             $publishOut = $null; $publishErr = $null
         }
     } catch {
