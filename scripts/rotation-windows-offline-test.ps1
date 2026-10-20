@@ -1,5 +1,6 @@
 param([string]$TestRoot,[string]$PythonPath)
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSEdition -eq 'Desktop') { $env:PSModulePath = Join-Path $PSHOME 'Modules' }
 foreach ($file in @('rotation-install.ps1','rotation-credentials.ps1','rotation-scheduled.ps1')) {
     $tokens=$null; $errors=$null
     [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot $file),[ref]$tokens,[ref]$errors) | Out-Null

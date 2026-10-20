@@ -1,5 +1,6 @@
 param([Parameter(Mandatory=$true)][string]$InstallRoot)
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSEdition -eq 'Desktop') { $env:PSModulePath = Join-Path $PSHOME 'Modules' }
 $config = $null
 $keySecure = $null
 $secretSecure = $null

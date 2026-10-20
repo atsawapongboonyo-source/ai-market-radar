@@ -5,6 +5,7 @@ param(
     [switch]$RegisterTask
 )
 $ErrorActionPreference = 'Stop'
+if ($PSVersionTable.PSEdition -eq 'Desktop') { $env:PSModulePath = Join-Path $PSHOME 'Modules' }
 $taskName = 'AI Market Radar Capital Rotation Local'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()

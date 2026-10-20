@@ -1,5 +1,7 @@
 param([Parameter(Mandatory=$true)][string]$InstallRoot)
 $ErrorActionPreference = 'Stop'
+# PS7 parents can pass incompatible Core modules to Windows PowerShell 5.1.
+if ($PSVersionTable.PSEdition -eq 'Desktop') { $env:PSModulePath = Join-Path $PSHOME 'Modules' }
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $statusPath = Join-Path $InstallRoot 'credential-status.json'

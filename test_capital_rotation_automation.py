@@ -104,7 +104,8 @@ class AutomationTests(unittest.TestCase):
         script = Path(__file__).parent / 'scripts' / 'rotation-windows-offline-test.ps1'
         result = subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive',
             '-ExecutionPolicy', 'Bypass', '-File', str(script), '-TestRoot', str(self.root),
-            '-PythonPath', sys.executable], capture_output=True, text=True, timeout=45)
+            '-PythonPath', sys.executable], capture_output=True, text=True, timeout=45,
+            env=dict(os.environ, PSModulePath=str(self.root / 'parent-module-path')))
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('WINDOWS_OFFLINE_OK', result.stdout)
         self.assertNotIn('synthetic-child-secret', result.stdout + result.stderr)
