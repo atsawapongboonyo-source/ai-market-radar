@@ -1,0 +1,6 @@
+{
+  "public_keys": {
+    "windows-staging": "021e81d7e2d1d8ade3436703cd6b5b3781e5fcf0efa99752d9309b487c2e6cd7"
+  },
+  "scope": "SIMULATED_STAGING_ONLY"
+}

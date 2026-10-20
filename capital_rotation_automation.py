@@ -69,7 +69,8 @@ def valid_saved(evidence, session):
         payload = {'bars': {s: [{'t': r['bar_timestamp_utc'], 'c': r['close']} for r in rows]
                             for s, rows in observations.items()}}
         snapshot = _daily_close_snapshot(payload, expected_session=session)
-        if audit_snapshot(snapshot, expected_session=session)['status'] != 'PASSED':
+        recomputed = audit_snapshot(snapshot, expected_session=session)
+        if recomputed['status'] != 'PASSED' or evidence.get('calculation_audit') != recomputed:
             return False
         # Recompute classification; a forged PASSED label does not bypass checks.
         replay = build_report(snapshot, expected_session=session,
