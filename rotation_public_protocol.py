@@ -1,12 +1,12 @@
 """Strict public-only schema and domain-separated Ed25519 request signatures."""
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from math import isfinite
 import hashlib
 import json
 import re
 
 from capital_rotation_offline import SECTORS, AI_PROXIES
-from capital_rotation_calendar import last_completed_session
+from capital_rotation_calendar import last_completed_session, session_close
 from capital_rotation_confirmation import confirm_rotation
 
 SYMBOLS = ('SPY',) + AI_PROXIES + SECTORS
@@ -34,11 +34,14 @@ def parse_public(raw, now):
             raise PublicDataError('INVALID_SCHEMA')
         if type(value['schema_version']) is not int or value['schema_version'] != 1 or value['feed'] != 'iex':
             raise PublicDataError('INVALID_SCHEMA')
-        if value['session_date'] != last_completed_session(now).isoformat():
+        completed = last_completed_session(now)
+        if value['session_date'] != completed.isoformat():
             raise PublicDataError('STALE_SESSION')
         generated = datetime.fromisoformat(value['generated_utc'].replace('Z', '+00:00'))
         if generated.tzinfo is None or not -60 <= (now-generated).total_seconds() <= 120*3600:
             raise PublicDataError('STALE_PUBLICATION')
+        if generated < session_close(completed) + timedelta(minutes=20):
+            raise PublicDataError('PUBLICATION_BEFORE_SESSION_READY')
         if set(value['returns']) != {'5d', '20d'}:
             raise PublicDataError('INVALID_SCHEMA')
         for rows in value['returns'].values():

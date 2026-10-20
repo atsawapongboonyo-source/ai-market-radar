@@ -96,6 +96,10 @@ class RotationWebTests(unittest.TestCase):
         value=fake_public(self.now);value['generated_utc']=(self.now-timedelta(minutes=1)).isoformat()
         self.assertEqual(self.post(value).status_code,409)
 
+    def test_publication_cannot_predate_its_completed_session(self):
+        value=fake_public(self.now);value['generated_utc']='2026-10-19T19:00:00+00:00'
+        self.assertEqual(self.post(value).status_code,422)
+
     def test_oversize_and_duplicate_json_and_nonfinite_rejected(self):
         response=self.client.post(INGEST_PATH,data=b'x'*9000,content_type='application/json')
         self.assertEqual(response.status_code,413)
