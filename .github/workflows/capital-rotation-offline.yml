@@ -17,6 +17,10 @@ on:
       - test_capital_rotation_html.py
       - capital_rotation_alpaca.py
       - capital_rotation_alpaca_report.py
+      - capital_rotation_calendar.py
+      - capital_rotation_audit.py
+      - test_capital_rotation_calendar.py
+      - test_capital_rotation_audit.py
       - test_capital_rotation_alpaca.py
       - test_capital_rotation_alpaca_report.py
       - test_capital_rotation_report.py

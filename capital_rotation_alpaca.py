@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 from capital_rotation_offline import SECTORS, AI_PROXIES
+from capital_rotation_calendar import CalendarError, trailing_sessions, session_close
 
 SYMBOLS = ("SPY",) + AI_PROXIES + SECTORS
 HOST = "https://data.alpaca.markets/v2/stocks/bars"
@@ -28,7 +29,11 @@ def _daily_close_snapshot(payload, *, expected_session):
     bars = payload.get("bars")
     if not isinstance(bars, dict):
         raise MarketDataError("MISSING_BARS")
-    snapshot = {"5d": {}, "20d": {}}
+    snapshot = {"5d": {}, "20d": {}, "_observations": {}}
+    try:
+        required_sessions = trailing_sessions(expected_session)
+    except CalendarError:
+        raise MarketDataError('CALENDAR_UNAVAILABLE') from None
     reference_sessions = None
     for symbol in SYMBOLS:
         history = bars.get(symbol)
@@ -57,12 +62,20 @@ def _daily_close_snapshot(payload, *, expected_session):
             reference_sessions = sessions[-21:]
         elif sessions[-21:] != reference_sessions:
             raise MarketDataError("MISALIGNED_SYMBOL_SESSIONS")
+        if sessions[-21:] != required_sessions:
+            raise MarketDataError('MISSING_EXCHANGE_SESSIONS')
         close_now, asof = by_date[sessions[-1]]
+        snapshot['_observations'][symbol] = [
+            {'session': day.isoformat(), 'close': by_date[day][0],
+             'bar_timestamp_utc': by_date[day][1].isoformat()}
+            for day in sessions[-21:]]
         for window, offset in (("5d", 5), ("20d", 20)):
             earlier = by_date[sessions[-1 - offset]][0]
             snapshot[window][symbol] = {
                 "return_pct": (close_now / earlier - 1.0) * 100,
-                "asof_utc": asof.isoformat(),
+                # Daily-bar timestamps mark the START of the NY day, not close.
+                "asof_utc": session_close(expected_session).isoformat(),
+                "bar_timestamp_utc": asof.isoformat(),
                 "session_date": expected_session.isoformat(),
             }
     return snapshot

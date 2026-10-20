@@ -49,6 +49,12 @@ small{color:#526074}strong{color:#173b6c}
 <p><strong>Completed session:</strong> """ + field(report.get("expected_session")) + """</p>
 <p><strong>Generated UTC:</strong> """ + field(report.get("generated_utc")) + """</p></section>
 <p><strong>Data feed:</strong> """ + field(report.get("feed")) + """ (IEX is partial-market data; not consolidated US coverage.)</p>
+<section><h2>Validation</h2>
+<p><strong>Calculation audit:</strong> """ + field(report.get('calculation_audit', {}).get('status', 'NOT_RUN')) + """</p>
+<p><strong>IEX / SIP comparison:</strong> """ + field(report.get('cross_feed_verification', {}).get('status', 'NOT_RUN')) + """</p>
+<p>Calculations can be checked from saved closing prices. SIP comparison uses a different feed
+from the same provider; it is not an independent vendor verification.</p>
+<p><strong>Calendar:</strong> """ + field(report.get('calendar', {}).get('coverage')) + """</p></section>
 <section><h2>Relative strength candidates</h2>
 <table><thead><tr><th>ETF</th><th>vs SPY 5D (%)</th><th>vs SPY 20D (%)</th></tr></thead>
 <tbody>""" + "".join(rows) + """</tbody></table></section>

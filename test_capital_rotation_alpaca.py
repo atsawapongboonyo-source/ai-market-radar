@@ -102,6 +102,13 @@ class AlpacaAdapterTests(unittest.TestCase):
             fetch_alpaca_snapshot(expected_session=self.session, api_key='test-key',
                                   secret_key='test-secret', opener=denied)
 
+    def test_identical_gaps_across_all_symbols_still_fail_calendar(self):
+        payload = json.loads(json.dumps(self.payload))
+        for symbol in SYMBOLS:
+            payload['bars'][symbol][0]['t'] = (self.days[0] - timedelta(days=1)).isoformat() + 'T00:00:00Z'
+        with self.assertRaisesRegex(MarketDataError, '^MISSING_EXCHANGE_SESSIONS$'):
+            self.fetch(payload)
+
 
 if __name__ == "__main__":
     unittest.main()
