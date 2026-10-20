@@ -5,6 +5,7 @@ from pathlib import Path
 import json
 
 from capital_rotation_calendar import CalendarError, trailing_sessions, is_session
+from capital_rotation_storage import atomic_write_text
 
 
 def compare_reference(evidence, reference):
@@ -94,6 +95,5 @@ def archive_run(evidence, root):
         if path.read_text(encoding='utf-8') != text:
             raise ValueError('conflicting run timestamp')
     else:
-        with path.open('x', encoding='utf-8') as handle:
-            handle.write(text)
+        atomic_write_text(path, text, overwrite=False)
     return summarize_history(root)

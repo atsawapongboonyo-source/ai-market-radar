@@ -17,6 +17,7 @@ from capital_rotation_calendar import (CalendarError, last_completed_session,
                                       calendar_age_limit, SOURCE, REVIEWED)
 from capital_rotation_audit import audit_snapshot, compare_feeds
 from capital_rotation_validation import compare_reference, archive_run
+from capital_rotation_storage import atomic_write_text
 
 
 def main(argv=None):
@@ -55,7 +56,7 @@ def main(argv=None):
         if args.html:
             save_rotation_html(report, args.html)
         if args.audit_json:
-            args.audit_json.write_text(json.dumps(report, indent=2), encoding='utf-8')
+            atomic_write_text(args.audit_json, json.dumps(report, indent=2))
         print(json.dumps(report))
         return 2
     report = build_report(snapshot, expected_session=completed,
@@ -92,7 +93,7 @@ def main(argv=None):
         report['history_summary'] = archive_run(evidence, args.history_dir)
         evidence['history_summary'] = report['history_summary']
     if args.audit_json:
-        args.audit_json.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding='utf-8')
+        atomic_write_text(args.audit_json, json.dumps(evidence, indent=2, sort_keys=True))
     if args.html:
         save_rotation_html(report, args.html)
     print(json.dumps(report, indent=2, sort_keys=True))

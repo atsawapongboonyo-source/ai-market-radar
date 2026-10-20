@@ -5,6 +5,7 @@ Accepts only the evaluated report dict; escapes all dynamic content.
 """
 from html import escape
 from pathlib import Path
+from capital_rotation_storage import atomic_write_text
 
 
 def render_rotation_html(report):
@@ -46,6 +47,16 @@ def render_rotation_html(report):
             'Samples only; adjustment and close conventions still require reconciliation.</p>'
             '<table><thead><tr><th>ETF</th><th>5D difference (pp)</th><th>20D difference (pp)</th></tr></thead>'
             '<tbody>' + ''.join(comparison_rows) + '</tbody></table></section>')
+    health = report.get('automation_health', {})
+    health_section = ''
+    if health:
+        health_section = ('<section><h2>Local Automation Health</h2><p><strong>Health Status:</strong> '
+            + field(health.get('status')) + '</p><p><strong>Error Code:</strong> '
+            + field(health.get('error_code')) + '</p><p><strong>Last Data Success (UTC):</strong> '
+            + field(health.get('last_success_utc')) + '</p><p><strong>Last Run / Check (UTC):</strong> '
+            + field(health.get('last_check_utc')) + '</p><p><strong>Next Run / market data due (UTC):</strong> '
+            + field(health.get('next_market_due_utc')) + '</p><p><strong>Next Scheduled Check (UTC):</strong> '
+            + field(health.get('next_check_utc')) + '</p></section>')
     return """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -57,6 +68,7 @@ table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:12px;bor
 small{color:#526074}strong{color:#173b6c}
 </style></head><body>
 <h1>Capital Rotation — Research Only</h1>
+""" + health_section + """
 <section><p><strong>Status:</strong> """ + field(status) + """</p>
 <p><strong>Regime:</strong> """ + field(result.get("regime")) + """</p>
 <p><strong>Reason:</strong> """ + field(result.get("reason", result.get("note"))) + """</p>
@@ -83,5 +95,5 @@ or a trading signal. Data may be delayed or incomplete. No automated orders.</sm
 
 def save_rotation_html(report, output_path):
     path = Path(output_path)
-    path.write_text(render_rotation_html(report), encoding="utf-8")
+    atomic_write_text(path, render_rotation_html(report))
     return path

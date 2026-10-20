@@ -9,7 +9,7 @@ from datetime import date, datetime, timedelta, timezone
 import json
 import os
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.error import HTTPError
 
 from capital_rotation_offline import SECTORS, AI_PROXIES
@@ -21,6 +21,16 @@ HOST = "https://data.alpaca.markets/v2/stocks/bars"
 
 class MarketDataError(Exception):
     pass
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        # Never forward authentication headers to a redirected host/path.
+        raise HTTPError(request.full_url, code, 'Redirect refused', headers, fp)
+
+
+def _readonly_urlopen(request, timeout):
+    return build_opener(_NoRedirect()).open(request, timeout=timeout)
 
 
 def _daily_close_snapshot(payload, *, expected_session):
@@ -82,7 +92,7 @@ def _daily_close_snapshot(payload, *, expected_session):
 
 
 def fetch_alpaca_snapshot(*, expected_session, api_key, secret_key,
-                          feed="iex", opener=urlopen):
+                          feed="iex", opener=None):
     """One bounded read-only daily-bar request. Missing symbols fail closed.
 
     IEX is a partial-market feed; it may omit some ETFs. Never describe
@@ -94,6 +104,7 @@ def fetch_alpaca_snapshot(*, expected_session, api_key, secret_key,
         raise ValueError("unsupported feed")
     if not api_key or not secret_key:
         raise MarketDataError("MISSING_CREDENTIALS")
+    opener = opener or _readonly_urlopen
     params = urlencode({
         "symbols": ",".join(SYMBOLS), "timeframe": "1Day",
         "start": (expected_session - timedelta(days=55)).isoformat(),

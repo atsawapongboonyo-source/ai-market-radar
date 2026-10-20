@@ -109,6 +109,14 @@ class AlpacaAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(MarketDataError, '^MISSING_EXCHANGE_SESSIONS$'):
             self.fetch(payload)
 
+    def test_redirect_never_forwards_authentication(self):
+        from urllib.error import HTTPError
+        from urllib.request import Request
+        from capital_rotation_alpaca import _NoRedirect
+        with self.assertRaises(HTTPError):
+            _NoRedirect().redirect_request(Request(HOST), None, 302, 'redirect', {},
+                                           'https://example.org/other')
+
 
 if __name__ == "__main__":
     unittest.main()
