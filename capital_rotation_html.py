@@ -32,6 +32,20 @@ def render_rotation_html(report):
         rows.append('<tr><td colspan="3">No confirmed candidates / insufficient data</td></tr>')
     def field(value):
         return escape(str(value if value is not None else "—"))
+    comparison_rows = []
+    comparison = report.get('reference_verification', {})
+    if comparison.get('status') == 'SPOT_CHECK_ONLY':
+        for check in comparison.get('checks', []):
+            comparison_rows.append('<tr><td>' + field(check.get('symbol'))
+                + '</td><td>' + field(round(check['returns']['5d']['difference_pp'], 4))
+                + '</td><td>' + field(round(check['returns']['20d']['difference_pp'], 4)) + '</td></tr>')
+    external_section = ''
+    if comparison_rows:
+        external_section = ('<section><h2>External sample differences</h2>'
+            '<p>IEX return minus external published-close return, in percentage points. '
+            'Samples only; adjustment and close conventions still require reconciliation.</p>'
+            '<table><thead><tr><th>ETF</th><th>5D difference (pp)</th><th>20D difference (pp)</th></tr></thead>'
+            '<tbody>' + ''.join(comparison_rows) + '</tbody></table></section>')
     return """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -52,12 +66,16 @@ small{color:#526074}strong{color:#173b6c}
 <section><h2>Validation</h2>
 <p><strong>Calculation audit:</strong> """ + field(report.get('calculation_audit', {}).get('status', 'NOT_RUN')) + """</p>
 <p><strong>IEX / SIP comparison:</strong> """ + field(report.get('cross_feed_verification', {}).get('status', 'NOT_RUN')) + """</p>
+<p><strong>External price sample:</strong> """ + field(report.get('reference_verification', {}).get('status', 'NOT_RUN')) + """</p>
+<p><strong>Consecutive observed sessions:</strong> """ + field(report.get('history_summary', {}).get('consecutive_sessions', 0)) + """ / 5 pilot target</p>
+<p>Spot checks cover selected symbols and dates only. Five observed sessions do not establish predictive performance or production readiness.</p>
 <p>Calculations can be checked from saved closing prices. SIP comparison uses a different feed
 from the same provider; it is not an independent vendor verification.</p>
 <p><strong>Calendar:</strong> """ + field(report.get('calendar', {}).get('coverage')) + """</p></section>
 <section><h2>Relative strength candidates</h2>
 <table><thead><tr><th>ETF</th><th>vs SPY 5D (%)</th><th>vs SPY 20D (%)</th></tr></thead>
 <tbody>""" + "".join(rows) + """</tbody></table></section>
+""" + external_section + """
 <small>Price-relative strength proxy only. Not actual fund flows, investment advice,
 or a trading signal. Data may be delayed or incomplete. No automated orders.</small>
 </body></html>"""

@@ -59,6 +59,26 @@ This is **not an independent vendor check**. A separate licensed source with
 matching split adjustment and close conventions still needs to be reconciled
 before claiming independently verified market prices.
 
+## External spot checks and repeated-session pilot
+
+The CLI accepts `--reference-json sample.json` for a locally sourced price
+sample. It compares closes at the latest, 5-session-base and 20-session-base
+dates and records differences in basis points and return percentage points.
+Samples require an HTTPS source URL per symbol and must match the report
+session. Missing/invalid samples are BLOCKED; complete samples remain
+SPOT_CHECK_ONLY, never full-universe certification. Source adjustment/close
+conventions must be separately reconciled. No external data is scraped by the
+report CLI and no universal numerical pass threshold is assumed.
+
+The Windows launcher now archives local evidence with `--history-dir` outside
+the repository. Repeated runs on one session count once. Gaps and blocked runs
+do not count toward consecutive valid sessions. Five consecutive sessions is
+a practical initial pilot target, not production approval, statistical evidence
+of returns, or proof of market-data equivalence. An unchanged latest report
+can be used for research immediately; refresh it after a new session completes.
+No background process or schedule is installed, and credentials are never
+retained for future runs.
+
 HTML output is also written on provider failure, replacing any previous
 candidate list with BLOCKED. Safe error codes distinguish missing credentials,
 authentication failure (401), feed access denial (403), and rate limits (429).

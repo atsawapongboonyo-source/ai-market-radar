@@ -16,6 +16,7 @@ from capital_rotation_html import save_rotation_html
 from capital_rotation_calendar import (CalendarError, last_completed_session,
                                       calendar_age_limit, SOURCE, REVIEWED)
 from capital_rotation_audit import audit_snapshot, compare_feeds
+from capital_rotation_validation import compare_reference, archive_run
 
 
 def main(argv=None):
@@ -26,6 +27,8 @@ def main(argv=None):
     parser.add_argument("--max-age-hours", type=float)
     parser.add_argument('--audit-json', type=Path, help='Local price and calculation evidence; no credentials')
     parser.add_argument('--verify-sip', action='store_true', help='One extra read-only historical SIP request to compare IEX closes')
+    parser.add_argument('--reference-json', type=Path, help='Optional local external price sample for this session')
+    parser.add_argument('--history-dir', type=Path, help='Archive local runs and count distinct sessions')
     args = parser.parse_args(argv)
     if args.max_age_hours is not None and not 0 < args.max_age_hours <= 120:
         parser.error("max-age-hours must be > 0 and <= 120")
@@ -76,8 +79,19 @@ def main(argv=None):
                 report['cross_feed_verification'] = compare_feeds(snapshot, reference)
         except MarketDataError as exc:
             report['cross_feed_verification'] = {'status': 'BLOCKED', 'reason': str(exc)}
+    evidence = dict(report, observations=snapshot['_observations'])
+    report['reference_verification'] = {'status': 'NOT_RUN'}
+    if args.reference_json:
+        try:
+            reference_prices = json.loads(args.reference_json.read_text(encoding='utf-8'))
+            report['reference_verification'] = compare_reference(evidence, reference_prices)
+        except (OSError, ValueError):
+            report['reference_verification'] = {'status': 'BLOCKED', 'reason': 'INVALID_REFERENCE_FILE'}
+    evidence['reference_verification'] = report['reference_verification']
+    if args.history_dir:
+        report['history_summary'] = archive_run(evidence, args.history_dir)
+        evidence['history_summary'] = report['history_summary']
     if args.audit_json:
-        evidence = dict(report, observations=snapshot['_observations'])
         args.audit_json.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding='utf-8')
     if args.html:
         save_rotation_html(report, args.html)

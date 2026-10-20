@@ -41,6 +41,7 @@ $repoPath = Split-Path $PSScriptRoot -Parent
 $outputRoot = (Resolve-Path -LiteralPath $OutputDirectory).Path
 $htmlPath = Join-Path $outputRoot "rotation-$Feed.html"
 $auditPath = Join-Path $outputRoot "rotation-$Feed-audit.json"
+$historyPath = Join-Path $outputRoot "rotation-$Feed-history"
 # Inputs are hidden, never command arguments or persisted environment settings.
 try {
     foreach ($name in @('ALPACA_DATA_KEY_ID','ALPACA_DATA_SECRET_KEY')) {
@@ -54,7 +55,7 @@ try {
             Remove-Variable secureValue,pointer
         }
     }
-    $reportArgs = @((Join-Path $repoPath 'capital_rotation_alpaca_report.py'), '--feed', $Feed, '--html', $htmlPath, '--audit-json', $auditPath)
+    $reportArgs = @((Join-Path $repoPath 'capital_rotation_alpaca_report.py'), '--feed', $Feed, '--html', $htmlPath, '--audit-json', $auditPath, '--history-dir', $historyPath)
     if ($Feed -eq 'iex') { $reportArgs += '--verify-sip' }
     & $pythonPath @reportArgs
     Write-Host "Local report: $htmlPath"
