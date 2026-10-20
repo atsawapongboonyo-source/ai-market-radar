@@ -31,7 +31,8 @@ def connection(path):
 
 
 def register_rotation(app, *, database=None, public_keys=None, clock=None,
-                      loopback_staging=False, trusted_tls_proxy=False, simulated=False):
+                      loopback_staging=False, trusted_tls_proxy=False, simulated=False,
+                      storage_mode='UNVERIFIED'):
     clock = clock or (lambda: datetime.now(timezone.utc))
     public_keys = public_keys or {}
     configured = bool(database and public_keys)
@@ -49,9 +50,15 @@ def register_rotation(app, *, database=None, public_keys=None, clock=None,
             if not row:
                 return {'result': blocked('AWAITING_COLLECTOR'), 'simulated': simulated}
             value, result = parse_public(bytes(row[0]), clock())
+            ranking = sorted(({'symbol': s, 'return_5d_pct': value['returns']['5d'][s],
+                'return_20d_pct': value['returns']['20d'][s],
+                'relative_5d_pct': round(value['returns']['5d'][s]-value['returns']['5d']['SPY'], 3),
+                'relative_20d_pct': round(value['returns']['20d'][s]-value['returns']['20d']['SPY'], 3)}
+                for s in value['returns']['5d']),
+                key=lambda r: (-r['relative_20d_pct'], -r['relative_5d_pct'], r['symbol']))
             return {'result': result, 'session_date': value['session_date'],
                     'generated_utc': value['generated_utc'], 'returns': value['returns'],
-                    'feed': 'iex', 'simulated': simulated}
+                    'feed': 'iex', 'simulated': simulated, 'ranking': ranking}
         except PublicDataError as exc:
             return {'result': blocked(str(exc)), 'simulated': simulated}
         except (OSError, sqlite3.Error):
@@ -59,7 +66,7 @@ def register_rotation(app, *, database=None, public_keys=None, clock=None,
 
     @bp.get('/rotation')
     def dashboard():
-        return render_template('rotation_dashboard.html', data=current())
+        return render_template('rotation_dashboard.html', data=current(), storage_mode=storage_mode)
 
     @bp.get('/api/rotation')
     def read_rotation():

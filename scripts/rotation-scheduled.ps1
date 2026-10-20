@@ -89,4 +89,39 @@ try {
     if ($null -ne $process) { $process.Dispose() }
     $stored = $null; $entry = $null; $psi = $null
 }
+# Optional publisher executes only AFTER the credential-bearing child is disposed.
+# No Alpaca variables are passed; publication failure does not break local collection.
+if ($exitCode -eq 0 -and (Test-Path -LiteralPath (Join-Path $InstallRoot 'publisher.json'))) {
+    $publisherProcess = $null
+    try {
+        $publisher = Get-Content -LiteralPath (Join-Path $InstallRoot 'publisher.json') -Raw | ConvertFrom-Json
+        if ($publisher.enabled -eq $true) {
+            $publishInfo = New-Object Diagnostics.ProcessStartInfo
+            $publishInfo.FileName = $publisher.python_path
+            $publishInfo.Arguments = '"' + (Join-Path $InstallRoot 'publisher-runtime\rotation_collector_publish.py') + '" --root "' + $InstallRoot + '"'
+            $publishInfo.UseShellExecute = $false
+            $publishInfo.CreateNoWindow = $true
+            $publishInfo.RedirectStandardOutput = $true
+            $publishInfo.RedirectStandardError = $true
+            $publishInfo.EnvironmentVariables.Remove('ALPACA_DATA_KEY_ID')
+            $publishInfo.EnvironmentVariables.Remove('ALPACA_DATA_SECRET_KEY')
+            $publisherProcess = New-Object Diagnostics.Process
+            $publisherProcess.StartInfo = $publishInfo
+            [void]$publisherProcess.Start()
+            $publishOut = $publisherProcess.StandardOutput.ReadToEndAsync()
+            $publishErr = $publisherProcess.StandardError.ReadToEndAsync()
+            if (-not $publisherProcess.WaitForExit(90000)) { $publisherProcess.Kill() }
+            $publishOut = $null; $publishErr = $null
+        }
+    } catch {
+        # Fixed local status, never exception text. Collector exit status stays intact.
+        try {
+            $path = Join-Path $InstallRoot 'publication-health.json'
+            $temporary = $path + '.' + [Guid]::NewGuid().ToString('N') + '.tmp'
+            [IO.File]::WriteAllText($temporary,'{"status":"BLOCKED","error_code":"PUBLISHER_UNAVAILABLE"}')
+            if ([IO.File]::Exists($path)) { [IO.File]::Replace($temporary,$path,[NullString]::Value) }
+            else { [IO.File]::Move($temporary,$path) }
+        } catch { }
+    } finally { if ($null -ne $publisherProcess) { $publisherProcess.Dispose() } }
+}
 exit $exitCode

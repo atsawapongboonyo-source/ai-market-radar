@@ -65,7 +65,7 @@ def upload(url, raw, private_key, key_id, *, now=None, local_staging=False):
     parse_public(raw, now)
     request = Request(url, data=raw, headers=signed_headers(raw, private_key, key_id, now), method='POST')
     try:
-        with build_opener(NoRedirect()).open(request, timeout=12) as response:
+        with build_opener(NoRedirect()).open(request, timeout=45) as response:
             return response.status
     except Exception:
         raise PublicDataError('PUBLICATION_FAILED') from None

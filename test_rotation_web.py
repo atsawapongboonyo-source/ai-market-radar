@@ -64,6 +64,26 @@ class RotationWebTests(unittest.TestCase):
         app2=Flask('restart')
         register_rotation(app2,database=self.db,public_keys={'test':self.key.public_key().public_bytes_raw().hex()},clock=lambda:self.now,loopback_staging=True)
         self.assertEqual(app2.test_client().post(INGEST_PATH,data=raw,headers=headers).status_code,409)
+        self.assertEqual(app2.test_client().get('/api/rotation').get_json()['session_date'],'2026-10-19')
+
+    def test_ranking_matches_returns_and_stale_ranking_is_hidden(self):
+        self.post()
+        data=self.client.get('/api/rotation').get_json()
+        expected=sorted(SYMBOLS,key=lambda s:(-data['returns']['20d'][s],-data['returns']['5d'][s],s))
+        self.assertEqual([r['symbol'] for r in data['ranking']],expected)
+        self.assertEqual(len(data['ranking']),14)
+        self.now += timedelta(days=1)
+        self.assertNotIn('ranking',self.client.get('/api/rotation').get_json())
+
+    def test_corrupt_store_and_missing_mount_fail_closed(self):
+        Path(self.db).write_bytes(b'corrupt database')
+        value=self.client.get('/api/rotation').get_json()
+        self.assertEqual(value['result']['reason'],'STORE_UNAVAILABLE')
+        self.assertEqual(value['result']['candidates'],[])
+        app=Flask('unavailable_mount')
+        register_rotation(app,database=str(Path(self.tmp.name)/'missing'/'db.sqlite'),
+                          public_keys={'test':self.key.public_key().public_bytes_raw().hex()})
+        self.assertEqual(app.test_client().get('/api/rotation').get_json()['result']['reason'],'STORE_UNAVAILABLE')
 
     def test_idempotent_repeat_with_new_nonce_has_one_record(self):
         self.assertEqual(self.post().status_code,200)

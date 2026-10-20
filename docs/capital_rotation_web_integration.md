@@ -74,10 +74,11 @@ no server-side shared secret is required.
 
 ## Staging and verification
 
-`rotation_staging:app` composes the actual scanner with the isolated receiver
-and forces a prominent SIMULATED STAGING banner. It accepts synthetic summaries
-from scripts/rotation_stage_publish.py; that script never reads Alpaca values or
-private Audit files. The stage service uses no Render environment variables.
+`rotation_staging:app` composes the actual scanner with the isolated receiver.
+Phase 2 revokes the simulation key and trusts a separate real-data staging key;
+its private half is DPAPI-protected on Windows. A REAL DATA STAGING banner and
+explicit storage mode distinguish research staging from production. The old
+synthetic uploader is retained as a fixture but its key is no longer trusted.
 Use one worker on a free staging service with auto-deploy disabled:
 
 ```
@@ -94,6 +95,42 @@ incremental RSS. Tests also cover replay after application restart, rollback,
 staleness, private-field rejection, invalid signatures, partial coverage and
 Windows DPAPI signing-key round trips. Existing scanner files remain byte-identical.
 
+## Phase 2 collector extension and storage
+
+`rotation_collector_publish.py` requires a recent successful collector check,
+revalidates all 14 symbols x 21 observations with the existing audit/formulas,
+then constructs the existing strict public schema. It writes an atomic local
+public outbox, signs only those derived returns, and posts only to the exact
+approved staging URL. Every successful 15-minute check republishes the same
+session with a new nonce; the server keeps one publication row and returns
+UNCHANGED. This also recovers the current dashboard after an empty free-service
+restart, but is **not** durable server storage or durable replay protection.
+
+`scripts/rotation-enable-staging-publisher.ps1` adds this opt-in extension to the
+existing scheduled wrapper, after the credential-bearing child is disposed.
+The publisher child explicitly removes both Alpaca environment variables. The
+original collector runtime and task definition remain unchanged. Publisher
+health is separate and never stores exception text or private evidence. A
+separate dependency snapshot avoids changing the working collector's imports.
+Keep the publisher Python environment available at its configured local path.
+
+Storage choice: retain bounded transactional SQLite and attach a 1 GB disk at
+`/var/data` to the existing staging service, subject to approval of paid compute
+and disk charges. This avoids another database service, credentials, driver or
+website. A real mounted `/var/data` selects `/var/data/rotation-staging.sqlite`;
+without it, storage explicitly reports EPHEMERAL. The optional nonsecret
+ROTATION_STAGING_DATA_DIR path is CONFIGURED_UNVERIFIED; a missing/unwritable
+path fails closed rather than silently falling back to temp. Only a live
+restart/redeploy test can establish persistence. Never treat local tests or
+successful republication as proof that Render retained its database/nonces.
+
+On Free, the Windows history/outbox are durable, but web history and nonces can
+be erased on restart. An old signed request still within the five-minute
+signature window could be accepted again after nonce loss. This remains a
+production blocker until transactional server storage is actually persistent.
+SQLite native backup/restore verification is required before production;
+filesystem snapshots alone are not a database backup policy.
+
 ## Still required before production
 
 - Separate explicit approval for production deployment/start-command and
@@ -105,9 +142,9 @@ Windows DPAPI signing-key round trips. Existing scanner files remain byte-identi
   a restart/redeploy can erase public summaries and nonce state. It fails closed
   until a fresh signed publication arrives. Persistent disk or an equivalent
   shared transactional store and backup policy must be approved before release.
-- Wire an opt-in publisher into the installed Windows runner only after that
-  target is approved. The present working local automation remains unchanged.
-  Republishing the current summary on checks must recover an emptied web store.
+- Complete the installed publisher pilot against staging, including a server
+  restart and independent end-to-end result comparison. Production publication
+  stays disabled and needs a distinct approved production public key.
 - Confirm market-data display/derived-data rights and complete the multi-session
   pilot and independent price-convention reconciliation. IEX is partial-market.
 - Review platform-level rate limiting and multi-instance coordination before
