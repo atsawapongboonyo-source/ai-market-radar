@@ -28,12 +28,19 @@ def main(argv=None):
             expected_session=args.completed_session, feed=args.feed
         )
     except MarketDataError as exc:
-        print(json.dumps({"status": "BLOCKED", "reason": str(exc),
-                          "trade_signal": False, "candidates": []}))
+        report = {"expected_session": args.completed_session.isoformat(),
+                  "generated_utc": datetime.now(timezone.utc).isoformat(),
+                  "feed": args.feed,
+                  "result": {"status": "BLOCKED", "reason": str(exc),
+                             "trade_signal": False, "candidates": []}}
+        if args.html:
+            save_rotation_html(report, args.html)
+        print(json.dumps(report))
         return 2
     report = build_report(snapshot, expected_session=args.completed_session,
                           now_utc=datetime.now(timezone.utc),
                           max_age_hours=args.max_age_hours)
+    report["feed"] = args.feed
     if args.html:
         save_rotation_html(report, args.html)
     print(json.dumps(report, indent=2, sort_keys=True))

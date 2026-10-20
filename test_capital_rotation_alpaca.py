@@ -88,6 +88,20 @@ class AlpacaAdapterTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.fetch(feed="unlicensed")
 
+    def test_different_symbol_history_fails_closed(self):
+        payload = json.loads(json.dumps(self.payload))
+        payload['bars']['XLV'][0]['t'] = (self.days[0] - timedelta(days=1)).isoformat() + 'T00:00:00Z'
+        with self.assertRaisesRegex(MarketDataError, '^MISALIGNED_SYMBOL_SESSIONS$'):
+            self.fetch(payload)
+
+    def test_http_error_is_safely_classified(self):
+        from urllib.error import HTTPError
+        def denied(request, timeout):
+            raise HTTPError(request.full_url, 403, 'test-secret', {}, None)
+        with self.assertRaisesRegex(MarketDataError, '^FEED_ACCESS_DENIED$'):
+            fetch_alpaca_snapshot(expected_session=self.session, api_key='test-key',
+                                  secret_key='test-secret', opener=denied)
+
 
 if __name__ == "__main__":
     unittest.main()

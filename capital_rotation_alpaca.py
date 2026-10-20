@@ -10,6 +10,7 @@ import json
 import os
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
 
 from capital_rotation_offline import SECTORS, AI_PROXIES
 
@@ -28,6 +29,7 @@ def _daily_close_snapshot(payload, *, expected_session):
     if not isinstance(bars, dict):
         raise MarketDataError("MISSING_BARS")
     snapshot = {"5d": {}, "20d": {}}
+    reference_sessions = None
     for symbol in SYMBOLS:
         history = bars.get(symbol)
         if not isinstance(history, list):
@@ -51,6 +53,10 @@ def _daily_close_snapshot(payload, *, expected_session):
         sessions = sorted(by_date)
         if len(sessions) < 21 or sessions[-1] != expected_session:
             raise MarketDataError("INSUFFICIENT_COMPLETED_SESSIONS")
+        if reference_sessions is None:
+            reference_sessions = sessions[-21:]
+        elif sessions[-21:] != reference_sessions:
+            raise MarketDataError("MISALIGNED_SYMBOL_SESSIONS")
         close_now, asof = by_date[sessions[-1]]
         for window, offset in (("5d", 5), ("20d", 20)):
             earlier = by_date[sessions[-1 - offset]][0]
@@ -94,6 +100,11 @@ def fetch_alpaca_snapshot(*, expected_session, api_key, secret_key,
         payload = json.loads(raw)
     except MarketDataError:
         raise
+    except HTTPError as exc:
+        # Only a fixed classification is exposed; never response bodies/headers.
+        reason = {401: "AUTHENTICATION_FAILED", 403: "FEED_ACCESS_DENIED",
+                  429: "RATE_LIMITED"}.get(exc.code, "PROVIDER_UNAVAILABLE")
+        raise MarketDataError(reason) from None
     except Exception:
         # Never leak exception text (HTTP errors may contain provider metadata).
         raise MarketDataError("PROVIDER_UNAVAILABLE") from None

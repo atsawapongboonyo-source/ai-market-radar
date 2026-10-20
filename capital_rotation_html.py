@@ -48,6 +48,7 @@ small{color:#526074}strong{color:#173b6c}
 <p><strong>Reason:</strong> """ + field(result.get("reason", result.get("note"))) + """</p>
 <p><strong>Completed session:</strong> """ + field(report.get("expected_session")) + """</p>
 <p><strong>Generated UTC:</strong> """ + field(report.get("generated_utc")) + """</p></section>
+<p><strong>Data feed:</strong> """ + field(report.get("feed")) + """ (IEX is partial-market data; not consolidated US coverage.)</p>
 <section><h2>Relative strength candidates</h2>
 <table><thead><tr><th>ETF</th><th>vs SPY 5D (%)</th><th>vs SPY 20D (%)</th></tr></thead>
 <tbody>""" + "".join(rows) + """</tbody></table></section>

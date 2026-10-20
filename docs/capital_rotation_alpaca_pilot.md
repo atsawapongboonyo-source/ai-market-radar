@@ -18,13 +18,17 @@ ChatGPT, commit them to Git, put them in screenshots, or include them in logs.
 The following prompts do not echo the secret values:
 
 ```powershell
-$env:ALPACA_DATA_KEY_ID = Read-Host 'Alpaca Paper Key ID'
-$secure = Read-Host 'Alpaca Paper Secret' -AsSecureString
-$ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-try { $env:ALPACA_DATA_SECRET_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr) }
-finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr); Remove-Variable secure,ptr }
-python capital_rotation_alpaca_report.py 2026-10-16 --feed iex --max-age-hours 96
-Remove-Item Env:ALPACA_DATA_KEY_ID,Env:ALPACA_DATA_SECRET_KEY
+try {
+  foreach ($name in @('ALPACA_DATA_KEY_ID', 'ALPACA_DATA_SECRET_KEY')) {
+    $secure = Read-Host "Enter $name (hidden)" -AsSecureString
+    $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+    try { [Environment]::SetEnvironmentVariable($name, [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr), 'Process') }
+    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr); $secure.Dispose(); Remove-Variable secure,ptr }
+  }
+  python capital_rotation_alpaca_report.py 2026-10-16 --feed iex --max-age-hours 96 --html ../rotation-iex.html
+} finally {
+  Remove-Item Env:ALPACA_DATA_KEY_ID,Env:ALPACA_DATA_SECRET_KEY -ErrorAction SilentlyContinue
+}
 ```
 
 The date shown is an **example**, not a claim about today's last completed
@@ -35,6 +39,16 @@ silently accept genuinely stale data.
 IEX data are **not consolidated US market volume**. If any ETF lacks 21
 completed sessions in the feed, output is `BLOCKED` and no candidate list.
 The adapter deliberately makes one bounded request and does not paginate.
+All symbols must have identical last 21 observation dates, so gaps cannot
+silently turn a 5-session comparison into different intervals per symbol.
+This alignment check does not replace an authoritative exchange calendar.
+
+HTML output is also written on provider failure, replacing any previous
+candidate list with BLOCKED. Safe error codes distinguish missing credentials,
+authentication failure (401), feed access denial (403), and rate limits (429).
+Other provider exceptions are suppressed without printing response content.
+Successful IEX access verifies only the requested daily historical data; it
+does not establish SIP, streaming, real-time, or redistribution entitlement.
 
 The tool reports *relative price strength*, not actual institutional capital
 flows. It cannot produce live intraday momentum, constituent breadth, or
