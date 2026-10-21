@@ -30,7 +30,7 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - if: runner.os == 'Linux'
         run: python scripts/rotation_stock_mobile_probe.py
-      - if: runner.os == 'Linux'
+      - if: always() && runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: rotation-stock-mobile-qa

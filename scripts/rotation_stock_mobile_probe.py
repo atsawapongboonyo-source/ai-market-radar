@@ -19,7 +19,11 @@ with sync_playwright() as p:
         page=browser.new_page(viewport={'width':width,'height':844});page.set_content(html)
         page.locator('details').filter(has=page.locator('summary strong',has_text='XLE')).locator('summary').click()
         assert page.locator('details[open] .stock-card').count()==1
-        assert page.evaluate('document.documentElement.scrollWidth')<=width
+        overflow=page.evaluate('document.documentElement.scrollWidth')
+        if overflow>width:
+            print(json.dumps(page.evaluate('''Array.from(document.querySelectorAll('*')).filter(e=>e.getBoundingClientRect().right>innerWidth+1).map(e=>({tag:e.tagName,cls:e.className,width:e.getBoundingClientRect().width,text:e.textContent.slice(0,70)})).slice(0,12)''')))
+        page.screenshot(path=f'rotation-stock-mobile-{width}.png',full_page=True)
+        assert overflow<=width
         assert page.get_by_text('SIMULATED STAGING',exact=False).count()>=1
         page.locator('details[open]').scroll_into_view_if_needed()
         page.screenshot(path=f'rotation-stock-mobile-{width}.png',full_page=True)
