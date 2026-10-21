@@ -55,10 +55,11 @@ States: READY (passes research criteria), WAIT (setup incomplete), AVOID (risk c
   installed collector/task. Publish mode rejects a credential-bearing context;
   only the strict signed derived summary is sent. No new scheduled task is
   installed; unattended feature collection is not claimed.
-- Immutable rule version eod-v1.0: sector and stock lead SPY/sector in both
+- Immutable rule version eod-v1.1: sector and stock lead SPY/sector in both
   windows, close>SMA20>SMA50 with rising SMA20, median IEX dollar volume >=300k,
   ATR/close <=8%, near prior-20-session-high trigger, relative volume >=1.2 and
-  net R:R >=2 after assumed 40 bps per side. Stop reference is bounded by prior
+  net R:R >=2 after assumed 40 bps per side. SPY-parent candidates require positive
+  SPY momentum instead of impossible SPY-relative-to-itself leadership. Stop reference is bounded by prior
   10-session lows and 2 ATR; target must be a previously observed 60-session
   high. No invented 2R target or profitability target. EOD READY is research
   review only, never a live entry instruction or order.
@@ -80,7 +81,7 @@ States: READY (passes research criteria), WAIT (setup incomplete), AVOID (risk c
   bars, costs, 1% IEX participation limit, <=5-session holding, SPY comparison,
   false positives, trade frequency, closed-trade and daily-mark drawdowns.
   V1 simulator is per-stock; no aggregate portfolio backtest claim.
-- First paper signal per session/universe is persisted locally and does not get
+- First paper signal per session/universe/rule version is persisted locally and does not get
   overwritten by reruns. Only bars whose closes occur AFTER observation may be
   used for 5-session forward outcomes. No order is submitted. Current observation
   has no mature future outcome and cannot demonstrate predictive performance.

@@ -24,6 +24,17 @@ jobs:
       - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
       - run: python -m pytest -q
       - run: python scripts/rotation_web_probe.py --output rotation-web-ram.json
+      - if: runner.os == 'Linux'
+        run: python -m pip install playwright
+      - if: runner.os == 'Linux'
+        run: python -m playwright install --with-deps chromium
+      - if: runner.os == 'Linux'
+        run: python scripts/rotation_stock_mobile_probe.py
+      - if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-stock-mobile-qa
+          path: rotation-stock-mobile-*.png
   postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 8

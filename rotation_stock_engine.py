@@ -6,7 +6,7 @@ from statistics import mean,median,correlation
 from math import isfinite
 from capital_rotation_calendar import trailing_sessions,last_completed_session
 
-RULE_VERSION='eod-v1.0'
+RULE_VERSION='eod-v1.1'
 COST_BPS_PER_SIDE=40
 METRIC_KEYS={'close','return_5d_pct','return_20d_pct','spy_5d_pct','spy_20d_pct','etf_5d_pct','etf_20d_pct','rs_spy_5d','rs_spy_20d','rs_etf_5d','rs_etf_20d','sma20','sma50','sma20_prior5','atr14','atr_pct','median_iex_dollar_volume20','relative_volume','trigger','stop','target','net_reward_risk','distance_to_trigger_pct'}
 
@@ -30,7 +30,7 @@ def portfolio_warnings(symbol,parent,portfolio=None):
         return warnings or ['NO_THRESHOLD_WARNING_FROM_PROVIDED_SNAPSHOT']
     except (KeyError,TypeError,ValueError,AssertionError):return ['PORTFOLIO_EXPOSURE_UNKNOWN']
 
-def decide(m):
+def decide(m,parent=None):
     if set(m)!=METRIC_KEYS or any(type(v) not in (int,float) or not isfinite(v) for v in m.values()):
         return 'BLOCKED',['INVALID_METRICS']
     if m['median_iex_dollar_volume20']<300000:return 'BLOCKED',['LOW_IEX_LIQUIDITY']
@@ -40,7 +40,8 @@ def decide(m):
     if m['close']<m['sma50']:risk.append('BELOW_LONG_TREND')
     if m['close']>m['trigger']+2*m['atr14']:risk.append('OVEREXTENDED')
     if risk:return 'AVOID',risk
-    if not (m['etf_5d_pct']>m['spy_5d_pct'] and m['etf_20d_pct']>m['spy_20d_pct']):wait.append('SECTOR_NOT_LEADING')
+    sector_leads=(min(m['spy_5d_pct'],m['spy_20d_pct'])>0) if parent=='SPY' else (m['etf_5d_pct']>m['spy_5d_pct'] and m['etf_20d_pct']>m['spy_20d_pct'])
+    if not sector_leads:wait.append('SECTOR_NOT_LEADING')
     if min(m[k] for k in ('rs_spy_5d','rs_spy_20d','rs_etf_5d','rs_etf_20d'))<=0:wait.append('RELATIVE_STRENGTH_INCOMPLETE')
     if not (m['close']>m['sma20']>m['sma50'] and m['sma20']>m['sma20_prior5']):wait.append('TREND_UNCONFIRMED')
     if not -1<=m['distance_to_trigger_pct']<=2:wait.append('OUTSIDE_TRIGGER_ZONE')
@@ -95,7 +96,7 @@ def analyze(symbol,parent,histories,universe,now,*,adjustment='split',portfolio=
             m[f'rs_spy_{w}d']=m[f'return_{w}d_pct']-m[f'spy_{w}d_pct']
             m[f'rs_etf_{w}d']=m[f'return_{w}d_pct']-m[f'etf_{w}d_pct']
         m={k:round(v,8) for k,v in m.items()}
-        state,reasons=decide(m)
+        state,reasons=decide(m,parent)
         result.update(metrics=m,state=state,reason_codes=reasons)
     except (KeyError,ValueError,TypeError,IndexError,ZeroDivisionError) as exc:
         safe={'UNVERIFIED_MEMBERSHIP','STALE_OR_FUTURE_UNIVERSE','INCOMPARABLE_ADJUSTMENT','DUPLICATE_OR_FUTURE_BAR','MISALIGNED_OR_MISSING_BARS','INVALID_OHLCV','INCONSISTENT_OHLC','INVALID_RISK_REFERENCES','CORPORATE_ACTION_OR_OUTLIER'}

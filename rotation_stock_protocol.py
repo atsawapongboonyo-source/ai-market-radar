@@ -56,7 +56,7 @@ def parse_stock(raw,now,universe):
             if row['metrics'] is None:
                 if row['state']!='BLOCKED' or not row['reason_codes'] or not set(row['reason_codes'])<=BLOCK_REASONS:raise ValueError()
             else:
-                m=row['metrics'];state,reasons=decide(m)
+                m=row['metrics'];state,reasons=decide(m,row['parent'])
                 if (state,reasons)!=(row['state'],row['reason_codes']):raise ValueError()
                 if not (m['close']>0 and m['trigger']>m['stop']>0 and m['atr14']>0):raise ValueError()
                 costs=(m['trigger']+max(m['target'],m['trigger']))*.004

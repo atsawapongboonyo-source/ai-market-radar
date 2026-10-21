@@ -29,7 +29,8 @@ def walk_forward(histories,universe,symbol,parent,now):
             if entry is None:
                 if bar['h']<m['trigger']:continue
                 entry=max(bar['o'],m['trigger']);entry_index=j
-                if entry<=m['stop'] or 1000>bar['c']*bar['v']*.01:entry=None;break
+                gap_cost=(entry+m['target'])*COST_BPS_PER_SIDE/10000
+                if entry<=m['stop'] or m['target']<=entry or (m['target']-entry-gap_cost)/(entry-m['stop']+gap_cost)<2 or 1000>bar['c']*bar['v']*.01:entry=None;break
             if bar['o']<=m['stop']:exit_price=bar['o'];reason='GAP_STOP'
             elif bar['l']<=m['stop']:exit_price=m['stop'];reason='STOP_FIRST'
             elif bar['h']>=m['target']:exit_price=max(bar['o'],m['target']);reason='TARGET'
@@ -50,7 +51,7 @@ def walk_forward(histories,universe,symbol,parent,now):
         equity*=1+t['net_return_pct']/100;peak=max(peak,equity);drawdown=max(drawdown,(peak-equity)/peak*100)
     return {'status':'OBSERVED' if trades else 'BLOCKED','reason_codes':[] if trades else ['NO_MATURE_POINT_IN_TIME_OBSERVATIONS'],
             'completed_trades':len(trades),'eligible_decisions':eligible,'pending':pending,'trades':trades,
-            'false_positives':sum(t['net_return_pct']<=0 for t in trades),'closed_trade_max_drawdown_pct':round(drawdown,6),'mark_to_market_max_drawdown_pct':round(mtm_drawdown,6),
+            'false_positives':sum(t['net_return_pct']<=0 for t in trades),'closed_trade_max_drawdown_pct':round(drawdown,6) if trades else None,'mark_to_market_max_drawdown_pct':round(mtm_drawdown,6) if trades else None,
             'trade_frequency_per_eligible_session':len(trades)/eligible if eligible else None,
             'net_compounded_return_pct':round((equity-1)*100,6) if trades else None,
             'warning':'No point-in-time historical archive means no retrospective performance claim; no parameter fitting.'}

@@ -38,5 +38,11 @@ def register_stock(app,store,keys,universe,clock=None):
         r.headers['Cache-Control']='no-store';r.headers['X-Content-Type-Options']='nosniff'
         return r
     app.register_blueprint(bp)
-    app.context_processor(lambda:{'stock_data':current(),'stock_universe':universe})
+    labels={'SECTOR_NOT_LEADING':'กลุ่มยังไม่นำตลาดทั้งสองช่วง','RELATIVE_STRENGTH_INCOMPLETE':'หุ้นยังไม่นำทั้ง SPY และกลุ่มครบสองช่วง',
+      'TREND_UNCONFIRMED':'แนวโน้มยังไม่ยืนยัน','OUTSIDE_TRIGGER_ZONE':'ราคายังอยู่นอกเขตอ้างอิงเข้า',
+      'VOLUME_CONFIRMATION_MISSING':'ปริมาณ IEX ยังไม่ยืนยัน','NO_OBSERVED_RESISTANCE_TARGET':'ยังไม่มีแนวต้านเดิมเหนือ trigger ให้ประเมินเป้าหมาย',
+      'NET_REWARD_RISK_BELOW_2':'ผลตอบแทนต่อความเสี่ยงหลังต้นทุนต่ำกว่า 2','EXCESS_VOLATILITY':'ความผันผวนสูงเกินเกณฑ์',
+      'BELOW_LONG_TREND':'ราคาต่ำกว่าแนวโน้มระยะยาว','OVEREXTENDED':'ราคาไกลจากจุดอ้างอิงเกินเกณฑ์',
+      'LOW_IEX_LIQUIDITY':'กิจกรรมซื้อขาย IEX ต่ำเกินเกณฑ์','ALL_RESEARCH_GATES_PASSED':'ผ่านเกณฑ์เพื่อทบทวน ยังไม่ใช่คำสั่งซื้อ'}
+    app.context_processor(lambda:{'stock_data':current(),'stock_universe':universe,'stock_reason_labels':labels})
     return current

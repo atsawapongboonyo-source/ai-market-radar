@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from urllib.error import HTTPError
 from capital_rotation_alpaca import _NoRedirect,_readonly_urlopen,MarketDataError,HOST
 from capital_rotation_calendar import last_completed_session,trailing_sessions
-from rotation_stock_engine import analyze
+from rotation_stock_engine import analyze,RULE_VERSION
 from rotation_stock_protocol import parse_stock,stock_headers,STOCK_PATH,MAX_STOCK_BODY
 from rotation_stock_backtest import walk_forward
 
@@ -62,7 +62,7 @@ def collect(root,universe,now,*,fetcher=fetch_history):
     write(root/'walk-forward.json',{'generated_utc':now.isoformat(),'feed':'iex','reports':reports,
         'status':'BLOCKED' if all(r['completed_trades']==0 for r in reports) else 'OBSERVED'})
     # Idempotent observation: first immutable signal snapshot per session/universe.
-    observation=root/'paper'/(str(day)+'-'+universe['version']+'.json')
+    observation=root/'paper'/(str(day)+'-'+universe['version']+'-'+RULE_VERSION+'.json')
     if not observation.exists():write(observation,{'observed_utc':now.isoformat(),'session':str(day),'stocks':rows,'status':'PENDING_FUTURE_OUTCOMES','orders_sent':False})
     # Mature only old observations using bars strictly AFTER their observation time.
     outcomes=[]
@@ -71,7 +71,7 @@ def collect(root,universe,now,*,fetcher=fetch_history):
         for row in o['stocks']:
             forward=[b for b in history.get(row['symbol'],[]) if __import__('capital_rotation_calendar').session_close(date.fromisoformat(b['session']))>observed]
             if len(forward)>=5:
-                outcomes.append({'observed_utc':o['observed_utc'],'symbol':row['symbol'],'parent':row['parent'],'state':row['state'],
+                outcomes.append({'observed_utc':o['observed_utc'],'symbol':row['symbol'],'parent':row['parent'],'state':row['state'],'rule_version':row['rule_version'],
                     'forward_5d_price_return_pct':(forward[4]['c']/forward[0]['o']-1)*100,'interpretation':'observation outcome, not filled trade'})
     write(root/'paper-outcomes.json',{'status':'OBSERVED' if outcomes else 'PENDING_FUTURE_OUTCOMES','outcomes':outcomes})
     return {'status':'COLLECTED','session':str(day),'symbols_requested':len(symbols),'stock_rows':len(rows),
