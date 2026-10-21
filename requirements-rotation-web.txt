@@ -1,3 +1,4 @@
 -r requirements.txt
 cryptography==50.0.2
 tzdata
+psycopg[binary]==3.2.13
