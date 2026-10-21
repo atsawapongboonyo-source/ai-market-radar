@@ -13,19 +13,22 @@ class StockStore(PublicStore):
               digest TEXT NOT NULL CHECK(digest ~ '^[a-f0-9]{64}$'),
               body BYTEA NOT NULL CHECK(octet_length(body) BETWEEN 1 AND 131072))''')
     def latest(self):
+        import json
+        from rotation_public_protocol import PublicDataError
         with self.connect() as db:
-            r=db.execute('SELECT body FROM rotation.stock_publications ORDER BY session DESC LIMIT 1').fetchone()
-            if not r:return None
-            import json
-            value=json.loads(bytes(r[0]));base=db.execute('SELECT body FROM rotation.publications WHERE session=%s',(value['session_date'],)).fetchone()
-            if not base:raise StoreUnavailable('BASELINE_UNAVAILABLE')
-            baseline=json.loads(bytes(base[0]))
-            for row in value['stocks']:
-                m=row['metrics']
-                if m:
-                    for w in (5,20):
-                        if abs(m[f'etf_{w}d_pct']-baseline['returns'][f'{w}d'][row['parent']])>1e-5 or abs(m[f'spy_{w}d_pct']-baseline['returns'][f'{w}d']['SPY'])>1e-5:raise StoreUnavailable('BASELINE_MISMATCH')
-            return bytes(r[0])
+            row=db.execute('SELECT body,digest FROM rotation.stock_publications ORDER BY session DESC LIMIT 1').fetchone()
+            if not row:return None
+            raw=bytes(row[0]);value=json.loads(raw)
+            base=db.execute('SELECT body FROM rotation.publications WHERE session=%s',(value['session_date'],)).fetchone()
+        if hashlib.sha256(raw).hexdigest()!=row[1]:raise PublicDataError('INVALID_STOCK_DIGEST')
+        if not base:raise PublicDataError('BASELINE_UNAVAILABLE')
+        baseline=json.loads(bytes(base[0]))
+        for item in value['stocks']:
+            m=item['metrics']
+            if m:
+                for w in (5,20):
+                    if abs(m[f'etf_{w}d_pct']-baseline['returns'][f'{w}d'][item['parent']])>1e-5 or abs(m[f'spy_{w}d_pct']-baseline['returns'][f'{w}d']['SPY'])>1e-5:raise PublicDataError('BASELINE_MISMATCH')
+        return raw
     def publish(self,raw,value,kid,nonce,now,*,signed_timestamp):
         digest=hashlib.sha256(raw).hexdigest();generated=datetime.fromisoformat(value['generated_utc'])
         with self.connect(write=True) as db:

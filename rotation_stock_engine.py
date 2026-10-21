@@ -10,19 +10,24 @@ RULE_VERSION='eod-v1.1'
 COST_BPS_PER_SIDE=40
 METRIC_KEYS={'close','return_5d_pct','return_20d_pct','spy_5d_pct','spy_20d_pct','etf_5d_pct','etf_20d_pct','rs_spy_5d','rs_spy_20d','rs_etf_5d','rs_etf_20d','sma20','sma50','sma20_prior5','atr14','atr_pct','median_iex_dollar_volume20','relative_volume','trigger','stop','target','net_reward_risk','distance_to_trigger_pct'}
 
-def portfolio_warnings(symbol,parent,portfolio=None):
+def portfolio_warnings(symbol,parent,portfolio=None,*,now=None):
     if not portfolio or portfolio.get('authorized') is not True:
         return ['PORTFOLIO_EXPOSURE_UNKNOWN']
     try:
+        now=now or datetime.now(timezone.utc)
+        asof=datetime.fromisoformat(portfolio['as_of'])
+        assert asof.tzinfo is not None and 0<=(now-asof).total_seconds()<=24*3600
+        assert portfolio.get('source') in ('manual_user_snapshot','authorized_readonly_connector')
         positions=portfolio['positions']
-        assert positions and all(0<=p['weight']<=1 for p in positions)
+        assert positions and len(positions)<=100 and all(type(p['weight']) in (int,float) and isfinite(p['weight']) and 0<=p['weight']<=1 for p in positions)
         assert sum(p['weight'] for p in positions)<=1.000001
         warnings=[]
         if sum(p['weight'] for p in positions if p['symbol']==symbol)>=.1:warnings.append('SINGLE_NAME_CONCENTRATION')
         if any('parent_etf' not in p for p in positions):warnings.append('SECTOR_EXPOSURE_UNKNOWN')
         elif sum(p['weight'] for p in positions if p['parent_etf']==parent)>=.3:warnings.append('SECTOR_CONCENTRATION')
         candidate=portfolio.get('candidate_returns')
-        if candidate and all(p.get('aligned_returns') for p in positions):
+        sessions=portfolio.get('candidate_return_sessions',[])
+        if candidate and len(sessions)==len(candidate)>=20 and sessions==sorted(set(sessions)) and all(p.get('aligned_returns') and p.get('return_sessions')==sessions for p in positions):
             for p in positions:
                 if p['weight']>0 and len(candidate)==len(p['aligned_returns'])>=20 and correlation(candidate,p['aligned_returns'])>=.8:
                     warnings.append('HIGH_HISTORICAL_CORRELATION');break
@@ -52,7 +57,7 @@ def decide(m,parent=None):
 
 def analyze(symbol,parent,histories,universe,now,*,adjustment='split',portfolio=None):
     result={'symbol':symbol,'parent':parent,'state':'BLOCKED','reason_codes':[],
-        'warnings':portfolio_warnings(symbol,parent,portfolio),'metrics':None,
+        'warnings':portfolio_warnings(symbol,parent,portfolio,now=now),'metrics':None,
         'trade_signal':False,'rule_version':RULE_VERSION}
     try:
         day=last_completed_session(now)

@@ -56,5 +56,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -r requirements-rotation-web.txt pytest
+      - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
       - run: python -m pytest -q test_rotation_postgres.py test_rotation_stock_postgres.py
+      - run: python scripts/rotation_stock_pg_probe.py

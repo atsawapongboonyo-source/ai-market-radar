@@ -61,3 +61,11 @@ class StockPostgresTests(unittest.TestCase):
         finally:
             with self.store.connect() as db:
                 db.execute('DROP TRIGGER stock_test_fail ON rotation.stock_publications');db.execute('DROP FUNCTION rotation.stock_test_fail()')
+
+    def test_corrected_baseline_blocks_old_stock_view(self):
+        self.assertEqual(self.post().status_code,200)
+        baseline=json.loads(self.baseline);baseline['returns']['5d']['XLE']+=1
+        with self.base.connect(write=True) as db:
+            db.execute('UPDATE rotation.publications SET body=%s',(json.dumps(baseline).encode(),))
+        data=self.app.test_client().get('/api/rotation/stocks').get_json()
+        self.assertEqual(data['status'],'BLOCKED');self.assertEqual(data['reason'],'BASELINE_MISMATCH')

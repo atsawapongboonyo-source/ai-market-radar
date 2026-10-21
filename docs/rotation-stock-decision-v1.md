@@ -38,12 +38,15 @@ States: READY (passes research criteria), WAIT (setup incomplete), AVOID (risk c
 
 ## V1 implementation and operating limits
 - Immutable `data/rotation-stock-universe-v1.json` is an issuer-attributed snapshot,
-  downloaded from State Street on 2026-10-21, holdings as of 2026-10-19. Analyze
-  only the top 5 by issuer weight for each of 12 funds. SMH/SOXX are explicitly
-  unsupported/BLOCKED pending verified sources; no thematic list is represented
-  as holdings. Snapshot expiry is 7 calendar days; refresh requires review and a
+  verified from State Street, iShares and VanEck on 2026-10-21, holdings as of 2026-10-19. Analyze
+  only the top 5 by issuer weight for each of all 14 baseline funds. SOXX is from issuer CSV; SMH is a reviewed
+  issuer HTML extraction (XLS unavailable), with the exact normalized factual
+  extract and hash preserved in data/rotation-stock-smh-source-20261021.txt.
+  No thematic list is represented as holdings. Snapshot expiry is 7 calendar days; refresh requires review and a
   new matching client/server universe version. `scripts/rotation_refresh_universe.py`
-  reproduces retrieval; its openpyxl dependency is operator-only.
+  reproduces State Street retrieval; its openpyxl dependency is operator-only.
+  iShares CSV and VanEck HTML evidence require a separately reviewed refresh;
+  do not silently relabel their original known_at time as a new verification.
 - `rotation_stock_collector.py collect` fetches 120 completed sessions for the
   deduplicated stock/parent/SPY set with GET market-data IEX split-adjusted daily
   bars. OHLCV and local backtest/paper evidence stay local. Returns are PRICE
@@ -66,7 +69,9 @@ States: READY (passes research criteria), WAIT (setup incomplete), AVOID (risk c
 - Portfolio input is optional, local and explicitly authorized. With no current
   authorized snapshot, every row says PORTFOLIO_EXPOSURE_UNKNOWN. Warnings use
   >=10% name weight / >=30% provided parent-sector weight; correlation requires
-  >=20 aligned supplied returns. This does not estimate unknown ETF look-through.
+  >=20 explicitly aligned, dated supplied returns. Portfolio snapshots must have
+  an authorized source and timezone-aware timestamp <=24 hours old; otherwise
+  exposure stays unknown. This does not estimate unknown ETF look-through.
 - Separate `/api/rotation/stocks/ingest` uses a different signature domain and
   the existing persistent global nonce lock/table. New stock_publications has
   idempotent session keys, bounded body/retention and transactions. Stock returns
@@ -91,3 +96,25 @@ States: READY (passes research criteria), WAIT (setup incomplete), AVOID (risk c
   to feature/rotation-stock-decision-v1 through an authorized Render UI/API path.
   Do not work around this by modifying PR #15, changing production, creating a
   new service or executing remote code via environment variables.
+
+## Observed development evidence (2026-10-21)
+- Real local read-only IEX: 73 unique symbols x120 completed sessions, 70
+  ETF-stock membership rows. Latest session 2026-10-20. Rules eod-v1.1:
+  READY 0, WAIT 39, AVOID 31, BLOCKED 0. No forced signals.
+- Independent local Decimal audit verified 420 stock/parent/SPY 5D/20D return
+  calculations. All parent/SPY values agree with the live 14-ETF staging summary.
+  Existing real DPAPI signing key validates the stock-specific signature locally.
+  Strict derived public payload is 54,946 bytes; no raw OHLCV/accounts/credentials
+  were transmitted. Feature upload has NOT happened because deployment is gated.
+- Browser QA in CI found a 320px overflow, which was corrected by wrapping
+  navigation, long research labels and table containers. Both 320/390px native
+  details expansion tests passed in the subsequent CI run. Fixtures are clearly
+  labelled SIMULATED; they are not evidence of real stock performance.
+- Existing Render Staging/Production remain healthy and PR #15 remains at
+  0401c2e. Existing PostgreSQL has the baseline publication, with NO stock table
+  yet. Feature PostgreSQL migration, concurrency, persistent replay and rollback
+  are verified on disposable PostgreSQL 18 CI, NOT yet on Render. Feature RAM,
+  restart persistence and end-to-end signed ingest still require feature deploy.
+- Paper observations are local, immutable and pending future closes. There are
+  zero mature final-rule outcomes. Real-data retrospective backtest remains
+  BLOCKED because no historical point-in-time holdings archive was provided.

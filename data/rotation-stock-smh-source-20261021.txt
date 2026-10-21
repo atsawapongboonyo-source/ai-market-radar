@@ -1,0 +1,10 @@
+Source: https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/
+Verified issuer HTML extraction on 2026-10-21; XLS retrieval unavailable.
+Daily Holdings (%) as of 10/19/2026
+Total Holdings: 26 (issuer reported total, not an equity-only count)
+Ticker | % of Net Assets
+NVDA | 20.42
+TSM | 9.45
+AVGO | 5.49
+AMD | 5.43
+TXN | 4.99

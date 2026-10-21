@@ -58,8 +58,9 @@ class DecisionBoundaryTests(unittest.TestCase):
         m['median_iex_dollar_volume20']=1;self.assertEqual(decide(m)[0],'BLOCKED')
         m['close']=float('nan');self.assertEqual(decide(m)[0],'BLOCKED')
     def test_authorized_concentration_and_no_fictional_correlation(self):
-        w=portfolio_warnings('TEST','XLE',{'authorized':True,'positions':[{'symbol':'TEST','weight':.4,'parent_etf':'XLE'}]})
+        w=portfolio_warnings('TEST','XLE',{'authorized':True,'as_of':NOW.isoformat(),'source':'manual_user_snapshot','positions':[{'symbol':'TEST','weight':.4,'parent_etf':'XLE'}]},now=NOW)
         self.assertIn('SINGLE_NAME_CONCENTRATION',w);self.assertIn('SECTOR_CONCENTRATION',w);self.assertIn('CORRELATION_UNKNOWN',w)
+        self.assertEqual(portfolio_warnings('TEST','XLE',{'authorized':True,'as_of':(NOW-timedelta(days=2)).isoformat(),'source':'manual_user_snapshot','positions':[{'symbol':'TEST','weight':1}]},now=NOW),['PORTFOLIO_EXPOSURE_UNKNOWN'])
     def test_adjustment_and_corporate_action_mismatch(self):
         self.assertEqual(analyze('TEST','XLE',histories(),universe(),NOW,adjustment='raw')['state'],'BLOCKED')
         h=histories();h['TEST'][-1].update(o=1000,h=1100,l=900,c=1000)

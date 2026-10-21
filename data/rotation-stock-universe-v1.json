@@ -1,5 +1,5 @@
 {
-  "version": "issuer-20261021-v1",
+  "version": "issuer-20261021-v2",
   "selection": "top5_by_issuer_weight; bounded research subset, not all constituents",
   "funds": {
     "SPY": {
@@ -359,6 +359,68 @@
         {
           "symbol": "TTWO",
           "weight_pct": 4.5998
+        }
+      ]
+    },
+    "SOXX": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:46:06.288316+00:00",
+      "source": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv",
+      "source_sha256": "969673949636e952179e7cccceb792e665aa9538d1d5b8ad79a4151df34a082f",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 30,
+      "stocks": [
+        {
+          "symbol": "AMD",
+          "weight_pct": 9.25
+        },
+        {
+          "symbol": "INTC",
+          "weight_pct": 8.32
+        },
+        {
+          "symbol": "NVDA",
+          "weight_pct": 7.95
+        },
+        {
+          "symbol": "MU",
+          "weight_pct": 7.64
+        },
+        {
+          "symbol": "AVGO",
+          "weight_pct": 7.31
+        }
+      ]
+    },
+    "SMH": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:46:06.288316+00:00",
+      "source": "https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/",
+      "source_sha256": "a029a12bcf72520584ac13b6da63deaf00ad72e22629286d5e0aba2091164e8f",
+      "source_format": "issuer_html_verified_extract",
+      "count_scope": "issuer_reported_total_including_non_equity",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 26,
+      "stocks": [
+        {
+          "symbol": "NVDA",
+          "weight_pct": 20.42
+        },
+        {
+          "symbol": "TSM",
+          "weight_pct": 9.45
+        },
+        {
+          "symbol": "AVGO",
+          "weight_pct": 5.49
+        },
+        {
+          "symbol": "AMD",
+          "weight_pct": 5.43
+        },
+        {
+          "symbol": "TXN",
+          "weight_pct": 4.99
         }
       ]
     }

@@ -16,7 +16,7 @@
 {% for etf in data.ranking %}
 <details class="stock-group"><summary><strong>{{etf.symbol}}</strong> · ดูหุ้นและเหตุผลการประเมิน</summary>
 {% set fund=stock_universe.funds.get(etf.symbol) %}
-{% if fund %}<p class="muted">VERIFIED HOLDINGS SNAPSHOT · as of {{fund.as_of}} · known at {{fund.known_at}} · วิเคราะห์ {{fund.stocks|length}} / {{fund.holdings_count}} หุ้นที่ผ่านตัวกรอง USD equity</p><a href="{{fund.source}}" rel="noreferrer">แหล่งข้อมูลผู้ออก ETF</a>
+{% if fund %}<p class="muted">VERIFIED HOLDINGS SNAPSHOT · as of {{fund.as_of}} · known at {{fund.known_at}} · วิเคราะห์ {{fund.stocks|length}} / {{fund.holdings_count}} holdings ({{fund.count_scope or 'USD equity filter'}})</p><a href="{{fund.source}}" rel="noreferrer">แหล่งข้อมูลผู้ออก ETF</a>
 {% if stock_data.status == 'RESEARCH_ONLY' %}
 {% for r in stock_data.stocks if r.parent == etf.symbol %}
 <article class="stock-card"><h3>{{r.symbol}} <span class="badge">{{r.state}}</span></h3>

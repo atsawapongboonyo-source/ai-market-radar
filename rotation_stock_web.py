@@ -16,6 +16,7 @@ def register_stock(app,store,keys,universe,clock=None):
             return {'status':'RESEARCH_ONLY',**parse_stock(raw,clock(),universe)}
         except PublicDataError as e:return {'status':'BLOCKED','reason':str(e),'stocks':[]}
         except StoreUnavailable:return {'status':'BLOCKED','reason':'STORE_UNAVAILABLE','stocks':[]}
+        except (ValueError,KeyError,TypeError):return {'status':'BLOCKED','reason':'INVALID_STOCK_SCHEMA','stocks':[]}
     @bp.get('/api/rotation/stocks')
     def read():return jsonify(current())
     @bp.post(STOCK_PATH)
