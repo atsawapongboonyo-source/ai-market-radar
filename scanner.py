@@ -29,3 +29,20 @@ finally:
 
 app = _latest.app
 RUNTIME_VERSION = "5.3.1"
+
+
+# Navigation-only backlink; applying/deploying this patch needs separate approval.
+@app.after_request
+def rotation_staging_backlink(response):
+    from flask import request
+    if (request.path in ('/', '/scanner', '/analysis') and response.status_code == 200
+            and response.mimetype == 'text/html' and not response.direct_passthrough):
+        body = response.get_data(as_text=True)
+        if 'id="rotation-staging-backlink"' not in body:
+            link = ('<nav id="rotation-staging-backlink" aria-label="Rotation Staging" '
+                    'style="padding:12px;background:#0d1b2a">'
+                    '<a href="https://ai-market-radar-rotation-staging.onrender.com/rotation" '
+                    'style="display:inline-flex;align-items:center;min-height:44px;color:#b9deff">'
+                    'Capital Rotation (Staging) →</a></nav>')
+            response.set_data(body.replace('<body>', '<body>'+link, 1))
+    return response
