@@ -1,0 +1,25 @@
+name: Stock Radar research universe isolation
+on:
+  pull_request:
+    paths:
+      - 'data/stock-radar-research-watchlist-v1.json'
+      - 'data/rotation-stock-universe-v1.json'
+      - 'stock_radar_universe_validation.py'
+      - 'test_stock_radar_universe_validation.py'
+      - '.github/workflows/stock-radar-universe.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest -v test_stock_radar_universe_validation
+      - run: python stock_radar_universe_validation.py
