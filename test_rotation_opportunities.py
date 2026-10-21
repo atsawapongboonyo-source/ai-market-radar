@@ -55,4 +55,13 @@ def test_home_only_escape_no_scanner_view_change_or_market_calls():
     assert b'Radar Opportunities' not in scanner.test_client().get('/scanner').data
     response = rotation.test_client().get('/api/rotation/opportunities')
     assert response.json['counts']['READY'] == 0
+    assert response.headers['Cache-Control'] == 'no-store'
     assert rotation.test_client().post('/api/rotation/opportunities').status_code == 405
+
+
+def test_all_avoid_is_not_wait_and_unknown_calendar_blocks():
+    data = current()
+    data['stocks'][0]['state'] = 'AVOID'  # synthetic projection only
+    assert opportunities(lambda: data, NOW)['status'] == 'AVOID'
+    d = opportunities(lambda: data, NOW.replace(year=2029))
+    assert d['status'] == 'BLOCKED' and not d['cards']

@@ -25,7 +25,7 @@ def opportunities(current, now=None):
             'reasons': r['reason_codes'], 'risk_flags': r['warnings'],
             'confidence': 'NOT_CALIBRATED', 'rule_version': r['rule_version']})
     return {'signal': 'Rotation Stock Decision — EOD research', 'scanner_signal': 'Scanner V4.10 — separate signal; not evaluated here',
-        'status': 'READY' if counts['READY'] else ('WAIT' if rows else 'BLOCKED'),
+        'status': next((s for s in ('READY', 'WAIT', 'AVOID') if counts[s]), 'BLOCKED'),
         'reason': data.get('reason', 'NO_READY_SIGNALS' if not counts['READY'] else 'RESEARCH_REVIEW_ONLY'),
         'counts': counts, 'cards': cards, 'session_date': data.get('session_date'),
         'generated_utc': data.get('generated_utc'), 'checked_utc': now.isoformat(),
@@ -53,7 +53,10 @@ def install_opportunities(scanner_app, rotation_app, current, clock=None):
 
     @rotation_app.get('/api/rotation/opportunities')
     def read_opportunities():
-        return jsonify(opportunities(current, clock()))
+        response = jsonify(opportunities(current, clock()))
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
 
     @scanner_app.after_request
     def home_opportunities(response):
@@ -63,4 +66,5 @@ def install_opportunities(scanner_app, rotation_app, current, clock=None):
             # Prepend the read-only panel to Home without altering scanner routes/engines.
             import re
             response.set_data(re.sub(r'(<body\b[^>]*>)', lambda m: m[0] + panel, body, count=1, flags=re.I))
+            response.headers['Cache-Control'] = 'no-store'
         return response
