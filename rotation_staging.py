@@ -6,6 +6,7 @@ import os
 from scanner import app as scanner_app
 from rotation_web import RotationSite
 from rotation_store import PublicStore, StoreUnavailable
+from rotation_backup import restore_drill
 
 def staging_storage():
     # Optional nonsecret path. Never silently fall back when an approved mount fails.
@@ -24,7 +25,14 @@ def staging_storage():
 public = json.loads((Path(__file__).parent/'rotation-staging-public.json').read_text(encoding='utf-8'))
 database, storage_mode = staging_storage()
 # Fail startup safely if the configured database/migration is unavailable.
-PublicStore(database).migrate()
+store = PublicStore(database)
+store.migrate()
+if storage_mode == 'POSTGRESQL_PERSISTENT':
+    # Safe evidence only. No DSN, credentials, bodies, signatures or nonce values.
+    # Staging startup verifies a snapshot in temporary tables; live rows unchanged.
+    print(json.dumps({'event': 'ROTATION_STORAGE_VERIFICATION',
+        'database_variable_present': bool(os.environ.get('ROTATION_DATABASE_URL')),
+        'storage_mode': storage_mode, 'restore_drill': restore_drill(store)}), flush=True)
 app = RotationSite(scanner_app, database=database,
     public_keys=public['public_keys'], trusted_tls_proxy=True, loopback_staging=True,
     simulated=False, storage_mode=storage_mode)
