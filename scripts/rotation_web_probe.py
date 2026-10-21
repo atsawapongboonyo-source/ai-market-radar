@@ -15,6 +15,7 @@ import psutil
 import scanner
 import legacy_scanner
 from rotation_web import RotationSite
+from rotation_navigation import install_navigation
 from werkzeug.test import Client
 from werkzeug.wrappers import Response
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -39,6 +40,8 @@ with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
     site=RotationSite(scanner.app,database=str(Path(directory)/'public.sqlite'),
         public_keys={'probe':key.public_key().public_bytes_raw().hex()},
         loopback_staging=True,simulated=True,clock=lambda:now)
+    install_navigation(scanner.app, scanner=True)
+    install_navigation(site.rotation_app)
     client=Client(site,Response)
     raw=json.dumps(fake_public(now)).encode()
     response=client.post('/api/rotation/ingest',data=raw,headers=signed_headers(raw,key,'probe',now),environ_overrides={'REMOTE_ADDR':'127.0.0.1'})

@@ -30,11 +30,16 @@ jobs:
         run: python -m playwright install --with-deps chromium
       - if: runner.os == 'Linux'
         run: python scripts/rotation_stock_mobile_probe.py
+      - if: runner.os == 'Linux'
+        run: python scripts/rotation_navigation_probe.py
       - if: always() && runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
           name: rotation-stock-mobile-qa
-          path: rotation-stock-mobile-*.png
+          path: |
+            rotation-stock-mobile-*.png
+            rotation-navigation-*.png
+            rotation-navigation-results.json
   postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 8
