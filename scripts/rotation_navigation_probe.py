@@ -22,6 +22,9 @@ else:
     from rotation_navigation import install_navigation
     from werkzeug.serving import make_server
     site = RotationSite(scanner.app, database=str(Path(temporary.name)/'qa.sqlite'), simulated=True)
+    from rotation_opportunities import install_opportunities
+    install_opportunities(scanner.app, site.rotation_app,
+        lambda: {'status':'BLOCKED','reason':'SIMULATED_QA_NO_MARKET_DATA','stocks':[]})
     install_navigation(scanner.app, scanner=True)
     install_navigation(site.rotation_app)
     server = make_server('127.0.0.1', 0, site, threaded=True)
@@ -48,6 +51,9 @@ try:
                 page.wait_for_url(base+path)
                 page.wait_for_timeout(150)
                 assert page.locator('#capital-rotation-nav [aria-current="page"]').inner_text()==label, (label,page.url,page.locator('#capital-rotation-nav').inner_text())
+                if label == 'Home':
+                    assert page.locator('#radar-opportunities').count() == 1
+                    assert 'NOT LIVE' in page.locator('#radar-opportunities').inner_text()
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width,path)
                 if label=='Top Pick':
                     assert page.locator('#topPicks').locator('xpath=ancestor::*[contains(@class,"card")][1]').is_visible()

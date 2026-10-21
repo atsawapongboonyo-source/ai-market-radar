@@ -43,7 +43,10 @@ from rotation_stock_web import register_stock
 stock_universe = json.loads((Path(__file__).parent/'data'/'rotation-stock-universe-v1.json').read_text())
 stock_store = StockStore(database)
 stock_store.migrate()
-register_stock(app.rotation_app, stock_store, public['public_keys'], stock_universe)
+stock_current = register_stock(app.rotation_app, stock_store, public['public_keys'], stock_universe)
+
+from rotation_opportunities import install_opportunities
+install_opportunities(scanner_app, app.rotation_app, stock_current)
 
 # Navigation is opt-in at this staging entrypoint; production scanner is untouched.
 from rotation_navigation import install_navigation
