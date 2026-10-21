@@ -1,7 +1,7 @@
 name: Rotation Web Isolation Tests
 on:
   push:
-    branches: [feature/capital-rotation-offline-v1]
+    branches: [feature/capital-rotation-offline-v1, feature/rotation-stock-decision-v1]
   pull_request:
     paths:
       - 'rotation_*.py'
@@ -46,4 +46,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-rotation-web.txt pytest
-      - run: python -m pytest -q test_rotation_postgres.py
+      - run: python -m pytest -q test_rotation_postgres.py test_rotation_stock_postgres.py
