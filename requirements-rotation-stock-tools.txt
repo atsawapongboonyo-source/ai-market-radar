@@ -1,0 +1,2 @@
+# Offline/operator issuer refresh only; not loaded by production or web service.
+openpyxl==3.1.5

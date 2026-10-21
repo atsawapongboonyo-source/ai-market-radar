@@ -36,3 +36,19 @@ if storage_mode == 'POSTGRESQL_PERSISTENT':
 app = RotationSite(scanner_app, database=database,
     public_keys=public['public_keys'], trusted_tls_proxy=True, loopback_staging=True,
     simulated=False, storage_mode=storage_mode)
+
+# Feature branch only: no stock hooks are installed in the original scanner app.
+from rotation_stock_store import StockStore
+from rotation_stock_web import register_stock
+stock_universe = json.loads((Path(__file__).parent/'data'/'rotation-stock-universe-v1.json').read_text())
+stock_store = StockStore(database)
+stock_store.migrate()
+stock_current = register_stock(app.rotation_app, stock_store, public['public_keys'], stock_universe)
+
+from rotation_opportunities import install_opportunities
+install_opportunities(scanner_app, app.rotation_app, stock_current)
+
+# Navigation is opt-in at this staging entrypoint; production scanner is untouched.
+from rotation_navigation import install_navigation
+install_navigation(scanner_app, scanner=True)
+install_navigation(app.rotation_app)

@@ -1,0 +1,428 @@
+{
+  "version": "issuer-20261021-v2",
+  "selection": "top5_by_issuer_weight; bounded research subset, not all constituents",
+  "funds": {
+    "SPY": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:06.582889+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-spy.xlsx",
+      "source_sha256": "3dfb682cee8802e3c1810b8fdfbb60027dbbfefee2571f83eb74ea7469cce261",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 503,
+      "stocks": [
+        {
+          "symbol": "NVDA",
+          "weight_pct": 7.927084
+        },
+        {
+          "symbol": "AAPL",
+          "weight_pct": 7.551917
+        },
+        {
+          "symbol": "MSFT",
+          "weight_pct": 5.977343
+        },
+        {
+          "symbol": "AMZN",
+          "weight_pct": 3.886853
+        },
+        {
+          "symbol": "GOOGL",
+          "weight_pct": 3.047316
+        }
+      ]
+    },
+    "XLK": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:06.581064+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlk.xlsx",
+      "source_sha256": "5b2dc9bf64bbf6367d83b20c2f361fc8db180f0995427841c46baffa2177a3fd",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 75,
+      "stocks": [
+        {
+          "symbol": "NVDA",
+          "weight_pct": 15.453773
+        },
+        {
+          "symbol": "AAPL",
+          "weight_pct": 14.722357
+        },
+        {
+          "symbol": "MSFT",
+          "weight_pct": 11.653554
+        },
+        {
+          "symbol": "AVGO",
+          "weight_pct": 4.682502
+        },
+        {
+          "symbol": "AMD",
+          "weight_pct": 4.677198
+        }
+      ]
+    },
+    "XLF": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:06.475949+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlf.xlsx",
+      "source_sha256": "a13f1a3b9cdd12a19513690577a6f5f46ceb07a9d02f641edafa8db503f53f61",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 76,
+      "stocks": [
+        {
+          "symbol": "BRK.B",
+          "weight_pct": 12.768757
+        },
+        {
+          "symbol": "JPM",
+          "weight_pct": 11.420627
+        },
+        {
+          "symbol": "V",
+          "weight_pct": 8.844742
+        },
+        {
+          "symbol": "MA",
+          "weight_pct": 6.420457
+        },
+        {
+          "symbol": "BAC",
+          "weight_pct": 4.221322
+        }
+      ]
+    },
+    "XLE": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:06.551534+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xle.xlsx",
+      "source_sha256": "29816989cb3642165f317a3d87fbc4ecc081191b0aa58216c7fb57cf9025f422",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 21,
+      "stocks": [
+        {
+          "symbol": "XOM",
+          "weight_pct": 23.915003
+        },
+        {
+          "symbol": "CVX",
+          "weight_pct": 18.019343
+        },
+        {
+          "symbol": "COP",
+          "weight_pct": 7.09231
+        },
+        {
+          "symbol": "MPC",
+          "weight_pct": 5.111427
+        },
+        {
+          "symbol": "PSX",
+          "weight_pct": 4.802302
+        }
+      ]
+    },
+    "XLV": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:13.851476+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlv.xlsx",
+      "source_sha256": "3a520bc8fd833eb9bb7f3ee4a15abf496b5da9c6a9c0f19b0ad98d6acbd9d568",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 60,
+      "stocks": [
+        {
+          "symbol": "LLY",
+          "weight_pct": 15.570298
+        },
+        {
+          "symbol": "JNJ",
+          "weight_pct": 9.59534
+        },
+        {
+          "symbol": "ABBV",
+          "weight_pct": 7.836962
+        },
+        {
+          "symbol": "UNH",
+          "weight_pct": 5.729755
+        },
+        {
+          "symbol": "MRK",
+          "weight_pct": 5.55949
+        }
+      ]
+    },
+    "XLI": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:13.929951+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xli.xlsx",
+      "source_sha256": "9929d7454dc3cd3d4a8fca7f5108613013fd02dd7e0ba2f78f547397d9ef1b8a",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 83,
+      "stocks": [
+        {
+          "symbol": "CAT",
+          "weight_pct": 6.291105
+        },
+        {
+          "symbol": "GE",
+          "weight_pct": 6.090237
+        },
+        {
+          "symbol": "RTX",
+          "weight_pct": 4.882481
+        },
+        {
+          "symbol": "GEV",
+          "weight_pct": 4.562514
+        },
+        {
+          "symbol": "UNP",
+          "weight_pct": 3.215529
+        }
+      ]
+    },
+    "XLY": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:13.901047+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xly.xlsx",
+      "source_sha256": "f48c6d6d072b807dc9b55ccac099de25c74e3b18f127a7e0ee528170b751681f",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 47,
+      "stocks": [
+        {
+          "symbol": "AMZN",
+          "weight_pct": 23.451869
+        },
+        {
+          "symbol": "TSLA",
+          "weight_pct": 17.444751
+        },
+        {
+          "symbol": "HD",
+          "weight_pct": 5.196382
+        },
+        {
+          "symbol": "TJX",
+          "weight_pct": 4.315534
+        },
+        {
+          "symbol": "MCD",
+          "weight_pct": 4.224532
+        }
+      ]
+    },
+    "XLP": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:13.926503+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlp.xlsx",
+      "source_sha256": "3b3b0913ca34e7f55d5030044661435d04efac99dcfc67ffda0e613992230cf4",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 34,
+      "stocks": [
+        {
+          "symbol": "WMT",
+          "weight_pct": 10.968678
+        },
+        {
+          "symbol": "COST",
+          "weight_pct": 9.154416
+        },
+        {
+          "symbol": "PG",
+          "weight_pct": 7.600285
+        },
+        {
+          "symbol": "KO",
+          "weight_pct": 7.500919
+        },
+        {
+          "symbol": "PM",
+          "weight_pct": 6.497527
+        }
+      ]
+    },
+    "XLB": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:21.228829+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlb.xlsx",
+      "source_sha256": "b49b247be825e69f8f69fc2708b3846be390995ba25ebc9494aed06e41d2bc5c",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 24,
+      "stocks": [
+        {
+          "symbol": "LIN",
+          "weight_pct": 13.045049
+        },
+        {
+          "symbol": "NEM",
+          "weight_pct": 6.989357
+        },
+        {
+          "symbol": "FCX",
+          "weight_pct": 5.630105
+        },
+        {
+          "symbol": "ECL",
+          "weight_pct": 4.973332
+        },
+        {
+          "symbol": "SHW",
+          "weight_pct": 4.896412
+        }
+      ]
+    },
+    "XLU": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:21.280378+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlu.xlsx",
+      "source_sha256": "513925b10cfd0a8ac046edbf684f7265275409ad3f952db9d6fd8cef38c43d79",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 31,
+      "stocks": [
+        {
+          "symbol": "NEE",
+          "weight_pct": 12.529332
+        },
+        {
+          "symbol": "SO",
+          "weight_pct": 7.890757
+        },
+        {
+          "symbol": "DUK",
+          "weight_pct": 7.145571
+        },
+        {
+          "symbol": "CEG",
+          "weight_pct": 6.663627
+        },
+        {
+          "symbol": "AEP",
+          "weight_pct": 5.217094
+        }
+      ]
+    },
+    "XLRE": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:21.184054+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlre.xlsx",
+      "source_sha256": "877f9b1bc8c91cad7f0f52753c3fa664e266dca8915fb7fd20d12c6e198567ab",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 30,
+      "stocks": [
+        {
+          "symbol": "WELL",
+          "weight_pct": 11.640371
+        },
+        {
+          "symbol": "PLD",
+          "weight_pct": 8.156335
+        },
+        {
+          "symbol": "EQIX",
+          "weight_pct": 6.658938
+        },
+        {
+          "symbol": "AMT",
+          "weight_pct": 5.89894
+        },
+        {
+          "symbol": "PSA",
+          "weight_pct": 4.673148
+        }
+      ]
+    },
+    "XLC": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:17:21.250627+00:00",
+      "source": "https://www.ssga.com/library-content/products/fund-data/etfs/us/holdings-daily-us-en-xlc.xlsx",
+      "source_sha256": "4b338187565373ea3598fc4e6afa4b818a2d07fc089884fc39b6909ddcfb916a",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 22,
+      "stocks": [
+        {
+          "symbol": "META",
+          "weight_pct": 22.939341
+        },
+        {
+          "symbol": "GOOGL",
+          "weight_pct": 12.384755
+        },
+        {
+          "symbol": "GOOG",
+          "weight_pct": 9.91482
+        },
+        {
+          "symbol": "DIS",
+          "weight_pct": 4.985548
+        },
+        {
+          "symbol": "TTWO",
+          "weight_pct": 4.5998
+        }
+      ]
+    },
+    "SOXX": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:46:06.288316+00:00",
+      "source": "https://www.ishares.com/us/products/239705/ishares-semiconductor-etf/latest-holdings.csv",
+      "source_sha256": "969673949636e952179e7cccceb792e665aa9538d1d5b8ad79a4151df34a082f",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 30,
+      "stocks": [
+        {
+          "symbol": "AMD",
+          "weight_pct": 9.25
+        },
+        {
+          "symbol": "INTC",
+          "weight_pct": 8.32
+        },
+        {
+          "symbol": "NVDA",
+          "weight_pct": 7.95
+        },
+        {
+          "symbol": "MU",
+          "weight_pct": 7.64
+        },
+        {
+          "symbol": "AVGO",
+          "weight_pct": 7.31
+        }
+      ]
+    },
+    "SMH": {
+      "as_of": "2026-10-19",
+      "known_at": "2026-10-21T08:46:06.288316+00:00",
+      "source": "https://www.vaneck.com/us/en/investments/semiconductor-etf-smh/",
+      "source_sha256": "a029a12bcf72520584ac13b6da63deaf00ad72e22629286d5e0aba2091164e8f",
+      "source_format": "issuer_html_verified_extract",
+      "count_scope": "issuer_reported_total_including_non_equity",
+      "kind": "VERIFIED_HOLDINGS",
+      "holdings_count": 26,
+      "stocks": [
+        {
+          "symbol": "NVDA",
+          "weight_pct": 20.42
+        },
+        {
+          "symbol": "TSM",
+          "weight_pct": 9.45
+        },
+        {
+          "symbol": "AVGO",
+          "weight_pct": 5.49
+        },
+        {
+          "symbol": "AMD",
+          "weight_pct": 5.43
+        },
+        {
+          "symbol": "TXN",
+          "weight_pct": 4.99
+        }
+      ]
+    }
+  }
+}

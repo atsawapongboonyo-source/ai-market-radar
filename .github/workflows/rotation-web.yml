@@ -1,7 +1,7 @@
 name: Rotation Web Isolation Tests
 on:
   push:
-    branches: [feature/capital-rotation-offline-v1]
+    branches: [feature/capital-rotation-offline-v1, feature/rotation-stock-decision-v1]
   pull_request:
     paths:
       - 'rotation_*.py'
@@ -24,6 +24,22 @@ jobs:
       - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
       - run: python -m pytest -q
       - run: python scripts/rotation_web_probe.py --output rotation-web-ram.json
+      - if: runner.os == 'Linux'
+        run: python -m pip install playwright
+      - if: runner.os == 'Linux'
+        run: python -m playwright install --with-deps chromium
+      - if: runner.os == 'Linux'
+        run: python scripts/rotation_stock_mobile_probe.py
+      - if: runner.os == 'Linux'
+        run: python scripts/rotation_navigation_probe.py
+      - if: always() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-stock-mobile-qa
+          path: |
+            rotation-stock-mobile-*.png
+            rotation-navigation-*.png
+            rotation-navigation-results.json
   postgres:
     runs-on: ubuntu-latest
     timeout-minutes: 8
@@ -45,5 +61,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -r requirements-rotation-web.txt pytest
-      - run: python -m pytest -q test_rotation_postgres.py
+      - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
+      - run: python -m pytest -q test_rotation_postgres.py test_rotation_stock_postgres.py
+      - run: python scripts/rotation_stock_pg_probe.py

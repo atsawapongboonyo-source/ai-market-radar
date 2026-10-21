@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/capital-rotation-offline-v1
+      - feature/rotation-stock-decision-v1
   pull_request:
     paths:
       - capital_rotation_offline.py
