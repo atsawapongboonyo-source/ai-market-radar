@@ -1,0 +1,140 @@
+{
+  "simulation_only": true,
+  "python": "3.12.14",
+  "platform": "Windows",
+  "sampled_interval_ms": 10,
+  "rss_sampled_peak_mib": 115.742,
+  "rss_samples": [
+    {
+      "phase": "python_and_psutil",
+      "rss_mib": 24.734
+    },
+    {
+      "phase": "flask_imported",
+      "rss_mib": 35.645
+    },
+    {
+      "phase": "pandas_imported",
+      "rss_mib": 74.629
+    },
+    {
+      "phase": "yfinance_imported",
+      "rss_mib": 89.816
+    },
+    {
+      "phase": "scanner_imported",
+      "rss_mib": 90.461
+    },
+    {
+      "phase": "rotation_probe_completed",
+      "rss_mib": 99.559
+    },
+    {
+      "phase": "history_cache_empty",
+      "rss_mib": 100.223,
+      "cache_entries": 0,
+      "cache_frame_bytes": 0
+    },
+    {
+      "phase": "synthetic_history_64",
+      "rss_mib": 101.965,
+      "cache_entries": 64,
+      "cache_frame_bytes": 4515840
+    },
+    {
+      "phase": "synthetic_history_128",
+      "rss_mib": 106.484,
+      "cache_entries": 128,
+      "cache_frame_bytes": 9031680
+    },
+    {
+      "phase": "synthetic_history_256",
+      "rss_mib": 115.652,
+      "cache_entries": 256,
+      "cache_frame_bytes": 18063360
+    },
+    {
+      "phase": "expired_history_after_gc",
+      "rss_mib": 115.742,
+      "cache_entries": 257,
+      "cache_frame_bytes": 18133920
+    },
+    {
+      "phase": "history_cache_cleared",
+      "rss_mib": 101.609,
+      "cache_entries": 0,
+      "cache_frame_bytes": 0
+    }
+  ],
+  "rotation_probe": {
+    "runtime_version": "5.3.1",
+    "scanner_view_functions_unchanged": true,
+    "position_engine_result_unchanged": true,
+    "rotation_has_no_scanner_injections": true,
+    "market_downloads": 0,
+    "background_threads_added": 0,
+    "requests": 1500,
+    "rss_before_mib": 92.43,
+    "rss_after_mib": 99.555,
+    "rss_delta_mib": 7.125,
+    "rss_peak_mib": 99.555,
+    "rss_samples": [
+      {
+        "phase": "scanner_imported",
+        "rss_mib": 92.43
+      },
+      {
+        "phase": "rotation_initialized",
+        "rss_mib": 93.781
+      },
+      {
+        "phase": "signed_ingest",
+        "rss_mib": 95.09
+      },
+      {
+        "phase": "rotation_reads_100",
+        "rss_mib": 95.254
+      },
+      {
+        "phase": "rotation_reads_500",
+        "rss_mib": 95.316
+      },
+      {
+        "phase": "rotation_reads_1000",
+        "rss_mib": 95.336
+      },
+      {
+        "phase": "rotation_reads_1500",
+        "rss_mib": 95.352
+      },
+      {
+        "phase": "home_and_rotation",
+        "rss_mib": 99.551
+      },
+      {
+        "phase": "opportunity_reads_100",
+        "rss_mib": 99.551
+      },
+      {
+        "phase": "opportunity_reads_500",
+        "rss_mib": 99.555
+      },
+      {
+        "phase": "after_gc",
+        "rss_mib": 99.555
+      }
+    ],
+    "ingest_status": 200
+  },
+  "synthetic_download_calls": 257,
+  "expired_cache": {
+    "cache_entries": 257,
+    "cache_frame_bytes": 18133920
+  },
+  "blocked_side_effect_attempts": 0,
+  "limitations": [
+    "Single process; excludes Gunicorn master and container page cache",
+    "Synthetic history; no live provider/native allocation profile",
+    "10ms sampling may miss shorter peaks; no live root-cause attribution"
+  ]
+}

@@ -5,8 +5,13 @@ on:
   pull_request:
     paths:
       - 'rotation_*.py'
+      - 'app.py'
+      - 'history_cache.py'
+      - 'test_history_cache.py'
       - 'rotation_templates/**'
       - 'test_rotation_web.py'
+      - 'scripts/rotation_web_probe.py'
+      - 'scripts/rotation_memory_diagnostic.py'
       - 'requirements-rotation-web.txt'
       - '.github/workflows/rotation-web.yml'
 jobs:
@@ -24,6 +29,14 @@ jobs:
       - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
       - run: python -m pytest -q
       - run: python scripts/rotation_web_probe.py --output rotation-web-ram.json
+      - run: python scripts/rotation_memory_diagnostic.py --output rotation-memory-diagnostic.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-memory-${{ runner.os }}
+          path: |
+            rotation-web-ram.json
+            rotation-memory-diagnostic.json
       - if: runner.os == 'Linux'
         run: python -m pip install playwright
       - if: runner.os == 'Linux'
