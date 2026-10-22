@@ -1,0 +1,59 @@
+# Stock Radar V2 — Consolidation Audit (research only)
+
+## Baseline
+- Parent branch: feature/rotation-stock-decision-v1 at 60d10a3.
+- ETF universe: data/rotation-stock-universe-v1.json; 14 funds, 59 unique top-five issuer symbols, verified holdings snapshots. Do not rewrite or expand this as if candidates were ETF constituents.
+- Research candidates: data/stock-radar-research-watchlist-v1.json; curated, NOT VERIFIED holdings, NOT EVALUATED, no prices/signals inferred. No collection job is scheduled by this change.
+- Rotation Stock Decision: rotation_stock_engine.py, rotation_stock_store.py, rotation_stock_web.py, signed publication. Home projection: rotation_opportunities.py. Navigation: rotation_navigation.py.
+- Scanner V4.10 / Production: unchanged and independent. Its signals are not Rotation READY.
+
+## Separation of responsibilities
+1. Home: read-only summary of published decisions; never recompute signals or create READY.
+2. Scanner: retain current production scanner behavior; never route rotation data into trading endpoints.
+3. Rotation: ETF relative-strength research; not measured fund flows.
+4. Stock Radar: discover symbols and display a cached, source-labeled decision if and only if a validated signed publication exists. Research candidates without publication display NOT_EVALUATED.
+5. Top Pick: presentation/filter of existing scanner picks, not a new scoring engine.
+6. Position: existing position view; never infer holdings from a watchlist.
+
+## Safe expansion gates
+- Validate symbols, listings, liquidity, corporate actions, data entitlements and timestamp freshness before collection.
+- Limit batch size/concurrency; benchmark RAM/CPU and database physical usage against existing 512 MiB service. No extra services or subscription.
+- Use the existing signed ingest, publication and PostgreSQL schema when extending eligible universe; do not treat EOD as live or IEX as SIP.
+- Keep research candidates separate from verified ETF holdings and never generate READY for missing or stale histories.
+- Test scanner isolation, deduplication by ticker and source, navigation 320/390px, signed replay, restart persistence, rollback artifact and sustained soak before any Staging deployment.
+
+## Existing HOLD blockers
+Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stock_publications restore drill incomplete; sustained RAM soak and signed ingest/replay through restart incomplete; intermittent Position-to-Rotation double navigation. These remain blockers. This branch also contains staging-only read-only research UI, routing and tests. It must NOT be deployed or merged to main while blockers remain.
+
+## Verification checkpoint — 2026-10-22
+- PR #21 commit 75e3ab2: research-universe and Rotation Web Isolation CI both passed (Ubuntu, Windows, PostgreSQL).
+- Browser navigation probe: widths 320/390/1440, 6 routes each, back/forward, Position close, no overflow, Scanner API blocked.
+- CI synthetic 1,500-request probe: no market downloads, no new background threads, RSS +5.559 MiB; not a Render production-like soak.
+- Render Staging still serves commit 96f3000, not this PR. Branch remains feature/rotation-stock-decision-v1, auto-deploy off.
+- Render observed memory ~433 MiB of 512 MiB on 2026-10-22; do not interpret CI RSS as available headroom for a new deployment.
+
+## Restore and deployment gates (non-destructive)
+1. Extend logical restore drill to include rotation.stock_publications in an isolated temp-table comparison, preserving digest/body bytes, session constraints, and transaction rollback. Test empty and populated snapshots with PostgreSQL; do not change live rows or elevate WAL privileges.
+2. Validate that the Render rollback target exists and is restorable before deploying; historical 'Build not found' means rollback is NOT verified. Do not attempt a deploy merely to test rollback.
+3. Obtain independent physical storage/disk evidence and WAL usage via permitted read-only metrics or operator-approved diagnostics. A SQL row count or serialized snapshot size is not physical disk usage.
+4. Perform signed stock ingest replay/concurrency and restart-persistence tests against a disposable isolated database, not live Staging; verify duplicate nonce, old timestamps, conflicting session updates, and baseline binding.
+5. Run sustained memory/CPU soak with an explicit stop threshold and measure real Render headroom; no automatic deployment or paid plan changes.
+6. Resolve Position-to-Rotation double-tap navigation and rerun the mobile browser probe. Only then reconsider a controlled Staging deployment; Production remains out of scope.
+
+## Signed-ingest CI checkpoint — 2026-10-22
+- Commit 4844823: both GitHub workflows succeeded; Rotation Web Isolation jobs Ubuntu, Windows, PostgreSQL succeeded.
+- Disposable PostgreSQL job: 22 tests passed; includes empty/populated stock restore drill, concurrent identical nonce replay, restart simulation (new Flask app/store), expired signed timestamp, older conflicting stock publication rejection, baseline mismatch, and failed insert transaction rollback.
+- PostgreSQL log lines for intentional constraint/trigger negative tests are expected and do not indicate a failed job.
+- These tests do NOT prove a Render instance restart, real external signed collector delivery, physical disk/WAL utilization, rollback artifact availability, or sustained live Staging RAM soak.
+- Staging remains deployed at 96f3000; PR #21 is Draft and unmerged. No production deploy or database mutation.
+
+## Production isolation confirmation — 2026-10-22
+- Render Production service srv-daek7uqd0e5s738riq40 remains unsuspended on branch main, latest deployment dep-dbccico473hc73aao9e0 at 36cae7b marked live. This is service/deploy status, not an end-to-end freshness guarantee.
+- PR #21 remains a Draft on a separate feature branch; neither Production nor Staging was deployed by this checkpoint.
+- Existing disposable PostgreSQL probe scripts/rotation_stock_pg_probe.py already exercise a synthetic 70-row publication, 500 read requests, scanner function isolation, no market downloads, no extra threads, bounded RSS delta and pg_total_relation_size for a disposable table. Do not mistake this for Render physical disk/WAL verification or sustained real-instance soak.
+
+## Render RAM gate — 2026-10-22 08:00–10:00 UTC
+- Read-only Render Staging memory metric: 465,403,900 bytes (~443.8 MiB) from 08:00–09:40 UTC, rising to 503,111,680 bytes (~479.8 MiB) at 09:50 and 10:00 UTC against a 536,870,900-byte (~512 MiB) limit. Peak headroom ~32.2 MiB (~6.3%).
+- These are existing deployed staging instance metrics, not new Stock Radar V2 deployment results. Cause of spike is unverified; do not infer memory leak or deploy safety.
+- CI commit d4c3d24: Stock Radar isolation passed, Windows integration and disposable PostgreSQL passed; Ubuntu browser integration still in progress when checked. Prior a2b5df2 Ubuntu failure traced to Position overlay close button intercepting Rotation nav click; navigation and probe updated in d4c3d24.
+- Staging deployment remains HOLD pending RAM headroom, physical disk/WAL, rollback artifact and real restart evidence. No live database mutation or production changes.

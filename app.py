@@ -7,12 +7,13 @@ import time
 
 import pandas as pd
 import yfinance as yf
+from history_cache import HistoryCache
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, template_folder=str(BASE_DIR))
 
 # Simple in-memory cache to reduce repeated calls to the free data source on Render.
-_HISTORY_CACHE = {}
+_HISTORY_CACHE = HistoryCache()
 _CACHE_TTL_SECONDS = 15 * 60
 
 
