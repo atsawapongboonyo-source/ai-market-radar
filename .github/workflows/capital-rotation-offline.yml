@@ -1,0 +1,58 @@
+name: Capital Rotation Offline Tests
+
+on:
+  push:
+    branches:
+      - feature/capital-rotation-offline-v1
+  pull_request:
+    paths:
+      - capital_rotation_offline.py
+      - capital_rotation_confirmation.py
+      - capital_rotation_data_quality.py
+      - capital_rotation_market_session.py
+      - capital_rotation_pipeline.py
+      - capital_rotation_cache.py
+      - capital_rotation_report.py
+      - capital_rotation_html.py
+      - test_capital_rotation_html.py
+      - capital_rotation_alpaca.py
+      - capital_rotation_alpaca_report.py
+      - capital_rotation_calendar.py
+      - capital_rotation_audit.py
+      - capital_rotation_validation.py
+      - test_capital_rotation_validation.py
+      - capital_rotation_automation.py
+      - capital_rotation_storage.py
+      - test_capital_rotation_automation.py
+      - scripts/rotation-install.ps1
+      - scripts/rotation-scheduled.ps1
+      - scripts/rotation-credentials.ps1
+      - scripts/rotation-windows-offline-test.ps1
+      - test_capital_rotation_calendar.py
+      - test_capital_rotation_audit.py
+      - test_capital_rotation_alpaca.py
+      - test_capital_rotation_alpaca_report.py
+      - test_capital_rotation_report.py
+      - test_capital_rotation_offline.py
+      - test_capital_rotation_confirmation.py
+      - test_capital_rotation_data_quality.py
+      - test_capital_rotation_market_session.py
+      - test_capital_rotation_pipeline.py
+      - test_capital_rotation_cache.py
+      - .github/workflows/capital-rotation-offline.yml
+
+jobs:
+  offline-tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install tzdata
+      - run: python -m unittest discover -v -p 'test_capital_rotation*.py'
+      - run: python -m py_compile capital_rotation_offline.py capital_rotation_confirmation.py capital_rotation_data_quality.py capital_rotation_market_session.py capital_rotation_pipeline.py capital_rotation_cache.py test_capital_rotation_offline.py test_capital_rotation_confirmation.py test_capital_rotation_data_quality.py test_capital_rotation_market_session.py test_capital_rotation_pipeline.py test_capital_rotation_cache.py test_capital_rotation_report.py capital_rotation_report.py capital_rotation_alpaca.py capital_rotation_alpaca_report.py test_capital_rotation_alpaca.py
