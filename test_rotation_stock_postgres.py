@@ -2,6 +2,7 @@
 import os,json,unittest
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
+from rotation_backup import restore_drill
 from rotation_store import PublicStore
 from rotation_stock_store import StockStore
 from rotation_stock_web import register_stock
@@ -31,6 +32,29 @@ class StockPostgresTests(unittest.TestCase):
     def post(self,h=None,raw=None,app=None):
         raw=raw or self.raw;h=h or stock_headers(raw,self.key,'test',NOW)
         return (app or self.app).test_client().post('/api/rotation/stocks/ingest',data=raw,headers={**h,'X-Forwarded-Proto':'https'})
+    def test_stock_restore_drill_preserves_published_rows(self):
+        self.assertEqual(self.post().status_code, 200)
+        with self.store.connect() as db:
+            before = db.execute('SELECT session, generated, digest, body FROM rotation.stock_publications').fetchall()
+            nonces = db.execute('SELECT count(*) FROM rotation.nonces').fetchone()[0]
+        report = restore_drill(self.store)
+        self.assertEqual(report['status'], 'VERIFIED')
+        self.assertTrue(report['stock_table_present'])
+        self.assertEqual(report['stock_publications'], 1)
+        self.assertFalse(report['source_modified'])
+        with self.store.connect() as db:
+            after = db.execute('SELECT session, generated, digest, body FROM rotation.stock_publications').fetchall()
+            self.assertEqual(db.execute('SELECT count(*) FROM rotation.nonces').fetchone()[0], nonces)
+        self.assertEqual(before, after)
+        self.assertEqual(self.store.latest(), self.raw)
+
+    def test_empty_stock_restore_drill(self):
+        report = restore_drill(self.store)
+        self.assertEqual(report['status'], 'VERIFIED')
+        self.assertTrue(report['stock_table_present'])
+        self.assertEqual(report['stock_publications'], 0)
+        self.assertFalse(report['source_modified'])
+
     def test_restart_and_baseline_unchanged(self):
         h=stock_headers(self.raw,self.key,'test',NOW)
         self.assertEqual(self.post(h).status_code,200)
