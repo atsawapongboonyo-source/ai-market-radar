@@ -21,7 +21,7 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         python: ['3.12', '3.14']
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -30,7 +30,10 @@ jobs:
       - run: python -m pip install -r requirements-rotation-web.txt -c docs/memory-evidence/render-build-96f3000-constraints.txt pytest psutil
       - run: python -m pytest -q
       - run: python scripts/rotation_web_probe.py --output rotation-web-ram.json
-      - run: python scripts/rotation_memory_diagnostic.py --output rotation-memory-diagnostic.json
+      - run: python scripts/rotation_memory_diagnostic.py --cycles 30 --output rotation-memory-diagnostic.json
+      - run: python scripts/rotation_memory_diagnostic.py --cycles 30 --cache-mode unbounded --output rotation-memory-unbounded.json
+      - if: runner.os == 'Linux'
+        run: python scripts/rotation_memory_diagnostic.py --gunicorn-startup --output rotation-gunicorn-startup.json
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -38,6 +41,8 @@ jobs:
           path: |
             rotation-web-ram.json
             rotation-memory-diagnostic.json
+            rotation-memory-unbounded.json
+            rotation-gunicorn-startup.json
       - if: runner.os == 'Linux'
         run: python -m pip install playwright
       - if: runner.os == 'Linux'
@@ -78,3 +83,7 @@ jobs:
       - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
       - run: python -m pytest -q test_rotation_postgres.py test_rotation_stock_postgres.py
       - run: python scripts/rotation_stock_pg_probe.py
+      - run: python scripts/rotation_stock_pg_probe.py --snapshot restart-checkpoint.json
+      - name: Restart disposable CI PostgreSQL only
+        run: docker restart ${{ job.services.postgres.id }}
+      - run: python scripts/rotation_stock_pg_probe.py --verify-snapshot restart-checkpoint.json

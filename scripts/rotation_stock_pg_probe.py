@@ -2,6 +2,41 @@
 from pathlib import Path
 import sys,json,gc,threading,copy
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+
+# Fingerprint only the disposable test database before/after a CI container
+# restart. No live URL is accepted; no row bodies/nonces are written or logged.
+if len(sys.argv) == 3 and sys.argv[1] in ('--snapshot', '--verify-snapshot'):
+    import hashlib, os, time
+    from urllib.parse import urlparse
+    import psycopg
+    url = os.environ['ROTATION_TEST_DATABASE_URL']
+    parsed = urlparse(url)
+    if parsed.path != '/rotation_test' or parsed.hostname not in ('localhost', '127.0.0.1'):
+        raise RuntimeError('Local disposable rotation_test required')
+    for attempt in range(30):
+        try:
+            connection = psycopg.connect(url, connect_timeout=2)
+            break
+        except psycopg.OperationalError:
+            if attempt == 29:
+                raise
+            time.sleep(1)
+    fingerprint = {}
+    with connection as db:
+        for table in ('publications', 'stock_publications', 'nonces', 'schema_version'):
+            rows = db.execute('SELECT * FROM rotation.' + table).fetchall()
+            encoded = sorted(json.dumps(row, default=str) for row in rows)
+            fingerprint[table] = dict(rows=len(rows), sha256=hashlib.sha256(
+                json.dumps(encoded).encode()).hexdigest())
+    target = Path(sys.argv[2])
+    if sys.argv[1] == '--snapshot':
+        target.write_text(json.dumps(fingerprint), encoding='utf-8')
+    else:
+        assert fingerprint == json.loads(target.read_text(encoding='utf-8')), 'Restart changed persisted rows'
+    print(json.dumps(dict(simulation_only=True, disposable_restart_checkpoint=sys.argv[1],
+                         rows={k:v['rows'] for k,v in fingerprint.items()}, matched=True)))
+    sys.exit(0)
+
 import psutil
 from unittest.mock import patch
 from test_rotation_stock_postgres import StockPostgresTests
