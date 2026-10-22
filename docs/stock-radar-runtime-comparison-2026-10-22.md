@@ -41,6 +41,9 @@ The guard is not a native-library network sandbox. Reports summed RSS and PSS
 (RSS double-counts shared pages). Startup evidence excludes live PostgreSQL,
 real provider load and container cache. Both Python runtimes use observed build
 dependency constraints. Independent CI jobs are no longer cancelled on one failure.
+The Linux integration artifact at 9f00595 unexpectedly resolved floating '3.14'
+to 3.14.9 while the PostgreSQL runner used 3.14.8. CI now pins 3.14.8 explicitly
+to the observed Render runtime. Do not present the 3.14.9 artifact as exact parity.
 CI also fingerprints all baseline/stock/nonce/schema rows before and after
 restarting only its disposable PostgreSQL container, verifying identity rather
 than row counts. This restart check passed at 73cd3a8: 1 baseline, 1 stock, 2
