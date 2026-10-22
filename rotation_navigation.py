@@ -2,7 +2,7 @@
 from flask import request
 
 LINKS = (('Home', '/'), ('Scanner', '/scanner'), ('Rotation', '/rotation'),
-         ('Stock Radar', '/analysis'), ('Top Pick', '/scanner#top-pick'),
+         ('Stock Radar', '/stock-radar'), ('Top Pick', '/scanner#top-pick'),
          ('Position', '/scanner#position'))
 
 STYLE = '''<style id="radar-unified-style">
