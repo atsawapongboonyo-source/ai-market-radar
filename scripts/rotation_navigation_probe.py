@@ -25,6 +25,8 @@ else:
     from rotation_opportunities import install_opportunities
     install_opportunities(scanner.app, site.rotation_app,
         lambda: {'status':'BLOCKED','reason':'SIMULATED_QA_NO_MARKET_DATA','stocks':[]})
+    from stock_radar_research_web import install_research_directory
+    install_research_directory(site.rotation_app)
     install_navigation(scanner.app, scanner=True)
     install_navigation(site.rotation_app)
     server = make_server('127.0.0.1', 0, site, threaded=True)
@@ -43,7 +45,7 @@ try:
             page = context.new_page()
             page.on('pageerror', lambda error: print('BROWSER_ERROR', error.stack))
             page.goto(base+'/rotation')
-            for label, path in [('Home','/'),('Scanner','/scanner'),('Stock Radar','/analysis'),
+            for label, path in [('Home','/'),('Scanner','/scanner'),('Stock Radar','/stock-radar'),
                                 ('Top Pick','/scanner#top-pick'),('Position','/scanner#position')]:
                 nav = page.locator('#capital-rotation-nav')
                 assert nav.count()==1
