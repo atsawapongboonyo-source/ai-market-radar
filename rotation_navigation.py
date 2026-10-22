@@ -37,7 +37,7 @@ SCRIPT = '''<script id="radar-unified-history">
    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
   if(path!=='/'&&path!=='/scanner')return;
-  if(window.v510ClosePosition)window.v510ClosePosition();
+  if(hash!=='#position'&&window.v510ClosePosition)window.v510ClosePosition();
   if(hash==='#position'){
    if(window.v510OpenPosition)window.v510OpenPosition();
   }else if(hash==='#top-pick'){
@@ -48,6 +48,14 @@ SCRIPT = '''<script id="radar-unified-history">
  function boot(){
   var close=document.getElementById('v510PositionClose');
   if(close)close.addEventListener('click',function(){if(location.hash==='#position')location.hash='';});
+  // The Position panel is a full-screen overlay. Keep navigation reachable
+  // without modifying Scanner's own position logic or click handlers.
+  document.querySelectorAll('#capital-rotation-nav .radar-links a').forEach(function(a){
+   a.addEventListener('click',function(){
+    if(location.pathname==='/scanner'&&location.hash==='#position'&&window.v510ClosePosition)
+     window.v510ClosePosition();
+   });
+  });
   sync();
  }
  window.addEventListener('hashchange',sync);window.addEventListener('pageshow',sync);
