@@ -78,6 +78,10 @@ try:
                 page.locator('#capital-rotation-nav').get_by_role('link',name='Position',exact=True).click()
                 page.wait_for_url(base+'/scanner#position')
                 assert page.locator('#v510PositionPanel').is_visible()
+                # The full-screen Position overlay intentionally captures pointer
+                # events. Close it through its visible control before navigation.
+                page.locator('#v510PositionClose').click()
+                assert not page.locator('#v510PositionPanel').is_visible()
                 page.locator('#capital-rotation-nav').get_by_role('link',name='Rotation',exact=True).click()
                 page.wait_for_url(base+'/rotation')
                 assert page.locator('#capital-rotation-nav').count()==1
