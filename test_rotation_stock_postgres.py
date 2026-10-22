@@ -1,5 +1,6 @@
 """Disposable PostgreSQL only: stock writes must preserve baseline and nonce semantics."""
 import os,json,unittest
+from datetime import timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
 from rotation_backup import restore_drill
@@ -67,6 +68,27 @@ class StockPostgresTests(unittest.TestCase):
         self.assertEqual(codes.count(200),1);self.assertEqual(codes.count(409),15)
         self.assertEqual(self.post().get_json()['status'],'UNCHANGED')
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM rotation.stock_publications').fetchone()[0],1)
+    def test_rejects_old_signed_timestamp_without_consuming_nonce(self):
+        old = stock_headers(self.raw, self.key, 'test', NOW - timedelta(seconds=301))
+        response = self.post(old)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json()['error_code'], 'INVALID_SIGNATURE')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM rotation.nonces WHERE key_id='test'").fetchone()[0], 0)
+            self.assertEqual(db.execute('SELECT count(*) FROM rotation.stock_publications').fetchone()[0], 0)
+
+    def test_conflicting_older_stock_publication_rejected(self):
+        self.assertEqual(self.post().status_code, 200)
+        older = json.loads(self.raw)
+        older['generated_utc'] = (NOW - timedelta(seconds=30)).isoformat()
+        old_raw = json.dumps(older).encode()
+        # Direct store invocation exercises rollback protection independently of the signature parser.
+        status, code = self.store.publish(old_raw, older, 'test', 'a'*32, NOW,
+                                          signed_timestamp=int(NOW.timestamp()))
+        self.assertEqual((status, code), ('ROLLBACK_REJECTED', 409))
+        self.assertEqual(StockStore(self.url).latest(), self.raw)
+        self.assertEqual(self.base.latest(), self.baseline)
+
     def test_shared_nonce_domain_rejects_cross_endpoint_reuse(self):
         h=stock_headers(self.raw,self.key,'base',NOW,nonce='f'*32)
         # Storage reuse is denied even with a valid signature in the stock domain.
