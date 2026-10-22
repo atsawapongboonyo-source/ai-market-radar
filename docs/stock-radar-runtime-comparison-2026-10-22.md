@@ -33,13 +33,19 @@ this is a short synthetic stress comparison, not a continuous Render soak.
 Fresh regressions: 177 passed/22 skipped. Missing local PostgreSQL is not passed.
 
 Linux CI now also measures the actual Gunicorn entrypoint with 1 worker/2 threads
-for 30 seconds, using an isolated temporary SQLite directory and scrubbed env.
-Provider network/process side effects are blocked before worker imports; no HTTP
-requests are sent. Reports summed RSS and PSS (RSS double-counts shared pages).
-Startup evidence excludes live PostgreSQL, real provider load and container cache.
+for 30 seconds, using disposable localhost PostgreSQL and scrubbed env. The first
+harness attempt used SQLite and correctly failed POSTGRES_REQUIRED; no application
+requirement was relaxed. Python network/process auditing permits only the local
+disposable database address, before worker imports; no HTTP requests are sent.
+The guard is not a native-library network sandbox. Reports summed RSS and PSS
+(RSS double-counts shared pages). Startup evidence excludes live PostgreSQL,
+real provider load and container cache. Both Python runtimes use observed build
+dependency constraints. Independent CI jobs are no longer cancelled on one failure.
 CI also fingerprints all baseline/stock/nonce/schema rows before and after
 restarting only its disposable PostgreSQL container, verifying identity rather
-than row counts. New exact-head CI results must be verified before claiming pass.
+than row counts. This restart check passed at 73cd3a8: 1 baseline, 1 stock, 2
+nonces and 1 schema row matched after restart. New exact-head CI results must be
+verified before claiming startup or full workflow success.
 
 Physical storage/WAL remains unavailable: read-only SQL 8,402,623 logical bytes,
 2 baseline rows/1 stock row; can_inspect_wal=false. No privilege changes. Deploy

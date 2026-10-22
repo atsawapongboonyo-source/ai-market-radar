@@ -41,9 +41,9 @@ def gunicorn_startup(output):
         config.write_text(
             'import sys\n'
             'def deny(event, args):\n'
-            "    if event == 'socket.connect' and args[1] in (('127.0.0.1',5432),('localhost',5432)):\n"
+            "    if event == 'socket.connect' and isinstance(args[1],tuple) and args[1][0] in ('127.0.0.1','localhost','::1') and args[1][1] == 5432:\n"
             '        return\n'
-            "    if event == 'socket.getaddrinfo' and args[0] in ('127.0.0.1','localhost') and args[1] == 5432:\n"
+            "    if event == 'socket.getaddrinfo' and args[0] in ('127.0.0.1','localhost') and str(args[1]) == '5432':\n"
             '        return\n'
             "    if event in ('socket.connect','socket.getaddrinfo','subprocess.Popen','os.system'):\n"
             "        raise RuntimeError('OFFLINE_STARTUP_SIDE_EFFECT_BLOCKED')\n"
