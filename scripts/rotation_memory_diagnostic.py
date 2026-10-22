@@ -50,7 +50,9 @@ def gunicorn_startup(output):
                 started = time.monotonic()
                 while time.monotonic() - started < 30:
                     if process.poll() is not None:
-                        raise RuntimeError('Disposable Gunicorn exited before observation completed')
+                        log.flush()
+                        log.seek(0)
+                        raise RuntimeError('Disposable Gunicorn exited before observation completed: ' + log.read()[-6000:])
                     processes = [psutil.Process(process.pid)]
                     processes += processes[0].children(recursive=True)
                     memory = [p.memory_full_info() for p in processes]

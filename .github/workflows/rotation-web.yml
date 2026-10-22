@@ -17,6 +17,7 @@ on:
 jobs:
   integration:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python: ['3.12', '3.14']
