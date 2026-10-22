@@ -46,3 +46,8 @@ Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stoc
 - PostgreSQL log lines for intentional constraint/trigger negative tests are expected and do not indicate a failed job.
 - These tests do NOT prove a Render instance restart, real external signed collector delivery, physical disk/WAL utilization, rollback artifact availability, or sustained live Staging RAM soak.
 - Staging remains deployed at 96f3000; PR #21 is Draft and unmerged. No production deploy or database mutation.
+
+## Production isolation confirmation — 2026-10-22
+- Render Production service srv-daek7uqd0e5s738riq40 remains unsuspended on branch main, latest deployment dep-dbccico473hc73aao9e0 at 36cae7b marked live. This is service/deploy status, not an end-to-end freshness guarantee.
+- PR #21 remains a Draft on a separate feature branch; neither Production nor Staging was deployed by this checkpoint.
+- Existing disposable PostgreSQL probe scripts/rotation_stock_pg_probe.py already exercise a synthetic 70-row publication, 500 read requests, scanner function isolation, no market downloads, no extra threads, bounded RSS delta and pg_total_relation_size for a disposable table. Do not mistake this for Render physical disk/WAL verification or sustained real-instance soak.
