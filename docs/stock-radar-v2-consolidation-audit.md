@@ -39,3 +39,10 @@ Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stoc
 4. Perform signed stock ingest replay/concurrency and restart-persistence tests against a disposable isolated database, not live Staging; verify duplicate nonce, old timestamps, conflicting session updates, and baseline binding.
 5. Run sustained memory/CPU soak with an explicit stop threshold and measure real Render headroom; no automatic deployment or paid plan changes.
 6. Resolve Position-to-Rotation double-tap navigation and rerun the mobile browser probe. Only then reconsider a controlled Staging deployment; Production remains out of scope.
+
+## Signed-ingest CI checkpoint — 2026-10-22
+- Commit 4844823: both GitHub workflows succeeded; Rotation Web Isolation jobs Ubuntu, Windows, PostgreSQL succeeded.
+- Disposable PostgreSQL job: 22 tests passed; includes empty/populated stock restore drill, concurrent identical nonce replay, restart simulation (new Flask app/store), expired signed timestamp, older conflicting stock publication rejection, baseline mismatch, and failed insert transaction rollback.
+- PostgreSQL log lines for intentional constraint/trigger negative tests are expected and do not indicate a failed job.
+- These tests do NOT prove a Render instance restart, real external signed collector delivery, physical disk/WAL utilization, rollback artifact availability, or sustained live Staging RAM soak.
+- Staging remains deployed at 96f3000; PR #21 is Draft and unmerged. No production deploy or database mutation.
