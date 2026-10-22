@@ -73,6 +73,13 @@ The PR workflow now executes the diagnostic on Windows/Linux, asserts frame
 retention limits and expiry, and uploads both memory JSON files on both OSes.
 Exact updated-head CI must be checked after push.
 
+First updated run 39773683041: Linux 174 passed/25 skipped, PostgreSQL and
+browser checks passed; Windows 177 passed/22 skipped and Rotation probe passed.
+Its new diagnostic failed because Python 3.12.10 platform.system() attempted to
+spawn `ver`, correctly denied by the audit hook. The diagnostic now uses
+sys.platform directly, retaining the process/network guard. A new exact-head run
+is required for the corrected diagnostic.
+
 ## Render observations and blockers
 
 Read-only discovery re-confirmed workspace tea-dacd3c0ae00c73euru00 and service

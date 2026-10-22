@@ -17,7 +17,6 @@ ROOT = Path(__file__).resolve().parents[1]
 def child(output):
     import gc
     import importlib
-    import platform
     import runpy
     import threading
     from unittest.mock import patch
@@ -93,8 +92,10 @@ def child(output):
         checkpoint('history_cache_cleared', **cache_stats())
         assert threading.active_count() == threads, 'Unexpected background thread'
         assert not denied, denied
-        result = dict(simulation_only=True, python=platform.python_version(),
-                      platform=platform.system(), sampled_interval_ms=10,
+        # platform.system() can spawn `ver` on older Windows Python releases.
+        result = dict(simulation_only=True, python=sys.version.split()[0],
+                      platform={'win32': 'Windows', 'linux': 'Linux'}.get(sys.platform, sys.platform),
+                      sampled_interval_ms=10,
                       rss_sampled_peak_mib=round(peak[0] / 2**20, 3),
                       rss_samples=samples, rotation_probe=rotation,
                       synthetic_download_calls=calls, expired_cache=retained,
