@@ -53,6 +53,10 @@ _STATE = {
     "running": False,
     "started_at": None,
     "last_cycle_at": None,
+    "last_cycle_started_at": None,
+    "last_cycle_finished_at": None,
+    "last_cycle_duration_seconds": None,
+    "cycle_in_progress": False,
     "last_error": None,
     "session": None,
     "candidate_mode": None,
@@ -688,12 +692,21 @@ def _loop():
         _STATE["running"] = True
         _STATE["started_at"] = datetime.now(ET).isoformat()
     while not _STOP.is_set():
+        cycle_started = time.monotonic()
+        with _LOCK:
+            _STATE["last_cycle_started_at"] = datetime.now(ET).isoformat()
+            _STATE["cycle_in_progress"] = True
         try:
             run_cycle()
         except Exception as exc:
             with _LOCK:
                 _STATE["last_error"] = str(exc)
                 _STATE["last_cycle_at"] = datetime.now(ET).isoformat()
+        finally:
+            with _LOCK:
+                _STATE["last_cycle_finished_at"] = datetime.now(ET).isoformat()
+                _STATE["last_cycle_duration_seconds"] = round(time.monotonic() - cycle_started, 2)
+                _STATE["cycle_in_progress"] = False
         _STOP.wait(_POLL_SECONDS)
     with _LOCK:
         _STATE["running"] = False
@@ -738,6 +751,10 @@ def status():
         and out.get("session") == _market_window(now)
     )
     out["health"] = {
+        "cycle_in_progress": bool(out.get("cycle_in_progress")),
+        "last_cycle_duration_seconds": out.get("last_cycle_duration_seconds"),
+        "last_cycle_started_at": out.get("last_cycle_started_at"),
+        "last_cycle_finished_at": out.get("last_cycle_finished_at"),
         "state": "HEALTHY" if healthy else ("DISABLED" if not _ENABLED else "NOT_HEALTHY"),
         "thread_alive": thread_alive,
         "server_now_et": now.isoformat(),
