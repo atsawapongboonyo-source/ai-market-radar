@@ -51,3 +51,9 @@ Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stoc
 - Render Production service srv-daek7uqd0e5s738riq40 remains unsuspended on branch main, latest deployment dep-dbccico473hc73aao9e0 at 36cae7b marked live. This is service/deploy status, not an end-to-end freshness guarantee.
 - PR #21 remains a Draft on a separate feature branch; neither Production nor Staging was deployed by this checkpoint.
 - Existing disposable PostgreSQL probe scripts/rotation_stock_pg_probe.py already exercise a synthetic 70-row publication, 500 read requests, scanner function isolation, no market downloads, no extra threads, bounded RSS delta and pg_total_relation_size for a disposable table. Do not mistake this for Render physical disk/WAL verification or sustained real-instance soak.
+
+## Render RAM gate — 2026-10-22 08:00–10:00 UTC
+- Read-only Render Staging memory metric: 465,403,900 bytes (~443.8 MiB) from 08:00–09:40 UTC, rising to 503,111,680 bytes (~479.8 MiB) at 09:50 and 10:00 UTC against a 536,870,900-byte (~512 MiB) limit. Peak headroom ~32.2 MiB (~6.3%).
+- These are existing deployed staging instance metrics, not new Stock Radar V2 deployment results. Cause of spike is unverified; do not infer memory leak or deploy safety.
+- CI commit d4c3d24: Stock Radar isolation passed, Windows integration and disposable PostgreSQL passed; Ubuntu browser integration still in progress when checked. Prior a2b5df2 Ubuntu failure traced to Position overlay close button intercepting Rotation nav click; navigation and probe updated in d4c3d24.
+- Staging deployment remains HOLD pending RAM headroom, physical disk/WAL, rollback artifact and real restart evidence. No live database mutation or production changes.
