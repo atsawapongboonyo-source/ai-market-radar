@@ -23,22 +23,33 @@ def clean_environment():
 
 
 def gunicorn_startup(output):
-    """Linux only: actual entrypoint, temporary SQLite, zero HTTP/provider traffic."""
+    """Linux only: actual entrypoint, disposable local PostgreSQL, no HTTP traffic."""
     import time
     import psutil
+    from urllib.parse import urlparse
     if sys.platform != 'linux':
         raise RuntimeError('Gunicorn startup measurement requires Linux')
+    database = os.environ.get('ROTATION_TEST_DATABASE_URL', '')
+    parsed = urlparse(database)
+    if (parsed.scheme not in ('postgres', 'postgresql') or parsed.path != '/rotation_test'
+            or parsed.hostname not in ('localhost', '127.0.0.1') or parsed.port != 5432
+            or parsed.query or parsed.fragment):
+        raise RuntimeError('Local disposable rotation_test on port 5432 required')
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         config = root / 'offline_config.py'
         config.write_text(
             'import sys\n'
             'def deny(event, args):\n'
+            "    if event == 'socket.connect' and args[1] in (('127.0.0.1',5432),('localhost',5432)):\n"
+            '        return\n'
+            "    if event == 'socket.getaddrinfo' and args[0] in ('127.0.0.1','localhost') and args[1] == 5432:\n"
+            '        return\n'
             "    if event in ('socket.connect','socket.getaddrinfo','subprocess.Popen','os.system'):\n"
             "        raise RuntimeError('OFFLINE_STARTUP_SIDE_EFFECT_BLOCKED')\n"
             'sys.addaudithook(deny)\n', encoding='utf-8')
         env = clean_environment()
-        env['ROTATION_STAGING_DATA_DIR'] = directory
+        env['ROTATION_DATABASE_URL'] = database
         samples = []
         with (root / 'startup.log').open('w+', encoding='utf-8') as log:
             process = subprocess.Popen(
@@ -67,7 +78,6 @@ def gunicorn_startup(output):
                 assert 'Booting worker' in logs and 'ERROR' not in logs, 'Startup failed'
                 assert 'OFFLINE_STARTUP_SIDE_EFFECT_BLOCKED' not in logs, 'Unexpected side effect'
                 assert samples[-1]['processes'] == 2, samples[-1]
-                assert (root / 'rotation-staging.sqlite').exists(), 'Disposable store missing'
             finally:
                 process.terminate()
                 try:
@@ -77,11 +87,11 @@ def gunicorn_startup(output):
                     process.wait(timeout=5)
         result = dict(simulation_only=True, mode='gunicorn_startup', python=sys.version.split()[0],
                       workers=1, configured_threads=2, seconds=30, http_requests=0,
-                      storage='temporary SQLite, no live database credentials',
+                      storage='local disposable PostgreSQL rotation_test, no live credentials',
                       peak_summed_rss_mib=round(max(x['rss_mib'] for x in samples), 3),
                       peak_summed_pss_mib=round(max(x['pss_mib'] for x in samples), 3),
                       final=samples[-1],
-                      limitations=['Startup only, no representative load or PostgreSQL',
+                      limitations=['Startup only, no representative load or live PostgreSQL',
                                    'Summed RSS double-counts shared pages; PSS apportions them',
                                    'Not Render container memory or a 400 MiB acceptance result'])
         output.write_text(json.dumps(result, indent=2), encoding='utf-8')
