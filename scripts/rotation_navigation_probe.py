@@ -72,6 +72,17 @@ try:
             assert page.url.endswith('/scanner#') or page.url.endswith('/scanner')
             page.locator('#capital-rotation-nav').get_by_role('link',name='Rotation',exact=True).click()
             page.wait_for_url(base+'/rotation')
+            # Regression: repeated Position -> Rotation navigation must not
+            # leave a stale Position overlay or duplicate the unified nav.
+            for _ in range(2):
+                page.locator('#capital-rotation-nav').get_by_role('link',name='Position',exact=True).click()
+                page.wait_for_url(base+'/scanner#position')
+                assert page.locator('#v510PositionPanel').is_visible()
+                page.locator('#capital-rotation-nav').get_by_role('link',name='Rotation',exact=True).click()
+                page.wait_for_url(base+'/rotation')
+                assert page.locator('#capital-rotation-nav').count()==1
+                assert page.locator('#capital-rotation-nav [aria-current="page"]').inner_text()=='Rotation'
+                assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
             assert page.locator('#capital-rotation-nav .radar-production').get_attribute('target')=='_blank'
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
             page.screenshot(path=f'rotation-navigation-{width}-Rotation.png',full_page=True)
