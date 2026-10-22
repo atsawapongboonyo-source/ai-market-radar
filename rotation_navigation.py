@@ -57,7 +57,7 @@ SCRIPT = '''<script id="radar-unified-history">
 def install_navigation(app, *, scanner=False):
     @app.after_request
     def unified_navigation(response):
-        if (request.path not in ('/', '/scanner', '/analysis', '/rotation') or
+        if (request.path not in ('/', '/scanner', '/analysis', '/rotation', '/stock-radar') or
                 response.status_code != 200 or response.mimetype != 'text/html' or response.direct_passthrough):
             return response
         import re
