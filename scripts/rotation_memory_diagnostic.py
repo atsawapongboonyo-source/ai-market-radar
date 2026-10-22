@@ -19,11 +19,18 @@ def child(output):
     import importlib
     import runpy
     import threading
+    from concurrent.futures import ThreadPoolExecutor
+    from importlib.metadata import version, PackageNotFoundError
     from unittest.mock import patch
     import psutil
 
     # Fail before network/process side effects, including during scanner import.
     denied = []
+    def dependency_version(name):
+        try:
+            return version(name)
+        except PackageNotFoundError:
+            return None
     def audit(event, args):
         if event in ('socket.connect', 'socket.getaddrinfo', 'subprocess.Popen', 'os.system'):
             denied.append(event)
@@ -38,7 +45,8 @@ def child(output):
         peak[0] = max(peak[0], proc.memory_info().rss)
     def checkpoint(phase, **extra):
         sample()
-        samples.append(dict(phase=phase, rss_mib=round(proc.memory_info().rss / 2**20, 3), **extra))
+        samples.append(dict(phase=phase, rss_mib=round(proc.memory_info().rss / 2**20, 3),
+                            os_threads=proc.num_threads(), python_threads=threading.active_count(), **extra))
     def monitor():
         while not stop.wait(.01):
             sample()
@@ -90,6 +98,32 @@ def child(output):
         core._HISTORY_CACHE.clear()
         gc.collect()
         checkpoint('history_cache_cleared', **cache_stats())
+        # Two callers match the configured Gunicorn thread count. Exercise real
+        # cache copies and eviction, but replace provider I/O with bounded data.
+        # Never retain all returned frames in the executor's result collection.
+        def request(i):
+            result = core.download_history('CYCLE%03d' % i, period='5y')
+            assert len(result) == len(frame)
+            return len(result)
+        cycles = []
+        with patch.object(core.yf, 'download', side_effect=lambda *a, **k: frame.copy()) as provider:
+            for cycle in range(3):
+                core._HISTORY_CACHE.clear()
+                for i in range(64):
+                    request(i)
+                cold_calls = provider.call_count
+                for i in range(64):
+                    request(i)
+                assert provider.call_count == cold_calls, 'Warm cache unexpectedly downloaded'
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    assert sum(pool.map(request, range(64, 320))) == 256 * len(frame)
+                stats = cache_stats()
+                assert stats['cache_entries'] <= 128 and stats['cache_frame_bytes'] <= 8 * 2**20
+                checkpoint('concurrent_cycle_%d' % cycle, **stats)
+                core._HISTORY_CACHE.clear()
+                gc.collect()
+                checkpoint('cycle_%d_cleared_after_gc' % cycle, **cache_stats())
+                cycles.append(dict(cycle=cycle, cumulative_synthetic_provider_calls=provider.call_count))
         assert threading.active_count() == threads, 'Unexpected background thread'
         assert not denied, denied
         # platform.system() can spawn `ver` on older Windows Python releases.
@@ -99,6 +133,10 @@ def child(output):
                       rss_sampled_peak_mib=round(peak[0] / 2**20, 3),
                       rss_samples=samples, rotation_probe=rotation,
                       synthetic_download_calls=calls, expired_cache=retained,
+                      concurrent_workers=2, repeated_cycles=cycles,
+                      dependencies={name: dependency_version(name) for name in
+                                    ('Flask', 'gunicorn', 'pandas', 'numpy', 'yfinance',
+                                     'curl_cffi', 'cryptography', 'psycopg', 'psutil')},
                       blocked_side_effect_attempts=len(denied),
                       limitations=['Single process; excludes Gunicorn master and container page cache',
                                    'Synthetic history; no live provider/native allocation profile',
