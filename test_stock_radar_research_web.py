@@ -2,6 +2,7 @@
 import unittest
 from flask import Flask
 from rotation_navigation import install_navigation
+from rotation_web import RotationSite
 from stock_radar_research_web import install_research_directory, filtered_rows
 from stock_radar_universe_validation import WATCHLIST
 import json
@@ -12,6 +13,21 @@ class StockRadarResearchWebTests(unittest.TestCase):
         install_research_directory(self.app)
         install_navigation(self.app)
         self.client = self.app.test_client()
+
+    def test_wsgi_dispatch_isolated_from_scanner(self):
+        from werkzeug.test import Client
+        from werkzeug.wrappers import Response
+        scanner = Flask('scanner_isolation_test')
+        @scanner.get('/scanner')
+        def original_scanner():
+            return 'ORIGINAL_SCANNER'
+        site = RotationSite(scanner, simulated=True)
+        install_research_directory(site.rotation_app)
+        isolated = Client(site, Response)
+        self.assertEqual(isolated.get('/stock-radar').status_code, 200)
+        self.assertIn(b'NOT_EVALUATED', isolated.get('/stock-radar').data)
+        self.assertEqual(isolated.get('/scanner').data, b'ORIGINAL_SCANNER')
+        self.assertEqual(isolated.get('/api/rotation').status_code, 200)
 
     def test_search_and_filter(self):
         r = self.client.get('/stock-radar?q=MU')
