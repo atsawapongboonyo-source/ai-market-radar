@@ -57,3 +57,10 @@ Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stoc
 - These are existing deployed staging instance metrics, not new Stock Radar V2 deployment results. Cause of spike is unverified; do not infer memory leak or deploy safety.
 - CI commit d4c3d24: Stock Radar isolation passed, Windows integration and disposable PostgreSQL passed; Ubuntu browser integration still in progress when checked. Prior a2b5df2 Ubuntu failure traced to Position overlay close button intercepting Rotation nav click; navigation and probe updated in d4c3d24.
 - Staging deployment remains HOLD pending RAM headroom, physical disk/WAL, rollback artifact and real restart evidence. No live database mutation or production changes.
+
+## Memory / deployment evidence — 2026-10-26
+- Render Staging latest live deploy is still `96f3000588bd11cd069d91a7402d34fb5651b58d` from 2026-10-21, not PR #21. Auto-deploy remains off. Do not attribute observed RAM changes to un-deployed V2 code.
+- Read-only Render memory samples 2026-10-26 00:00–09:30 UTC (30-minute resolution) returned 20 samples across 16 distinct instance identifiers, minimum ~110.6 MiB, maximum ~159.1 MiB. Separately, higher-resolution 06:00–09:00 UTC samples previously showed peak ~181.9 MiB. The inconsistent sampling/instance turnover means no same-process sustained soak conclusion can be drawn.
+- Render service event query 2026-10-22 onward returned no events; this does not establish the cause of instance changes. Do not infer OOM or leak from metrics alone.
+- Existing CI on PR #21 head `56ec44a` passed both workflows, including Ubuntu, Windows and disposable PostgreSQL on Python 3.12 and 3.14.8; this is not Render deployment or live resource validation.
+- Remain HOLD: prove same-instance steady-state RAM with sustained workload, verify physical disk/WAL and safe rollback, then assess actual restart/persistence. No Production or Render config changes authorized.
