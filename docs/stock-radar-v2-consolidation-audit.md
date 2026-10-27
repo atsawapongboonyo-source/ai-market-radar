@@ -64,3 +64,9 @@ Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stoc
 - Render service event query 2026-10-22 onward returned no events; this does not establish the cause of instance changes. Do not infer OOM or leak from metrics alone.
 - Existing CI on PR #21 head `56ec44a` passed both workflows, including Ubuntu, Windows and disposable PostgreSQL on Python 3.12 and 3.14.8; this is not Render deployment or live resource validation.
 - Remain HOLD: prove same-instance steady-state RAM with sustained workload, verify physical disk/WAL and safe rollback, then assess actual restart/persistence. No Production or Render config changes authorized.
+
+## 2026-10-27 00:00–02:30 UTC Render restart investigation (read-only)
+- Staging memory samples (5-minute resolution): maximum ~175.7 MiB / 512 MiB, across six distinct instance IDs. This is not evidence of a stable same-instance soak.
+- Render application logs show Gunicorn master receiving `Handling signal: term` at 00:21, 00:51, 01:21, 01:51 and 02:21 UTC, followed by orderly `Worker exiting` / `Shutting down: Master` and new Gunicorn startup ~30–40 seconds later. This confirms repeated terminations/restarts, not the underlying platform cause.
+- No explicit OOM traceback observed in the inspected app logs; Render events query returned no events. Do not classify as memory leak or OOM, and do not assume a scheduler or Render free-tier behavior without independent evidence.
+- Maintain HOLD for V2 staging deploy until a controlled same-instance RAM soak and platform restart reason are available, plus disk/WAL and rollback gates. Existing staging deploy remains 96f3000; Production unchanged.
