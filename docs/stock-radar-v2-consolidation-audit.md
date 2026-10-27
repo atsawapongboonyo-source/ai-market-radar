@@ -75,3 +75,8 @@ Physical disk/WAL metrics unavailable; rollback artifact 'Build not found'; stoc
 - Read-only Render logs 06:00–10:00 UTC show repeated SIGTERM at 06:06, 06:51, 07:21, 07:51, 08:21, 08:51 UTC, with six `ROTATION_STORAGE_VERIFICATION` messages reporting `POSTGRESQL_PERSISTENT`, `restore_drill.status=VERIFIED`, and five publications each. This supports readable persistent data after process turnover; it does **not** demonstrate PITR, physical WAL capacity or a tested live rollback.
 - Memory 06:00–10:00 UTC: sampled maximum ~195.6 MiB of 512 MiB, across seven instance IDs. Subsequent 09:00–13:00 UTC query returned only seven samples (peak ~195.7 MiB) and two app logs, so do not infer the remainder of the requested time window was observed. No evidence of V2 memory improvement until deployed and measured.
 - The latest Render live deploy remains `96f3000` from October 21; no V2 deployment authorized. Maintain HOLD until instance turnover reason, sustained same-process soak, disk/WAL, and rollback gates are met.
+
+## 2026-10-27 11:00–13:15 UTC follow-up (read-only)
+- Staging app logs show Gunicorn SIGTERM at 11:06, 11:36, 12:06, 12:51 UTC; therefore the earlier ~30-minute cadence is not perfectly uniform (45-minute gap observed). Do not assert a precise restart schedule or platform cause.
+- Four `ROTATION_STORAGE_VERIFICATION` startup records each report `restore_drill.status=VERIFIED`. This is a startup logical verification only, not a live database restore, PITR or disk/WAL proof.
+- Render RAM: 27 five-minute samples, peak ~189.5 MiB / 512 MiB, five instance IDs; cannot establish same-instance long-duration memory stability. Existing deployed SHA unchanged in last verified deploy check; V2 remains HOLD.
