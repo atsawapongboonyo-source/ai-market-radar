@@ -4,6 +4,8 @@ on:
     paths:
       - 'data/stock-radar-research-watchlist-v1.json'
       - 'data/rotation-stock-universe-v1.json'
+      - 'market_data_freshness_v1.py'
+      - 'test_market_data_freshness_v1.py'
       - 'stock_radar_universe_validation.py'
       - 'test_stock_radar_universe_validation.py'
       - 'stock_radar_research_web.py'
@@ -25,5 +27,5 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install 'Flask>=3,<4'
-      - run: python -m unittest -v test_stock_radar_universe_validation test_stock_radar_research_web
+      - run: python -m unittest -v test_stock_radar_universe_validation test_stock_radar_research_web test_market_data_freshness_v1
       - run: python stock_radar_universe_validation.py
