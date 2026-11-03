@@ -1,5 +1,5 @@
 import unittest
-from rotation_restart_ingest_audit import audit
+from scripts.rotation_restart_ingest_audit import audit
 
 
 def log(time, message):
