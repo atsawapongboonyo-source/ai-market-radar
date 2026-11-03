@@ -28,6 +28,14 @@ args=parser.parse_args()
 process=psutil.Process()
 gc.collect()
 before=process.memory_info().rss
+peak=before
+samples=[]
+def checkpoint(label):
+    global peak
+    rss=process.memory_info().rss
+    peak=max(peak,rss)
+    samples.append({'phase':label,'rss_mib':round(rss/2**20,3)})
+checkpoint('scanner_imported')
 threads_before=threading.active_count()
 functions=dict(scanner.app.view_functions)
 positions=[{'ticker':'TEST','avg_cost':100,'price':price,'shares':10,'buy_low':98,'buy_high':102,'stop':95,'tp1':110,'tp2':120} for price in (94,105,115)]
@@ -45,29 +53,37 @@ with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
     from rotation_opportunities import install_opportunities
     install_opportunities(scanner.app,site.rotation_app,
         lambda: {'status':'BLOCKED','reason':'ISOLATION_PROBE','stocks':[]})
+    checkpoint('rotation_initialized')
     client=Client(site,Response)
     raw=json.dumps(fake_public(now)).encode()
     response=client.post('/api/rotation/ingest',data=raw,headers=signed_headers(raw,key,'probe',now),environ_overrides={'REMOTE_ADDR':'127.0.0.1'})
     assert response.status_code==200,response.data
-    for _ in range(1500):
+    checkpoint('signed_ingest')
+    for i in range(1500):
         assert client.get('/api/rotation').status_code==200
+        if i in (99,499,999,1499): checkpoint('rotation_reads_'+str(i+1))
     rotation=client.get('/rotation')
     home=client.get('/')
     assert b'v531LiveRotation' not in rotation.data
     assert b'capital-rotation-nav' in home.data
     assert b'radar-opportunities' in home.data
-    for _ in range(500):
+    checkpoint('home_and_rotation')
+    for i in range(500):
         assert client.get('/api/rotation/opportunities').json['status']=='BLOCKED'
+        if i in (99,499): checkpoint('opportunity_reads_'+str(i+1))
     assert scanner.app.view_functions==functions
     assert position_before==[legacy_scanner._position_manage(p) for p in positions]
     assert threads_before==threading.active_count()
     gc.collect()
     after=process.memory_info().rss
+    checkpoint('after_gc')
     result={'runtime_version':scanner.RUNTIME_VERSION,'scanner_view_functions_unchanged':True,
         'position_engine_result_unchanged':True,'rotation_has_no_scanner_injections':True,
         'market_downloads':0,'background_threads_added':0,'requests':1500,
         'rss_before_mib':round(before/2**20,3),'rss_after_mib':round(after/2**20,3),
-        'rss_delta_mib':round((after-before)/2**20,3),'ingest_status':response.status_code}
+        'rss_delta_mib':round((after-before)/2**20,3),
+        'rss_peak_mib':round(peak/2**20,3),'rss_samples':samples,
+        'ingest_status':response.status_code}
     assert after-before < 32*2**20,result
 args.output.write_text(json.dumps(result,indent=2),encoding='utf-8')
 print(json.dumps(result))

@@ -5,25 +5,42 @@ on:
   pull_request:
     paths:
       - 'rotation_*.py'
+      - 'app.py'
+      - 'history_cache.py'
+      - 'test_history_cache.py'
       - 'rotation_templates/**'
       - 'test_rotation_web.py'
+      - 'scripts/rotation_web_probe.py'
+      - 'scripts/rotation_memory_diagnostic.py'
       - 'requirements-rotation-web.txt'
       - '.github/workflows/rotation-web.yml'
 jobs:
   integration:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python: ['3.12', '3.14.8']
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 8
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -r requirements-rotation-web.txt -c docs/memory-evidence/render-build-96f3000-constraints.txt pytest psutil
       - run: python -m pytest -q
       - run: python scripts/rotation_web_probe.py --output rotation-web-ram.json
+      - run: python scripts/rotation_memory_diagnostic.py --cycles 30 --output rotation-memory-diagnostic.json
+      - run: python scripts/rotation_memory_diagnostic.py --cycles 30 --cache-mode unbounded --output rotation-memory-unbounded.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-memory-${{ runner.os }}-${{ matrix.python }}
+          path: |
+            rotation-web-ram.json
+            rotation-memory-diagnostic.json
+            rotation-memory-unbounded.json
       - if: runner.os == 'Linux'
         run: python -m pip install playwright
       - if: runner.os == 'Linux'
@@ -35,12 +52,16 @@ jobs:
       - if: always() && runner.os == 'Linux'
         uses: actions/upload-artifact@v4
         with:
-          name: rotation-stock-mobile-qa
+          name: rotation-stock-mobile-qa-${{ matrix.python }}
           path: |
             rotation-stock-mobile-*.png
             rotation-navigation-*.png
             rotation-navigation-results.json
   postgres:
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.14.8']
     runs-on: ubuntu-latest
     timeout-minutes: 8
     services:
@@ -60,7 +81,17 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - run: python -m pip install -r requirements-rotation-web.txt pytest psutil
+          python-version: ${{ matrix.python }}
+      - run: python -m pip install -r requirements-rotation-web.txt -c docs/memory-evidence/render-build-96f3000-constraints.txt pytest psutil
       - run: python -m pytest -q test_rotation_postgres.py test_rotation_stock_postgres.py
       - run: python scripts/rotation_stock_pg_probe.py
+      - run: python scripts/rotation_stock_pg_probe.py --snapshot restart-checkpoint.json
+      - name: Restart disposable CI PostgreSQL only
+        run: docker restart ${{ job.services.postgres.id }}
+      - run: python scripts/rotation_stock_pg_probe.py --verify-snapshot restart-checkpoint.json
+      - run: python scripts/rotation_memory_diagnostic.py --gunicorn-startup --output rotation-gunicorn-startup.json
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-gunicorn-startup-${{ matrix.python }}
+          path: rotation-gunicorn-startup.json

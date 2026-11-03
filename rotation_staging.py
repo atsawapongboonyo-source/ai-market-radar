@@ -52,3 +52,7 @@ install_opportunities(scanner_app, app.rotation_app, stock_current)
 from rotation_navigation import install_navigation
 install_navigation(scanner_app, scanner=True)
 install_navigation(app.rotation_app)
+
+# Read-only research directory is mounted only on this staging application.
+from stock_radar_research_web import install_research_directory
+install_research_directory(app.rotation_app)

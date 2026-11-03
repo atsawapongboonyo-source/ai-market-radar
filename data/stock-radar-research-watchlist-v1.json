@@ -1,0 +1,78 @@
+{
+  "schema": "stock-radar-research-watchlist-v1",
+  "purpose": "Research-only candidate universe. Not verified ETF holdings, no READY state and no trade recommendation.",
+  "updated_on": "2026-10-21",
+  "source_type": "CURATED_RESEARCH_CANDIDATES_NOT_HOLDINGS",
+  "groups": {
+    "AI Infrastructure": [
+      "VRT",
+      "DELL",
+      "IREN",
+      "CRWV"
+    ],
+    "Memory & Storage": [
+      "MU",
+      "SNDK",
+      "WDC",
+      "STX"
+    ],
+    "Optical & Photonics": [
+      "LITE",
+      "COHR",
+      "AXTI",
+      "AAOI"
+    ],
+    "Cybersecurity": [
+      "PANW",
+      "CRWD",
+      "FTNT",
+      "ZS"
+    ],
+    "Cloud & Software": [
+      "ORCL",
+      "NET",
+      "DDOG",
+      "SNOW"
+    ],
+    "Power & Utilities": [
+      "CEG",
+      "VST",
+      "NEE",
+      "ETN"
+    ],
+    "Financials": [
+      "JPM",
+      "GS",
+      "MS",
+      "V"
+    ],
+    "Healthcare": [
+      "LLY",
+      "UNH",
+      "ABBV",
+      "ISRG"
+    ],
+    "Industrials": [
+      "CAT",
+      "GE",
+      "DE",
+      "HON"
+    ],
+    "Consumer": [
+      "AMZN",
+      "COST",
+      "WMT",
+      "HD"
+    ]
+  },
+  "safety": {
+    "read_only": true,
+    "feed": "UNVERIFIED_UNTIL_COLLECTED",
+    "signal": "NOT_EVALUATED",
+    "requires_market_data_provenance": true,
+    "requires_liquidity_and_history_validation": true,
+    "requires_signed_ingest_before_decisions": true,
+    "do_not_mix_with_etf_holdings": true,
+    "do_not_trigger_bulk_collection": true
+  }
+}

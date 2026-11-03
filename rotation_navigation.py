@@ -2,7 +2,7 @@
 from flask import request
 
 LINKS = (('Home', '/'), ('Scanner', '/scanner'), ('Rotation', '/rotation'),
-         ('Stock Radar', '/analysis'), ('Top Pick', '/scanner#top-pick'),
+         ('Stock Radar', '/stock-radar'), ('Top Pick', '/scanner#top-pick'),
          ('Position', '/scanner#position'))
 
 STYLE = '''<style id="radar-unified-style">
@@ -37,7 +37,7 @@ SCRIPT = '''<script id="radar-unified-history">
    if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
   });
   if(path!=='/'&&path!=='/scanner')return;
-  if(window.v510ClosePosition)window.v510ClosePosition();
+  if(hash!=='#position'&&window.v510ClosePosition)window.v510ClosePosition();
   if(hash==='#position'){
    if(window.v510OpenPosition)window.v510OpenPosition();
   }else if(hash==='#top-pick'){
@@ -48,6 +48,14 @@ SCRIPT = '''<script id="radar-unified-history">
  function boot(){
   var close=document.getElementById('v510PositionClose');
   if(close)close.addEventListener('click',function(){if(location.hash==='#position')location.hash='';});
+  // The Position panel is a full-screen overlay. Keep navigation reachable
+  // without modifying Scanner's own position logic or click handlers.
+  document.querySelectorAll('#capital-rotation-nav .radar-links a').forEach(function(a){
+   a.addEventListener('click',function(){
+    if(location.pathname==='/scanner'&&location.hash==='#position'&&window.v510ClosePosition)
+     window.v510ClosePosition();
+   });
+  });
   sync();
  }
  window.addEventListener('hashchange',sync);window.addEventListener('pageshow',sync);
@@ -57,7 +65,7 @@ SCRIPT = '''<script id="radar-unified-history">
 def install_navigation(app, *, scanner=False):
     @app.after_request
     def unified_navigation(response):
-        if (request.path not in ('/', '/scanner', '/analysis', '/rotation') or
+        if (request.path not in ('/', '/scanner', '/analysis', '/rotation', '/stock-radar') or
                 response.status_code != 200 or response.mimetype != 'text/html' or response.direct_passthrough):
             return response
         import re

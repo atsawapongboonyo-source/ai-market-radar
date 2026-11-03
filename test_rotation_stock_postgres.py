@@ -1,7 +1,9 @@
 """Disposable PostgreSQL only: stock writes must preserve baseline and nonce semantics."""
 import os,json,unittest
+from datetime import timedelta
 from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import urlparse
+from rotation_backup import restore_drill
 from rotation_store import PublicStore
 from rotation_stock_store import StockStore
 from rotation_stock_web import register_stock
@@ -31,6 +33,29 @@ class StockPostgresTests(unittest.TestCase):
     def post(self,h=None,raw=None,app=None):
         raw=raw or self.raw;h=h or stock_headers(raw,self.key,'test',NOW)
         return (app or self.app).test_client().post('/api/rotation/stocks/ingest',data=raw,headers={**h,'X-Forwarded-Proto':'https'})
+    def test_stock_restore_drill_preserves_published_rows(self):
+        self.assertEqual(self.post().status_code, 200)
+        with self.store.connect() as db:
+            before = db.execute('SELECT session, generated, digest, body FROM rotation.stock_publications').fetchall()
+            nonces = db.execute('SELECT count(*) FROM rotation.nonces').fetchone()[0]
+        report = restore_drill(self.store)
+        self.assertEqual(report['status'], 'VERIFIED')
+        self.assertTrue(report['stock_table_present'])
+        self.assertEqual(report['stock_publications'], 1)
+        self.assertFalse(report['source_modified'])
+        with self.store.connect() as db:
+            after = db.execute('SELECT session, generated, digest, body FROM rotation.stock_publications').fetchall()
+            self.assertEqual(db.execute('SELECT count(*) FROM rotation.nonces').fetchone()[0], nonces)
+        self.assertEqual(before, after)
+        self.assertEqual(self.store.latest(), self.raw)
+
+    def test_empty_stock_restore_drill(self):
+        report = restore_drill(self.store)
+        self.assertEqual(report['status'], 'VERIFIED')
+        self.assertTrue(report['stock_table_present'])
+        self.assertEqual(report['stock_publications'], 0)
+        self.assertFalse(report['source_modified'])
+
     def test_restart_and_baseline_unchanged(self):
         h=stock_headers(self.raw,self.key,'test',NOW)
         self.assertEqual(self.post(h).status_code,200)
@@ -43,6 +68,27 @@ class StockPostgresTests(unittest.TestCase):
         self.assertEqual(codes.count(200),1);self.assertEqual(codes.count(409),15)
         self.assertEqual(self.post().get_json()['status'],'UNCHANGED')
         with self.store.connect() as db:self.assertEqual(db.execute('SELECT count(*) FROM rotation.stock_publications').fetchone()[0],1)
+    def test_rejects_old_signed_timestamp_without_consuming_nonce(self):
+        old = stock_headers(self.raw, self.key, 'test', NOW - timedelta(seconds=301))
+        response = self.post(old)
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(response.get_json()['error_code'], 'INVALID_SIGNATURE')
+        with self.store.connect() as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM rotation.nonces WHERE key_id='test'").fetchone()[0], 0)
+            self.assertEqual(db.execute('SELECT count(*) FROM rotation.stock_publications').fetchone()[0], 0)
+
+    def test_conflicting_older_stock_publication_rejected(self):
+        self.assertEqual(self.post().status_code, 200)
+        older = json.loads(self.raw)
+        older['generated_utc'] = (NOW - timedelta(seconds=30)).isoformat()
+        old_raw = json.dumps(older).encode()
+        # Direct store invocation exercises rollback protection independently of the signature parser.
+        status, code = self.store.publish(old_raw, older, 'test', 'a'*32, NOW,
+                                          signed_timestamp=int(NOW.timestamp()))
+        self.assertEqual((status, code), ('ROLLBACK_REJECTED', 409))
+        self.assertEqual(StockStore(self.url).latest(), self.raw)
+        self.assertEqual(self.base.latest(), self.baseline)
+
     def test_shared_nonce_domain_rejects_cross_endpoint_reuse(self):
         h=stock_headers(self.raw,self.key,'base',NOW,nonce='f'*32)
         # Storage reuse is denied even with a valid signature in the stock domain.

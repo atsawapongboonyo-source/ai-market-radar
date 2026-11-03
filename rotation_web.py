@@ -119,6 +119,6 @@ class RotationSite:
 
     def __call__(self, environ, start_response):
         path = environ.get('PATH_INFO', '')
-        if path in ('/rotation', '/api/rotation') or path.startswith(('/rotation/', '/api/rotation/')):
+        if path in ('/rotation', '/api/rotation', '/stock-radar') or path.startswith(('/rotation/', '/api/rotation/')):
             return self.rotation_app(environ, start_response)
         return self.scanner_app(environ, start_response)
