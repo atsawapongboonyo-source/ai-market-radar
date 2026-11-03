@@ -11,8 +11,8 @@ class RestartIngestAuditTests(unittest.TestCase):
         rows = [
             log("2026-11-03T00:51:01Z", "Handling signal: term"),
             log("2026-11-03T00:21:01Z", "Handling signal: term"),
-            log("2026-11-03T00:21:43Z", 'POST /api/rotation/ingest HTTP/1.1" 200 33'),
-            log("2026-11-03T00:36:01Z", 'POST /api/rotation/ingest HTTP/1.1" 500 33'),
+            log("2026-11-03T00:21:43Z", '"POST /api/rotation/ingest HTTP/1.1" 200 33'),
+            log("2026-11-03T00:36:01Z", '"POST /api/rotation/ingest HTTP/1.1" 500 33'),
             log("2026-11-03T00:21:34Z", '{"event": "ROTATION_STORAGE_VERIFICATION"}'),
         ]
         result = audit(rows)
