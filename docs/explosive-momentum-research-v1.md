@@ -86,3 +86,18 @@ Incomplete labels, missing screened names and look-ahead fail closed.
 When complete, it calculates TP/FP/FN/TN, precision, recall and false
 positive rate. This is a **measurement harness**, not a completed historical
 study: no real full-market labeled dataset has been evaluated yet.
+
+## Alpaca market-data adapter (read-only)
+
+`explosive_momentum_alpaca.fetch_intraday` supports bounded GET requests
+to Alpaca 1-minute bars and latest quotes for an explicit ticker, with no
+redirects, account access, order access or scheduled publishing. The adapter
+returns feed provenance; IEX is partial-market data. A latest quote is **not**
+a historical as-of quote and must never be attached to an older replay event.
+No credentials are persisted by this adapter.
+
+**Not yet a verified live connection:** credential access/entitlements, actual
+provider response, timestamp matching, 10+ prior-session same-clock baselines
+and market-wide coverage still require a local opt-in validation. In particular,
+do not call the intraday detector on historical bars using the latest quote:
+the live quote may be from the future relative to those bars.
