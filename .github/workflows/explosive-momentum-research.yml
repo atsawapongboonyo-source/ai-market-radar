@@ -1,0 +1,32 @@
+name: Explosive Momentum offline research
+on:
+  pull_request:
+    paths:
+      - 'explosive_momentum_research.py'
+      - 'test_explosive_momentum_research.py'
+      - 'explosive_momentum_intraday.py'
+      - 'test_explosive_momentum_intraday.py'
+      - 'explosive_momentum_replay.py'
+      - 'test_explosive_momentum_replay.py'
+      - 'explosive_momentum_evaluation.py'
+      - 'test_explosive_momentum_evaluation.py'
+      - 'explosive_momentum_alpaca.py'
+      - 'test_explosive_momentum_alpaca.py'
+      - 'explosive_momentum_timing.py'
+      - 'test_explosive_momentum_timing.py'
+      - '.github/workflows/explosive-momentum-research.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.12', '3.14']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m unittest -v test_explosive_momentum_research test_explosive_momentum_intraday test_explosive_momentum_replay test_explosive_momentum_evaluation test_explosive_momentum_alpaca test_explosive_momentum_timing
