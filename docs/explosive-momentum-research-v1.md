@@ -75,3 +75,14 @@ including non-winners, plus independent future outcomes and contemporaneous
 leaderboard timestamps before detection lead time, recall, precision,
 false-positive rate or P&L can be measured. No historical full-universe
 dataset or live market-wide data is bundled.
+
+## Outcome-evaluation safety gate
+
+`explosive_momentum_evaluation.evaluate_replay` now refuses precision and
+recall calculations unless the caller supplies the full screened universe,
+a record for each symbol including non-winners, one independently sourced
+boolean outcome per symbol and evaluation timestamps after observation.
+Incomplete labels, missing screened names and look-ahead fail closed.
+When complete, it calculates TP/FP/FN/TN, precision, recall and false
+positive rate. This is a **measurement harness**, not a completed historical
+study: no real full-market labeled dataset has been evaluated yet.
