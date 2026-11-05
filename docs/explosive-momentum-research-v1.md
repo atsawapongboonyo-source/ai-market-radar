@@ -64,3 +64,14 @@ load/restart/persistence checks. No claims of pre-leaderboard detection.
 The offline detector relies on its caller to provide matching session/feed
 and previously completed bars and baseline observations; these provenance
 contracts require end-to-end validation before enabling any alert.
+
+## Offline replay harness
+
+`explosive_momentum_replay.replay_snapshots` evaluates supplied
+point-in-time snapshots and reports REVIEW/WATCH/OVEREXTENDED/BLOCKED counts
+and first REVIEW timestamps per symbol. It does not invent outcomes or
+precision statistics. The caller must supply **all** screened symbols,
+including non-winners, plus independent future outcomes and contemporaneous
+leaderboard timestamps before detection lead time, recall, precision,
+false-positive rate or P&L can be measured. No historical full-universe
+dataset or live market-wide data is bundled.
