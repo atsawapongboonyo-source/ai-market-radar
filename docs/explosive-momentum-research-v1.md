@@ -43,3 +43,24 @@ and latency/freshness checks.
 Feature branch separate from Stock Radar V2 PR #21 and Rotation Staging.
 Do not merge main, deploy Production or Staging, change paid resources, create
 tasks, call trading APIs or send orders without separate approval.
+
+## Intraday V1 offline implementation (2026-11-05)
+
+`explosive_momentum_intraday.detect_intraday` now evaluates 16 contiguous
+completed one-minute UTC bars, 15-minute turnover, 5- and 15-minute price
+momentum, session-open gain, bid/ask spread and a 10+ prior-session
+**same-clock 15-minute volume** baseline. It blocks stale/future bars, gaps,
+invalid quotes and incomplete baselines. IEX-only input cannot produce a
+full-market REVIEW confirmation: it remains WATCH with PARTIAL_MARKET_FEED.
+Outputs REVIEW, WATCH, OVEREXTENDED or BLOCKED, without placing orders.
+
+**Unimplemented production requirements:** point-in-time universe discovery;
+market-wide intraday data licensing, SIP quote/trade coverage and provider
+integration; corporate-action and halt flags; session-calendar/DST validation;
+timestamped news/catalyst attribution; event-time backtest and performance
+metrics; live dashboard/Telegram delivery; collector scheduling; staging
+load/restart/persistence checks. No claims of pre-leaderboard detection.
+
+The offline detector relies on its caller to provide matching session/feed
+and previously completed bars and baseline observations; these provenance
+contracts require end-to-end validation before enabling any alert.
