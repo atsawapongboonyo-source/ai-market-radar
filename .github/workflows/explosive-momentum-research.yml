@@ -4,6 +4,8 @@ on:
     paths:
       - 'explosive_momentum_research.py'
       - 'test_explosive_momentum_research.py'
+      - 'explosive_momentum_intraday.py'
+      - 'test_explosive_momentum_intraday.py'
       - '.github/workflows/explosive-momentum-research.yml'
 permissions:
   contents: read
@@ -19,4 +21,4 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - run: python -m unittest -v test_explosive_momentum_research
+      - run: python -m unittest -v test_explosive_momentum_research test_explosive_momentum_intraday
